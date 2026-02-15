@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Payments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav { padding: 24px 0; }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-item.active { background-color: rgba(255,255,255,0.1); color: var(--white); border-right: 3px solid var(--white); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title { font-size: 32px; }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary { background-color: var(--text); color: var(--white); }
+    .btn-primary:hover { background-color: #4a4a4a; }
+    .btn-secondary { background-color: var(--white); color: var(--text); border: 1px solid rgba(184,184,184,0.4); }
+    .btn-secondary:hover { border-color: var(--text); }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-success { background-color: var(--success); color: var(--white); }
+
+    /* Revenue Cards */
+    .revenue-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .revenue-card {
+      background: linear-gradient(135deg, var(--text) 0%, #4a4a4a 100%);
+      border-radius: 16px;
+      padding: 24px;
+      color: var(--white);
+    }
+
+    .revenue-card.highlight {
+      background: linear-gradient(135deg, var(--success) 0%, #3d6b4a 100%);
+    }
+
+    .revenue-card.warning {
+      background: linear-gradient(135deg, var(--warning) 0%, #b8923a 100%);
+    }
+
+    .revenue-card.info {
+      background: linear-gradient(135deg, var(--info) 0%, #5a7db8 100%);
+    }
+
+    .revenue-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .revenue-card-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .revenue-card-change {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .revenue-card-change.positive { color: #90EE90; }
+    .revenue-card-change.negative { color: #FFB6B6; }
+
+    /* Secondary Stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.error { color: var(--error); }
+    .stat-value.info { color: var(--info); }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    .stat-change {
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .stat-change.positive { color: var(--success); }
+    .stat-change.negative { color: var(--error); }
+
+    /* Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(184,184,184,0.3);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+    .tab-count {
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .tab.active .tab-count { background-color: var(--text); color: var(--white); }
+
+    .tab-count.alert {
+      background-color: var(--error);
+      color: var(--white);
+    }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--white);
+      min-width: 150px;
+    }
+
+    .search-input {
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      width: 280px;
+      background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    }
+
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .date-input {
+      padding: 8px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .clear-filters {
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .clear-filters:hover { color: var(--text); }
+
+    /* Data Table */
+    .table-container {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .data-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .data-table tbody tr:hover { background-color: var(--secondary-bg); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Transaction ID */
+    .transaction-id {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Payment Type Badge */
+    .payment-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .payment-type.booking { background-color: #E8F4EA; color: var(--success); }
+    .payment-type.subscription { background-color: #E8EFF9; color: var(--info); }
+    .payment-type.refund { background-color: #FCE8E8; color: var(--error); }
+    .payment-type.payout { background-color: #FEF9E7; color: var(--warning); }
+    .payment-type.commission { background-color: var(--secondary-bg); color: var(--text); }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.completed { background-color: #E8F4EA; color: var(--success); }
+    .status-badge.pending { background-color: #FEF9E7; color: var(--warning); }
+    .status-badge.processing { background-color: #E8EFF9; color: var(--info); }
+    .status-badge.failed { background-color: #FCE8E8; color: var(--error); }
+    .status-badge.refunded { background-color: var(--secondary-bg); color: var(--accent); }
+    .status-badge.scheduled { background-color: #E8EFF9; color: var(--info); }
+
+    /* Amount */
+    .amount {
+      font-weight: 600;
+    }
+
+    .amount.positive { color: var(--success); }
+    .amount.negative { color: var(--error); }
+
+    /* Party Cell */
+    .party-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .party-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #E8F4EA, #FEF9E7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--success);
+    }
+
+    .party-avatar.host {
+      background: linear-gradient(135deg, #E8EFF9, #F3E8F9);
+      color: var(--info);
+    }
+
+    .party-name { font-weight: 500; font-size: 13px; }
+    .party-detail { font-size: 11px; color: var(--accent); }
+
+    /* Stripe Badge */
+    .stripe-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #635BFF;
+      text-decoration: none;
+    }
+
+    .stripe-link:hover { text-decoration: underline; }
+
+    /* Actions */
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Pagination */
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .pagination-info { font-size: 13px; color: var(--accent); }
+
+    .pagination-controls { display: flex; gap: 8px; }
+
+    .pagination-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-btn:hover { border-color: var(--text); }
+    .pagination-btn.active { background-color: var(--text); color: var(--white); border-color: var(--text); }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Alert Boxes */
+    .alert-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .alert-box.warning {
+      background-color: #FEF9E7;
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+
+    .alert-box.danger {
+      background-color: #FCE8E8;
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    .alert-box.info {
+      background-color: #E8EFF9;
+      border: 1px solid var(--info);
+      color: var(--info);
+    }
+
+    .alert-box.success {
+      background-color: #E8F4EA;
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .alert-count {
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    /* Payout Schedule */
+    .payout-schedule {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .payout-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .payout-card.next {
+      border-color: var(--success);
+      background-color: #E8F4EA;
+    }
+
+    .payout-date {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .payout-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .payout-count {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .payout-status {
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+
+    /* Commission Breakdown */
+    .commission-breakdown {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .commission-card {
+      background-color: var(--white);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid rgba(184,184,184,0.2);
+      text-align: center;
+    }
+
+    .commission-rate {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .commission-rate.rate-5 { color: var(--success); }
+    .commission-rate.rate-7 { color: var(--info); }
+    .commission-rate.rate-10 { color: var(--warning); }
+    .commission-rate.rate-15 { color: #E67E22; }
+    .commission-rate.rate-20 { color: var(--error); }
+
+    .commission-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .commission-revenue {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .btn-close:hover { background-color: var(--secondary-bg); }
+
+    .modal-body { padding: 24px; }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section:last-child { margin-bottom: 0; }
+
+    .modal-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-label { color: var(--accent); font-size: 13px; }
+    .detail-value { font-weight: 500; font-size: 13px; }
+
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* Timeline in Modal */
+    .payment-timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .payment-timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background-color: rgba(184,184,184,0.3);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 16px;
+    }
+
+    .timeline-item:last-child { padding-bottom: 0; }
+
+    .timeline-dot {
+      position: absolute;
+      left: -17px;
+      top: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+    }
+
+    .timeline-dot.pending { background-color: var(--warning); }
+    .timeline-dot.failed { background-color: var(--error); }
+
+    .timeline-date { font-size: 11px; color: var(--accent); }
+    .timeline-event { font-size: 13px; font-weight: 500; }
+    .timeline-detail { font-size: 12px; color: var(--accent); }
+
+    /* Revenue Chart Placeholder */
+    .chart-placeholder {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    /* Quick Stats Row */
+    .quick-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+
+    .quick-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quick-stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quick-stat-icon.success { background-color: #E8F4EA; color: var(--success); }
+    .quick-stat-icon.warning { background-color: #FEF9E7; color: var(--warning); }
+    .quick-stat-icon.error { background-color: #FCE8E8; color: var(--error); }
+    .quick-stat-icon.info { background-color: #E8EFF9; color: var(--info); }
+
+    .quick-stat-value { font-weight: 600; font-size: 16px; }
+    .quick-stat-label { font-size: 11px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            Dashboard
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            All Venues
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Users</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Venue Owners
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Retreat Hosts
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+            Wellness Guests
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Bookings</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            All Bookings
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            Enquiries
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item active" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Payments
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Subscriptions
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sanctum Journal
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Wellness Edit
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Payments</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#635BFF" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Stripe Dashboard
+          </button>
+          <button class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Record Payment
+          </button>
+        </div>
+      </div>
+
+      <!-- Revenue Cards -->
+      <div class="revenue-cards">
+        <div class="revenue-card highlight">
+          <div class="revenue-card-label">Total Revenue (Feb)</div>
+          <div class="revenue-card-value">$89,450</div>
+          <div class="revenue-card-change positive">↑ 23% from Jan</div>
+        </div>
+        <div class="revenue-card">
+          <div class="revenue-card-label">Booking Revenue</div>
+          <div class="revenue-card-value">$71,000</div>
+          <div class="revenue-card-change positive">↑ 18% from Jan</div>
+        </div>
+        <div class="revenue-card info">
+          <div class="revenue-card-label">Subscription Revenue</div>
+          <div class="revenue-card-value">$18,450</div>
+          <div class="revenue-card-change positive">↑ 12% from Jan</div>
+        </div>
+        <div class="revenue-card warning">
+          <div class="revenue-card-label">TGS Commission Earned</div>
+          <div class="revenue-card-value">$6,240</div>
+          <div class="revenue-card-change positive">↑ 15% from Jan</div>
+        </div>
+      </div>
+
+      <!-- Secondary Stats -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value">247</div>
+          <div class="stat-label">Total Transactions</div>
+          <div class="stat-change positive">↑ 34 this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">$362</div>
+          <div class="stat-label">Avg Transaction</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value info">$64,760</div>
+          <div class="stat-label">Payouts to Venues</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warning">$12,400</div>
+          <div class="stat-label">Pending Payouts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">3</div>
+          <div class="stat-label">Failed Payments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">$2,150</div>
+          <div class="stat-label">Refunds Issued</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <div class="tab active" data-tab="all-payments">All Transactions <span class="tab-count">247</span></div>
+        <div class="tab" data-tab="bookings">Booking Payments <span class="tab-count">89</span></div>
+        <div class="tab" data-tab="subscriptions">Subscriptions <span class="tab-count">118</span></div>
+        <div class="tab" data-tab="payouts">Payouts <span class="tab-count">32</span></div>
+        <div class="tab" data-tab="commissions">Commissions <span class="tab-count">89</span></div>
+        <div class="tab" data-tab="failed">Failed <span class="tab-count alert">3</span></div>
+        <div class="tab" data-tab="refunds">Refunds <span class="tab-count">5</span></div>
+      </div>
+
+      <!-- All Transactions Tab -->
+      <div id="all-payments" class="tab-content active">
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Types</option>
+            <option>Booking Payment</option>
+            <option>Subscription</option>
+            <option>Payout</option>
+            <option>Refund</option>
+            <option>Commission</option>
+          </select>
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Completed</option>
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Failed</option>
+            <option>Refunded</option>
+          </select>
+          <div class="date-range">
+            <input type="date" class="date-input" value="2026-02-01">
+            <span>to</span>
+            <input type="date" class="date-input" value="2026-02-12">
+          </div>
+          <input type="text" class="search-input" placeholder="Search transaction, venue, host...">
+          <span class="clear-filters">Clear filters</span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transaction</th>
+                <th>Type</th>
+                <th>From / To</th>
+                <th>Related To</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0247</div>
+                  <a href="#" class="stripe-link">pi_3Ox...kL9 ↗</a>
+                </td>
+                <td><span class="payment-type booking">Booking</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">TC</div>
+                    <div>
+                      <div class="party-name">Tom Cronin</div>
+                      <div class="party-detail">Retreat Host</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">5-Day Meditation</div>
+                  <div style="font-size: 11px; color: var(--accent);">Moraea Farm • Mar 15-20</div>
+                </td>
+                <td><span class="amount positive">+$22,000</span></td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <div>Today</div>
+                  <div style="font-size: 11px; color: var(--accent);">10:30 AM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0246</div>
+                  <a href="#" class="stripe-link">po_3Ox...mN2 ↗</a>
+                </td>
+                <td><span class="payment-type payout">Payout</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">MF</div>
+                    <div>
+                      <div class="party-name">Moraea Farm</div>
+                      <div class="party-detail">Venue Owner</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Weekly Payout</div>
+                  <div style="font-size: 11px; color: var(--accent);">3 bookings settled</div>
+                </td>
+                <td><span class="amount negative">-$18,700</span></td>
+                <td><span class="status-badge processing">Processing</span></td>
+                <td>
+                  <div>Today</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0245</div>
+                  <a href="#" class="stripe-link">in_3Ox...pQ4 ↗</a>
+                </td>
+                <td><span class="payment-type subscription">Subscription</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">SR</div>
+                    <div>
+                      <div class="party-name">Serenity Retreat</div>
+                      <div class="party-detail">Venue Owner</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Premium Plan</div>
+                  <div style="font-size: 11px; color: var(--accent);">Monthly renewal</div>
+                </td>
+                <td><span class="amount positive">+$399</span></td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <div>Yesterday</div>
+                  <div style="font-size: 11px; color: var(--accent);">11:15 PM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0244</div>
+                  <a href="#" class="stripe-link">pi_3Ox...rS6 ↗</a>
+                </td>
+                <td><span class="payment-type booking">Booking</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">AR</div>
+                    <div>
+                      <div class="party-name">Anna Roberts</div>
+                      <div class="party-detail">Retreat Host</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Stillness Retreat</div>
+                  <div style="font-size: 11px; color: var(--accent);">Mountain Sanctuary • Apr 2-6</div>
+                </td>
+                <td><span class="amount positive">+$16,500</span></td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <div>Yesterday</div>
+                  <div style="font-size: 11px; color: var(--accent);">3:45 PM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0243</div>
+                  <a href="#" class="stripe-link">in_3Ox...tU8 ↗</a>
+                </td>
+                <td><span class="payment-type subscription">Subscription</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">TW</div>
+                    <div>
+                      <div class="party-name">The Wellness Collective</div>
+                      <div class="party-detail">Venue Owner</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Featured Plan</div>
+                  <div style="font-size: 11px; color: var(--success);">Founder 40% off</div>
+                </td>
+                <td><span class="amount positive">+$149.40</span></td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <div>Feb 11</div>
+                  <div style="font-size: 11px; color: var(--accent);">12:00 AM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0242</div>
+                  <a href="#" class="stripe-link">re_3Ox...vW0 ↗</a>
+                </td>
+                <td><span class="payment-type refund">Refund</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">ML</div>
+                    <div>
+                      <div class="party-name">Marcus Lee</div>
+                      <div class="party-detail">Retreat Host</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Cancelled Booking</div>
+                  <div style="font-size: 11px; color: var(--accent);">Breathwork Retreat • Feb 8</div>
+                </td>
+                <td><span class="amount negative">-$850</span></td>
+                <td><span class="status-badge refunded">Refunded</span></td>
+                <td>
+                  <div>Feb 10</div>
+                  <div style="font-size: 11px; color: var(--accent);">2:30 PM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr style="background-color: #FCE8E8;">
+                <td>
+                  <div class="transaction-id">TXN-2026-0241</div>
+                  <a href="#" class="stripe-link">pi_3Ox...xY2 ↗</a>
+                </td>
+                <td><span class="payment-type subscription">Subscription</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">BV</div>
+                    <div>
+                      <div class="party-name">Billabong Retreat</div>
+                      <div class="party-detail">Venue Owner</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Basic Plan</div>
+                  <div style="font-size: 11px; color: var(--error);">Card declined</div>
+                </td>
+                <td><span class="amount" style="color: var(--accent);">$79</span></td>
+                <td><span class="status-badge failed">Failed</span></td>
+                <td>
+                  <div>Feb 5</div>
+                  <div style="font-size: 11px; color: var(--accent);">12:00 AM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-small" style="background-color: var(--error); color: var(--white);">Retry</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">TXN-2026-0240</div>
+                  <a href="#" class="stripe-link">po_3Ox...zA4 ↗</a>
+                </td>
+                <td><span class="payment-type payout">Payout</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">SR</div>
+                    <div>
+                      <div class="party-name">Serenity Retreat</div>
+                      <div class="party-detail">Venue Owner</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Weekly Payout</div>
+                  <div style="font-size: 11px; color: var(--accent);">2 bookings settled</div>
+                </td>
+                <td><span class="amount negative">-$24,200</span></td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <div>Feb 5</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <div class="pagination-info">Showing 1-8 of 247 transactions</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn">Previous</button>
+              <button class="pagination-btn active">1</button>
+              <button class="pagination-btn">2</button>
+              <button class="pagination-btn">3</button>
+              <button class="pagination-btn">...</button>
+              <button class="pagination-btn">31</button>
+              <button class="pagination-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking Payments Tab -->
+      <div id="bookings" class="tab-content">
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <div class="quick-stat-icon success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">$71,000</div>
+              <div class="quick-stat-label">Total Booking Revenue</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">89</div>
+              <div class="quick-stat-label">Bookings This Month</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">$798</div>
+              <div class="quick-stat-label">Avg Booking Value</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">$4,970</div>
+              <div class="quick-stat-label">Commission Earned</div>
+            </div>
+          </div>
+        </div>
+        <div class="table-container">
+          <p style="padding: 40px; text-align: center; color: var(--accent);">Booking payments table with venue, host, booking details, amounts, and commission breakdown.</p>
+        </div>
+      </div>
+
+      <!-- Subscriptions Tab -->
+      <div id="subscriptions" class="tab-content">
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <div class="quick-stat-icon success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">$18,450</div>
+              <div class="quick-stat-label">Subscription Revenue</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">118</div>
+              <div class="quick-stat-label">Active Subscriptions</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">$156</div>
+              <div class="quick-stat-label">Avg per Subscription</div>
+            </div>
+          </div>
+          <div class="quick-stat">
+            <div class="quick-stat-icon error">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="quick-stat-value">2</div>
+              <div class="quick-stat-label">Failed This Month</div>
+            </div>
+          </div>
+        </div>
+        <div class="table-container">
+          <p style="padding: 40px; text-align: center; color: var(--accent);">Subscription payments table with venue, plan, amount, billing date, and payment history.</p>
+        </div>
+      </div>
+
+      <!-- Payouts Tab -->
+      <div id="payouts" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <strong>Payout Schedule:</strong> Venue payouts are processed weekly on Wednesdays via Stripe Connect. Commission is automatically deducted before payout.
+          </div>
+        </div>
+
+        <div class="payout-schedule">
+          <div class="payout-card next">
+            <div class="payout-date">Next Payout • Feb 19</div>
+            <div class="payout-amount" style="color: var(--success);">$12,400</div>
+            <div class="payout-count">8 venues • 12 bookings</div>
+            <div class="payout-status" style="color: var(--success);">Scheduled</div>
+          </div>
+          <div class="payout-card">
+            <div class="payout-date">Feb 12 (Today)</div>
+            <div class="payout-amount">$18,700</div>
+            <div class="payout-count">5 venues • 8 bookings</div>
+            <div class="payout-status" style="color: var(--info);">Processing</div>
+          </div>
+          <div class="payout-card">
+            <div class="payout-date">Feb 5</div>
+            <div class="payout-amount">$24,200</div>
+            <div class="payout-count">6 venues • 10 bookings</div>
+            <div class="payout-status" style="color: var(--success);">Completed</div>
+          </div>
+          <div class="payout-card">
+            <div class="payout-date">Jan 29</div>
+            <div class="payout-amount">$21,860</div>
+            <div class="payout-count">7 venues • 9 bookings</div>
+            <div class="payout-status" style="color: var(--success);">Completed</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Payout ID</th>
+                <th>Venue</th>
+                <th>Bookings</th>
+                <th>Gross Amount</th>
+                <th>Commission</th>
+                <th>Net Payout</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="transaction-id">PO-2026-0032</div>
+                  <a href="#" class="stripe-link">po_3Ox...mN2 ↗</a>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">MF</div>
+                    <div>
+                      <div class="party-name">Moraea Farm</div>
+                      <div class="party-detail">Super Founder • 5%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">3 bookings</div>
+                  <div style="font-size: 11px; color: var(--accent);">Feb 5-12</div>
+                </td>
+                <td>$19,700</td>
+                <td style="color: var(--success);">-$985</td>
+                <td style="font-weight: 600;">$18,715</td>
+                <td><span class="status-badge processing">Processing</span></td>
+                <td>Today</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">PO-2026-0031</div>
+                  <a href="#" class="stripe-link">po_3Ox...zA4 ↗</a>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">SR</div>
+                    <div>
+                      <div class="party-name">Serenity Retreat</div>
+                      <div class="party-detail">Premium • 5%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">2 bookings</div>
+                  <div style="font-size: 11px; color: var(--accent);">Jan 29 - Feb 5</div>
+                </td>
+                <td>$25,500</td>
+                <td style="color: var(--success);">-$1,275</td>
+                <td style="font-weight: 600;">$24,225</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>Feb 5</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">PO-2026-0030</div>
+                  <a href="#" class="stripe-link">po_3Ox...bC6 ↗</a>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">MS</div>
+                    <div>
+                      <div class="party-name">Mountain Sanctuary</div>
+                      <div class="party-detail">Standard • 10%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">2 bookings</div>
+                  <div style="font-size: 11px; color: var(--accent);">Jan 29 - Feb 5</div>
+                </td>
+                <td>$18,000</td>
+                <td style="color: var(--success);">-$1,800</td>
+                <td style="font-weight: 600;">$16,200</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>Feb 5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Commissions Tab -->
+      <div id="commissions" class="tab-content">
+        <div class="alert-box success">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div>
+            <strong>Commission Earned (Feb):</strong> $6,240 from 89 bookings. Commission rates: 5% (Premium/VIP), 7% (Featured), 10% (Standard), 20% (Basic).
+          </div>
+        </div>
+
+        <div class="commission-breakdown">
+          <div class="commission-card">
+            <div class="commission-rate rate-5">5% Rate</div>
+            <div class="commission-count">34</div>
+            <div class="commission-revenue">$2,450 earned</div>
+          </div>
+          <div class="commission-card">
+            <div class="commission-rate rate-7">7% Rate</div>
+            <div class="commission-count">22</div>
+            <div class="commission-revenue">$1,680 earned</div>
+          </div>
+          <div class="commission-card">
+            <div class="commission-rate rate-10">10% Rate</div>
+            <div class="commission-count">18</div>
+            <div class="commission-revenue">$1,420 earned</div>
+          </div>
+          <div class="commission-card">
+            <div class="commission-rate rate-15">15% Rate</div>
+            <div class="commission-count">8</div>
+            <div class="commission-revenue">$480 earned</div>
+          </div>
+          <div class="commission-card">
+            <div class="commission-rate rate-20">20% Rate</div>
+            <div class="commission-count">7</div>
+            <div class="commission-revenue">$210 earned</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking</th>
+                <th>Venue</th>
+                <th>Host</th>
+                <th>Booking Value</th>
+                <th>Commission Rate</th>
+                <th>Commission</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="font-weight: 500;">5-Day Meditation</div>
+                  <div style="font-size: 11px; color: var(--accent);">Mar 15-20, 2026</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">MF</div>
+                    <div>
+                      <div class="party-name">Moraea Farm</div>
+                      <div class="party-detail">Super Founder</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Tom Cronin</td>
+                <td>$22,000</td>
+                <td><span style="color: var(--success); font-weight: 600;">5%</span></td>
+                <td style="font-weight: 600; color: var(--success);">$1,100</td>
+                <td>Today</td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight: 500;">Stillness Retreat</div>
+                  <div style="font-size: 11px; color: var(--accent);">Apr 2-6, 2026</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">MS</div>
+                    <div>
+                      <div class="party-name">Mountain Sanctuary</div>
+                      <div class="party-detail">Standard</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Anna Roberts</td>
+                <td>$16,500</td>
+                <td><span style="color: var(--warning); font-weight: 600;">10%</span></td>
+                <td style="font-weight: 600; color: var(--success);">$1,650</td>
+                <td>Yesterday</td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight: 500;">Corporate Wellness</div>
+                  <div style="font-size: 11px; color: var(--accent);">Feb 3-5, 2026</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">SR</div>
+                    <div>
+                      <div class="party-name">Serenity Retreat</div>
+                      <div class="party-detail">Premium</div>
+                    </div>
+                  </div>
+                </td>
+                <td>Tom Cronin</td>
+                <td>$28,000</td>
+                <td><span style="color: var(--success); font-weight: 600;">5%</span></td>
+                <td style="font-weight: 600; color: var(--success);">$1,400</td>
+                <td>Feb 5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Failed Tab -->
+      <div id="failed" class="tab-content">
+        <div class="alert-box danger">
+          <span class="alert-count">3</span>
+          <div>
+            <strong>Failed payments require immediate attention</strong>
+            <div style="font-size: 12px; opacity: 0.8;">Revenue at risk: $237. Contact venues to update payment methods.</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transaction</th>
+                <th>Type</th>
+                <th>Venue / Host</th>
+                <th>Amount</th>
+                <th>Failure Reason</th>
+                <th>Attempts</th>
+                <th>Last Attempt</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background-color: #FCE8E8;">
+                <td>
+                  <div class="transaction-id">TXN-2026-0241</div>
+                  <a href="#" class="stripe-link">pi_3Ox...xY2 ↗</a>
+                </td>
+                <td><span class="payment-type subscription">Subscription</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">BV</div>
+                    <div>
+                      <div class="party-name">Billabong Retreat</div>
+                      <div class="party-detail">Basic Plan • $79/mo</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-weight: 600;">$79.00</td>
+                <td>
+                  <div style="color: var(--error); font-weight: 500;">Card Declined</div>
+                  <div style="font-size: 11px; color: var(--accent);">Insufficient funds</div>
+                </td>
+                <td>2 of 3</td>
+                <td>
+                  <div>Feb 8, 2026</div>
+                  <div style="font-size: 11px; color: var(--error);">7 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-small" style="background-color: var(--error); color: var(--white);">Retry</button>
+                  <button class="btn btn-secondary btn-small">Contact</button>
+                </td>
+              </tr>
+              <tr style="background-color: #FCE8E8;">
+                <td>
+                  <div class="transaction-id">TXN-2026-0198</div>
+                  <a href="#" class="stripe-link">pi_3Ox...aB3 ↗</a>
+                </td>
+                <td><span class="payment-type subscription">Subscription</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">CV</div>
+                    <div>
+                      <div class="party-name">Coastal Villas</div>
+                      <div class="party-detail">Standard Plan • $149/mo</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-weight: 600;">$149.00</td>
+                <td>
+                  <div style="color: var(--error); font-weight: 500;">Card Expired</div>
+                  <div style="font-size: 11px; color: var(--accent);">Card ending 4242 expired</div>
+                </td>
+                <td>3 of 3</td>
+                <td>
+                  <div>Feb 3, 2026</div>
+                  <div style="font-size: 11px; color: var(--error);">9 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Update Card</button>
+                  <button class="btn btn-secondary btn-small">Contact</button>
+                </td>
+              </tr>
+              <tr style="background-color: #FCE8E8;">
+                <td>
+                  <div class="transaction-id">TXN-2026-0185</div>
+                  <a href="#" class="stripe-link">pi_3Ox...cD5 ↗</a>
+                </td>
+                <td><span class="payment-type booking">Booking</span></td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">DP</div>
+                    <div>
+                      <div class="party-name">David Patel</div>
+                      <div class="party-detail">Deposit • Zen Springs</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-weight: 600;">$500.00</td>
+                <td>
+                  <div style="color: var(--error); font-weight: 500;">Authentication Failed</div>
+                  <div style="font-size: 11px; color: var(--accent);">3D Secure not completed</div>
+                </td>
+                <td>1 of 3</td>
+                <td>
+                  <div>Feb 1, 2026</div>
+                  <div style="font-size: 11px; color: var(--error);">11 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-small" style="background-color: var(--error); color: var(--white);">Retry</button>
+                  <button class="btn btn-secondary btn-small">Contact</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Refunds Tab -->
+      <div id="refunds" class="tab-content">
+        <div class="stats-bar" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="stat-card">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Refunds This Month</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value error">$2,150</div>
+            <div class="stat-label">Total Refunded</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">$430</div>
+            <div class="stat-label">Avg Refund Amount</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value success">0.6%</div>
+            <div class="stat-label">Refund Rate</div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Refund ID</th>
+                <th>Original Payment</th>
+                <th>Customer</th>
+                <th>Reason</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="transaction-id">REF-2026-0005</div>
+                  <a href="#" class="stripe-link">re_3Ox...vW0 ↗</a>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Breathwork Retreat</div>
+                  <div style="font-size: 11px; color: var(--accent);">Booking cancelled by host</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">ML</div>
+                    <div>
+                      <div class="party-name">Marcus Lee</div>
+                      <div class="party-detail">Retreat Host</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-size: 12px;">Host cancelled event</div>
+                  <div style="font-size: 11px; color: var(--accent);">Full refund policy</div>
+                </td>
+                <td style="font-weight: 600; color: var(--error);">-$850</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>Feb 10</td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">REF-2026-0004</div>
+                  <a href="#" class="stripe-link">re_3Ox...eF7 ↗</a>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Wellness Day Pass</div>
+                  <div style="font-size: 11px; color: var(--accent);">Service not as described</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar">JW</div>
+                    <div>
+                      <div class="party-name">Jane Williams</div>
+                      <div class="party-detail">Guest</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-size: 12px;">Customer complaint</div>
+                  <div style="font-size: 11px; color: var(--accent);">Partial refund approved</div>
+                </td>
+                <td style="font-weight: 600; color: var(--error);">-$150</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>Feb 8</td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="transaction-id">REF-2026-0003</div>
+                  <a href="#" class="stripe-link">re_3Ox...gH9 ↗</a>
+                </td>
+                <td>
+                  <div style="font-weight: 500;">Yoga Retreat Deposit</div>
+                  <div style="font-size: 11px; color: var(--accent);">14+ day cancellation</div>
+                </td>
+                <td>
+                  <div class="party-cell">
+                    <div class="party-avatar host">LT</div>
+                    <div>
+                      <div class="party-name">Lisa Thompson</div>
+                      <div class="party-detail">Retreat Host</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-size: 12px;">Voluntary cancellation</div>
+                  <div style="font-size: 11px; color: var(--accent);">Full deposit refund</div>
+                </td>
+                <td style="font-weight: 600; color: var(--error);">-$500</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>Feb 5</td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Transaction Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Transaction Details</h2>
+        <button class="btn-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">Transaction Information</div>
+          <div class="detail-row"><span class="detail-label">Transaction ID</span><span class="detail-value">TXN-2026-0247</span></div>
+          <div class="detail-row"><span class="detail-label">Stripe ID</span><span class="detail-value"><a href="#" class="stripe-link">pi_3OxKzL2eZvKYlo2C1kL9 ↗</a></span></div>
+          <div class="detail-row"><span class="detail-label">Type</span><span class="detail-value"><span class="payment-type booking">Booking Payment</span></span></div>
+          <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge completed">Completed</span></span></div>
+          <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">Feb 12, 2026 at 10:30 AM</span></div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Payment Details</div>
+          <div class="detail-row"><span class="detail-label">Gross Amount</span><span class="detail-value" style="font-weight: 600;">$22,000.00</span></div>
+          <div class="detail-row"><span class="detail-label">TGS Commission (5%)</span><span class="detail-value" style="color: var(--success);">-$1,100.00</span></div>
+          <div class="detail-row"><span class="detail-label">Stripe Fee (2.9% + $0.30)</span><span class="detail-value">-$638.30</span></div>
+          <div class="detail-row"><span class="detail-label">Net to Venue</span><span class="detail-value" style="font-weight: 600;">$20,261.70</span></div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Booking Information</div>
+          <div class="detail-row"><span class="detail-label">Retreat</span><span class="detail-value">5-Day Meditation Immersion</span></div>
+          <div class="detail-row"><span class="detail-label">Venue</span><span class="detail-value">Moraea Farm</span></div>
+          <div class="detail-row"><span class="detail-label">Host</span><span class="detail-value">Tom Cronin</span></div>
+          <div class="detail-row"><span class="detail-label">Dates</span><span class="detail-value">Mar 15-20, 2026</span></div>
+          <div class="detail-row"><span class="detail-label">Guests</span><span class="detail-value">18 participants</span></div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Payment Timeline</div>
+          <div class="payment-timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">Feb 12, 2026 • 10:30 AM</div>
+              <div class="timeline-event">Payment Completed</div>
+              <div class="timeline-detail">Full amount captured</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">Feb 12, 2026 • 10:30 AM</div>
+              <div class="timeline-event">Payment Authorized</div>
+              <div class="timeline-detail">Card ending 4242</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">Feb 12, 2026 • 10:29 AM</div>
+              <div class="timeline-event">Payment Intent Created</div>
+              <div class="timeline-detail">Checkout initiated by Tom Cronin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary">Issue Refund</button>
+        <button class="btn btn-secondary">View in Stripe</button>
+        <button class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tabs
+      const tabs = document.querySelectorAll('.tabs-container .tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.classList.remove('active'));
+          document.getElementById(this.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Modal
+      const modal = document.getElementById('modalOverlay');
+      const closeBtn = document.getElementById('closeModal');
+      const viewButtons = document.querySelectorAll('.table-actions .btn');
+
+      viewButtons.forEach(btn => {
+        if (btn.textContent.trim() === 'View') {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          });
+        }
+      });
+
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

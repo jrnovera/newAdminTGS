@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Enquiries</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      padding: 0;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--white);
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav {
+      padding: 24px 0;
+    }
+
+    .nav-section {
+      margin-bottom: 8px;
+    }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.05);
+      color: var(--white);
+    }
+
+    .nav-item.active {
+      background-color: rgba(255,255,255,0.1);
+      color: var(--white);
+      border-left: 3px solid var(--white);
+      padding-left: 21px;
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+      opacity: 0.7;
+    }
+
+    .nav-item.active .nav-icon {
+      opacity: 1;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      background-color: var(--warning);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .user-menu {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: var(--text);
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 0;
+      background-color: var(--primary-bg);
+    }
+
+    /* Page Header */
+    .page-header {
+      padding: 32px 48px;
+      background-color: var(--white);
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-header-left h1 {
+      font-size: 32px;
+      margin-bottom: 4px;
+    }
+
+    .page-header-left p {
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .page-header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background-color: #4a4a4a;
+    }
+
+    .btn-secondary {
+      background-color: var(--white);
+      color: var(--text);
+      border: 1px solid rgba(184, 184, 184, 0.4);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: var(--white);
+    }
+
+    .btn-success:hover {
+      background-color: #3d6b4a;
+    }
+
+    .btn-warning {
+      background-color: var(--warning);
+      color: var(--text);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Top Level Tabs */
+    .top-tabs {
+      display: flex;
+      gap: 0;
+      background-color: var(--white);
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+      padding: 0 48px;
+    }
+
+    .top-tab {
+      padding: 16px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .top-tab:hover {
+      color: var(--text);
+    }
+
+    .top-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+
+    .top-tab .tab-count {
+      font-size: 11px;
+      font-weight: 600;
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+
+    .top-tab.active .tab-count {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    .tab-count.urgent {
+      background-color: var(--error);
+      color: var(--white);
+    }
+
+    /* Content Area */
+    .content-area {
+      padding: 32px 48px;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 20px 24px;
+      border: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.error { color: var(--error); }
+    .stat-value.info { color: var(--info); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Filters Row */
+    .filters-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-select {
+      padding: 8px 32px 8px 12px;
+      border: 1px solid rgba(184, 184, 184, 0.4);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--white);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    .search-input {
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgba(184, 184, 184, 0.4);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      width: 280px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 10px center;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    .filters-right {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Urgent Section */
+    .urgent-section {
+      background-color: #FCE8E8;
+      border: 1px solid var(--error);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .urgent-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .urgent-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--error);
+    }
+
+    .urgent-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .urgent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--white);
+      border-radius: 8px;
+    }
+
+    .urgent-item-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .urgent-item-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: #FCE8E8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .urgent-item-text {
+      font-size: 13px;
+    }
+
+    .urgent-item-text strong {
+      font-weight: 600;
+    }
+
+    .urgent-item-meta {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .urgent-item-meta .time-critical {
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    .urgent-item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Enquiries Table */
+    .enquiries-table-container {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      overflow: hidden;
+    }
+
+    .enquiries-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .enquiries-table th {
+      text-align: left;
+      padding: 16px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .enquiries-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.1);
+      vertical-align: middle;
+    }
+
+    .enquiries-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .enquiries-table tr:hover {
+      background-color: var(--secondary-bg);
+    }
+
+    .enquiries-table tr.unread {
+      background-color: #FEFCF5;
+    }
+
+    .enquiries-table tr.unread:hover {
+      background-color: #FDF8E8;
+    }
+
+    .enquiry-date {
+      font-weight: 500;
+    }
+
+    .enquiry-time {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .enquiry-type-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .enquiry-type-badge.booking-request {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .enquiry-type-badge.availability {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .enquiry-type-badge.quote {
+      background-color: #FEF9E7;
+      color: #B8860B;
+    }
+
+    .enquiry-type-badge.general {
+      background-color: var(--secondary-bg);
+      color: var(--accent);
+    }
+
+    .enquiry-type-badge.group-booking {
+      background-color: #F3E8F9;
+      color: #8B5A8B;
+    }
+
+    .enquiry-type-badge.corporate {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .venue-name {
+      font-weight: 500;
+    }
+
+    .venue-location {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .contact-name {
+      font-weight: 500;
+    }
+
+    .contact-detail {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .enquiry-summary {
+      max-width: 250px;
+      font-size: 13px;
+    }
+
+    .enquiry-summary .preview {
+      color: var(--accent);
+      font-size: 12px;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.new {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .status-badge.in-progress {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .status-badge.awaiting-reply {
+      background-color: var(--secondary-bg);
+      color: var(--accent);
+    }
+
+    .status-badge.converted {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .status-badge.expired {
+      background-color: #FCE8E8;
+      color: var(--error);
+    }
+
+    .status-badge.declined {
+      background-color: var(--secondary-bg);
+      color: var(--accent);
+    }
+
+    .response-due {
+      font-size: 12px;
+    }
+
+    .response-due.urgent {
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    .response-due.soon {
+      color: var(--warning);
+      font-weight: 500;
+    }
+
+    .response-due.ok {
+      color: var(--accent);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Unread indicator */
+    .unread-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--info);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .pagination-info {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .pagination-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pagination-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(184, 184, 184, 0.4);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover {
+      border-color: var(--text);
+    }
+
+    .pagination-btn.active {
+      background-color: var(--text);
+      color: var(--white);
+      border-color: var(--text);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Potential Value */
+    .potential-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .potential-label {
+      font-size: 10px;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabs = document.querySelectorAll('.top-tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.style.display = 'none');
+          const tabId = this.getAttribute('data-tab');
+          document.getElementById(tabId).style.display = 'block';
+        });
+      });
+    });
+  </script>
+
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9,22 9,12 15,12 15,22"/>
+            </svg>
+            Dashboard
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            All Venues
+          </a>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Bookings
+            <span class="nav-badge">12</span>
+          </a>
+          <a class="nav-item active">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Enquiries
+            <span class="nav-badge">8</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Contacts</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Venue Owners
+          </a>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            Retreat Hosts
+          </a>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            Wellness Guests
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 4H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V6a2 2 0 00-2-2z"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Subscriptions
+          </a>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+            Payments
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+              <path d="M2 2l7.586 7.586"/>
+              <circle cx="11" cy="11" r="2"/>
+            </svg>
+            Wellness Edit
+          </a>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+            </svg>
+            Sanctum Journal
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Insights</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            Analytics
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">Team</div>
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            Users
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <a class="nav-item">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+
+      <div class="user-menu">
+        <div class="user-avatar">K</div>
+        <div class="user-info">
+          <div class="user-name">Kate</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Page Header -->
+      <header class="page-header">
+        <div class="page-header-left">
+          <h1>Enquiries</h1>
+          <p>Manage incoming enquiries from facilitators and guests</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7,10 12,15 17,10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export
+          </button>
+          <button class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polyline points="22,12 16,12 14,15 10,15 8,12 2,12"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+            </svg>
+            Mark All Read
+          </button>
+        </div>
+      </header>
+
+      <!-- Top Level Tabs -->
+      <nav class="top-tabs">
+        <div class="top-tab active" data-tab="all-enquiries" style="cursor: pointer;">
+          All Enquiries
+          <span class="tab-count">42</span>
+        </div>
+        <div class="top-tab" data-tab="retreat-enquiries" style="cursor: pointer;">
+          Retreat Enquiries
+          <span class="tab-count">18</span>
+        </div>
+        <div class="top-tab" data-tab="wellness-enquiries" style="cursor: pointer;">
+          Wellness Enquiries
+          <span class="tab-count">24</span>
+        </div>
+      </nav>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        
+        <!-- TAB 1: ALL ENQUIRIES -->
+        <div id="all-enquiries" class="tab-content" style="display: block;">
+          <!-- Stats Bar -->
+          <div class="stats-bar">
+            <div class="stat-card">
+              <div class="stat-value">42</div>
+              <div class="stat-label">Total Enquiries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value info">8</div>
+              <div class="stat-label">New / Unread</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value error">3</div>
+              <div class="stat-label">Expiring Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value warning">12</div>
+              <div class="stat-label">Awaiting Response</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">$187,500</div>
+              <div class="stat-label">Potential Value</div>
+            </div>
+          </div>
+
+          <!-- Filters Row -->
+          <div class="filters-row">
+            <select class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="new">New</option>
+              <option value="in-progress">In Progress</option>
+              <option value="awaiting-reply">Awaiting Reply</option>
+              <option value="converted">Converted</option>
+              <option value="expired">Expired</option>
+              <option value="declined">Declined</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Venues</option>
+              <option value="moraea">Moraea Farm</option>
+              <option value="bodhi">Bodhi Day Spa</option>
+              <option value="serenity">Serenity Retreat</option>
+              <option value="lotus">Lotus Wellness Centre</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Types</option>
+              <option value="booking">Booking Request</option>
+              <option value="availability">Availability Check</option>
+              <option value="quote">Quote Request</option>
+              <option value="general">General Enquiry</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <input type="text" class="search-input" placeholder="Search name, email, or enquiry...">
+            <div class="filters-right">
+              <button class="btn btn-secondary btn-small">Clear Filters</button>
+            </div>
+          </div>
+
+          <!-- Urgent Section -->
+          <div class="urgent-section">
+            <div class="urgent-header">
+              <div class="urgent-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Expiring Soon - Response Required (3)
+              </div>
+              <button class="btn btn-secondary btn-small">View All Urgent</button>
+            </div>
+            <div class="urgent-items">
+              <div class="urgent-item">
+                <div class="urgent-item-info">
+                  <div class="urgent-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C45C5C" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="urgent-item-text"><span class="unread-dot"></span><strong>Corporate Retreat for 20 Executives</strong></div>
+                    <div class="urgent-item-meta">Moraea Farm • James Chen, Zenith Consulting • <span class="time-critical">Expires in 4 hours</span></div>
+                  </div>
+                </div>
+                <div class="urgent-item-actions">
+                  <button class="btn btn-success btn-small">Accept</button>
+                  <button class="btn btn-secondary btn-small">Decline</button>
+                  <button class="btn btn-secondary btn-small">Message</button>
+                </div>
+              </div>
+              <div class="urgent-item">
+                <div class="urgent-item-info">
+                  <div class="urgent-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C45C5C" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="urgent-item-text"><strong>Hen's Party Spa Day</strong> - Group of 12</div>
+                    <div class="urgent-item-meta">Bodhi Day Spa • Michelle Wong • <span class="time-critical">Expires in 6 hours</span></div>
+                  </div>
+                </div>
+                <div class="urgent-item-actions">
+                  <button class="btn btn-success btn-small">Confirm</button>
+                  <button class="btn btn-secondary btn-small">Reschedule</button>
+                  <button class="btn btn-secondary btn-small">Message</button>
+                </div>
+              </div>
+              <div class="urgent-item">
+                <div class="urgent-item-info">
+                  <div class="urgent-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="urgent-item-text"><strong>Custom Quote Request</strong> - 5 Day Silent Retreat</div>
+                    <div class="urgent-item-meta">Serenity Retreat • Anna Roberts • Expires in 18 hours</div>
+                  </div>
+                </div>
+                <div class="urgent-item-actions">
+                  <button class="btn btn-primary btn-small">Send Quote</button>
+                  <button class="btn btn-secondary btn-small">Message</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enquiries Table -->
+          <div class="enquiries-table-container">
+            <table class="enquiries-table">
+              <thead>
+                <tr>
+                  <th>Received</th>
+                  <th>Type</th>
+                  <th>Venue</th>
+                  <th>From</th>
+                  <th>Enquiry Summary</th>
+                  <th>Status</th>
+                  <th>Response Due</th>
+                  <th>Value</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">9:45 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge booking-request">Booking Request</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Moraea Farm</div>
+                    <div class="venue-location">Berry, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">James Chen</div>
+                    <div class="contact-detail">Zenith Consulting</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Corporate Retreat for 20 Executives
+                      <div class="preview">Mar 15-18, 2026 • Full board • Team building focus...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                      New
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due urgent">4 hours</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$28,000</div>
+                    <div class="potential-label">Est. value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Accept</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">8:30 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge group-booking">Group Booking</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Bodhi Day Spa</div>
+                    <div class="venue-location">Surry Hills, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Michelle Wong</div>
+                    <div class="contact-detail">michelle.w@gmail.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Hen's Party Spa Day
+                      <div class="preview">12 guests • Feb 28 • Full day package with champagne...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                      New
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due urgent">6 hours</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$2,400</div>
+                    <div class="potential-label">Est. value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Confirm</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Yesterday</div>
+                    <div class="enquiry-time">4:15 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge quote">Quote Request</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Serenity Retreat</div>
+                    <div class="venue-location">Blue Mountains, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Anna Roberts</div>
+                    <div class="contact-detail">Stillness Retreats</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      5 Day Silent Retreat - Custom Quote
+                      <div class="preview">Apr 10-15 • 15 participants • Special dietary needs...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge in-progress">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                      In Progress
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due soon">18 hours</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$18,750</div>
+                    <div class="potential-label">Est. value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-primary btn-small">Send Quote</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Yesterday</div>
+                    <div class="enquiry-time">2:00 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge availability">Availability</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Moraea Farm</div>
+                    <div class="venue-location">Berry, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Tom Cronin</div>
+                    <div class="contact-detail">The Stillness Project</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Checking May/June availability
+                      <div class="preview">Looking for 7-night slot for teacher training...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge awaiting-reply">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20,6 9,17 4,12"/>
+                      </svg>
+                      Awaiting Reply
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due ok">Responded</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$35,000</div>
+                    <div class="potential-label">Est. value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">Follow Up</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 10</div>
+                    <div class="enquiry-time">11:30 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge corporate">Corporate</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Lotus Wellness Centre</div>
+                    <div class="venue-location">Newtown, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Sarah Mitchell</div>
+                    <div class="contact-detail">Deloitte HR</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Monthly Corporate Wellness Days
+                      <div class="preview">Recurring booking for 20 staff, once per month...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge converted">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20,6 9,17 4,12"/>
+                      </svg>
+                      Converted
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due ok">—</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$48,000</div>
+                    <div class="potential-label">Annual value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">View Booking</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 8</div>
+                    <div class="enquiry-time">3:45 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge general">General</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Bodhi Day Spa</div>
+                    <div class="venue-location">Surry Hills, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">David Park</div>
+                    <div class="contact-detail">david.park@outlook.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Gift voucher question
+                      <div class="preview">Asking about gift voucher options for anniversary...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge expired">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                      Expired
+                    </span>
+                  </td>
+                  <td>
+                    <div class="response-due ok">Expired</div>
+                  </td>
+                  <td>
+                    <div class="potential-value">$300</div>
+                    <div class="potential-label">Est. value</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">Reopen</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <div class="pagination-info">Showing 1-6 of 42 enquiries</div>
+              <div class="pagination-controls">
+                <button class="pagination-btn" disabled>Previous</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">...</button>
+                <button class="pagination-btn">7</button>
+                <button class="pagination-btn">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: RETREAT ENQUIRIES -->
+        <div id="retreat-enquiries" class="tab-content" style="display: none;">
+          <!-- Stats Bar -->
+          <div class="stats-bar">
+            <div class="stat-card">
+              <div class="stat-value">18</div>
+              <div class="stat-label">Retreat Enquiries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value info">4</div>
+              <div class="stat-label">New / Unread</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value error">2</div>
+              <div class="stat-label">Expiring Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value warning">6</div>
+              <div class="stat-label">Awaiting Response</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">$168,750</div>
+              <div class="stat-label">Potential Value</div>
+            </div>
+          </div>
+
+          <!-- Filters Row -->
+          <div class="filters-row">
+            <select class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="new">New</option>
+              <option value="in-progress">In Progress</option>
+              <option value="awaiting-reply">Awaiting Reply</option>
+              <option value="converted">Converted</option>
+              <option value="expired">Expired</option>
+              <option value="declined">Declined</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Retreat Venues</option>
+              <option value="moraea">Moraea Farm</option>
+              <option value="serenity">Serenity Retreat</option>
+              <option value="mountain">Mountain Sanctuary</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Enquiry Types</option>
+              <option value="booking">Booking Request</option>
+              <option value="availability">Availability Check</option>
+              <option value="quote">Quote Request</option>
+              <option value="general">General Enquiry</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <input type="text" class="search-input" placeholder="Search facilitator, organisation, or retreat...">
+            <div class="filters-right">
+              <button class="btn btn-secondary btn-small">Clear Filters</button>
+            </div>
+          </div>
+
+          <!-- Enquiries Table -->
+          <div class="enquiries-table-container">
+            <table class="enquiries-table">
+              <thead>
+                <tr>
+                  <th>Received</th>
+                  <th>Type</th>
+                  <th>Venue</th>
+                  <th>Facilitator</th>
+                  <th>Retreat Details</th>
+                  <th>Dates</th>
+                  <th>Guests</th>
+                  <th>Status</th>
+                  <th>Est. Value</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">9:45 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge booking-request">Booking</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Moraea Farm</div>
+                    <div class="venue-location">Berry, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">James Chen</div>
+                    <div class="contact-detail">Zenith Consulting</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Corporate Retreat for Executives
+                      <div class="preview">Team building, mindfulness workshops...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Mar 15-18</div>
+                    <div class="enquiry-time">3 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">20</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">New</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$28,000</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Accept</button>
+                      <button class="btn btn-secondary btn-small">Decline</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">7:20 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge booking-request">Booking</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Serenity Retreat</div>
+                    <div class="venue-location">Blue Mountains, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Lisa Thompson</div>
+                    <div class="contact-detail">Women's Wellness Circle</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Women's Empowerment Weekend
+                      <div class="preview">Yoga, journaling, sound healing...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Apr 4-6</div>
+                    <div class="enquiry-time">2 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">16</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">New</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$14,400</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Accept</button>
+                      <button class="btn btn-secondary btn-small">Decline</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Yesterday</div>
+                    <div class="enquiry-time">4:15 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge quote">Quote</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Serenity Retreat</div>
+                    <div class="venue-location">Blue Mountains, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Anna Roberts</div>
+                    <div class="contact-detail">Stillness Retreats</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      5 Day Silent Retreat - Custom
+                      <div class="preview">Vegan menu, private rooms only...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Apr 10-15</div>
+                    <div class="enquiry-time">5 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">15</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge in-progress">In Progress</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$18,750</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-primary btn-small">Send Quote</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Yesterday</div>
+                    <div class="enquiry-time">2:00 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge availability">Availability</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Moraea Farm</div>
+                    <div class="venue-location">Berry, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Tom Cronin</div>
+                    <div class="contact-detail">The Stillness Project</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Teacher Training - May/June
+                      <div class="preview">Checking 7-night slots availability...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">May/Jun</div>
+                    <div class="enquiry-time">7 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">18</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge awaiting-reply">Awaiting Reply</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$35,000</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">Follow Up</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 9</div>
+                    <div class="enquiry-time">10:30 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge booking-request">Booking</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Moraea Farm</div>
+                    <div class="venue-location">Berry, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Marcus Lee</div>
+                    <div class="contact-detail">Primal Wellness</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Breathwork & Cold Exposure
+                      <div class="preview">Ice bath facilities required...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Apr 5-9</div>
+                    <div class="enquiry-time">4 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">15</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge converted">Converted</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$22,500</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">View Booking</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 5</div>
+                    <div class="enquiry-time">1:15 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge booking-request">Booking</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Mountain Sanctuary</div>
+                    <div class="venue-location">Kangaroo Valley, NSW</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Rachel Wong</div>
+                    <div class="contact-detail">Mindful Leaders Co</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Executive Leadership Retreat
+                      <div class="preview">Leadership coaching, nature walks...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Mar 1-4</div>
+                    <div class="enquiry-time">3 nights</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">6</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge declined">Declined</span>
+                  </td>
+                  <td>
+                    <div class="potential-value"><s>$15,000</s></div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <div class="pagination-info">Showing 1-6 of 18 retreat enquiries</div>
+              <div class="pagination-controls">
+                <button class="pagination-btn" disabled>Previous</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: WELLNESS ENQUIRIES -->
+        <div id="wellness-enquiries" class="tab-content" style="display: none;">
+          <!-- Stats Bar -->
+          <div class="stats-bar">
+            <div class="stat-card">
+              <div class="stat-value">24</div>
+              <div class="stat-label">Wellness Enquiries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value info">4</div>
+              <div class="stat-label">New / Unread</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value error">1</div>
+              <div class="stat-label">Expiring Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value warning">6</div>
+              <div class="stat-label">Awaiting Response</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">$18,750</div>
+              <div class="stat-label">Potential Value</div>
+            </div>
+          </div>
+
+          <!-- Filters Row -->
+          <div class="filters-row">
+            <select class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="new">New</option>
+              <option value="in-progress">In Progress</option>
+              <option value="awaiting-reply">Awaiting Reply</option>
+              <option value="converted">Converted</option>
+              <option value="expired">Expired</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Wellness Venues</option>
+              <option value="bodhi">Bodhi Day Spa</option>
+              <option value="lotus">Lotus Wellness Centre</option>
+              <option value="harmony">Harmony Springs</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Enquiry Types</option>
+              <option value="group">Group Booking</option>
+              <option value="corporate">Corporate Enquiry</option>
+              <option value="event">Event/Celebration</option>
+              <option value="general">General Enquiry</option>
+            </select>
+            <select class="filter-select">
+              <option value="">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <input type="text" class="search-input" placeholder="Search guest name or email...">
+            <div class="filters-right">
+              <button class="btn btn-secondary btn-small">Clear Filters</button>
+            </div>
+          </div>
+
+          <!-- Enquiries Table -->
+          <div class="enquiries-table-container">
+            <table class="enquiries-table">
+              <thead>
+                <tr>
+                  <th>Received</th>
+                  <th>Type</th>
+                  <th>Venue</th>
+                  <th>Guest</th>
+                  <th>Enquiry Summary</th>
+                  <th>Preferred Date</th>
+                  <th>Group Size</th>
+                  <th>Status</th>
+                  <th>Est. Value</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">8:30 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge group-booking">Group</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Bodhi Day Spa</div>
+                    <div class="venue-location">Surry Hills, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Michelle Wong</div>
+                    <div class="contact-detail">michelle.w@gmail.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Hen's Party Spa Day
+                      <div class="preview">Full day package with champagne lunch...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Feb 28</div>
+                    <div class="enquiry-time">10am - 4pm</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">12</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">New</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$2,400</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Confirm</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="unread">
+                  <td>
+                    <div class="enquiry-date"><span class="unread-dot"></span>Today</div>
+                    <div class="enquiry-time">7:15 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge corporate">Corporate</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Lotus Wellness Centre</div>
+                    <div class="venue-location">Newtown, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Peter Chang</div>
+                    <div class="contact-detail">KPMG Sydney</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Team Wellness Afternoon
+                      <div class="preview">Chair massages + meditation session...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Mar 5</div>
+                    <div class="enquiry-time">2pm - 5pm</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">25</div>
+                    <div class="enquiry-time">staff</div>
+                  </td>
+                  <td>
+                    <span class="status-badge new">New</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$3,750</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-primary btn-small">Send Quote</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Yesterday</div>
+                    <div class="enquiry-time">5:30 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge group-booking">Group</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Bodhi Day Spa</div>
+                    <div class="venue-location">Surry Hills, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Rebecca Taylor</div>
+                    <div class="contact-detail">bec.taylor@yahoo.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Baby Shower Pamper Session
+                      <div class="preview">Pregnancy-safe treatments for 8 ladies...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Mar 15</div>
+                    <div class="enquiry-time">11am - 3pm</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">8</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge in-progress">In Progress</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$1,440</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-success btn-small">Confirm</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 10</div>
+                    <div class="enquiry-time">11:30 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge corporate">Corporate</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Lotus Wellness Centre</div>
+                    <div class="venue-location">Newtown, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Sarah Mitchell</div>
+                    <div class="contact-detail">Deloitte HR</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Monthly Corporate Wellness Days
+                      <div class="preview">20 staff monthly, ongoing contract...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Monthly</div>
+                    <div class="enquiry-time">Recurring</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">20</div>
+                    <div class="enquiry-time">staff/month</div>
+                  </td>
+                  <td>
+                    <span class="status-badge converted">Converted</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$48,000</div>
+                    <div class="potential-label">Annual</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">View Contract</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 8</div>
+                    <div class="enquiry-time">3:45 PM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge general">General</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Bodhi Day Spa</div>
+                    <div class="venue-location">Surry Hills, Sydney</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">David Park</div>
+                    <div class="contact-detail">david.park@outlook.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Gift voucher question
+                      <div class="preview">Anniversary gift options...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">—</div>
+                    <div class="enquiry-time"></div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">1</div>
+                    <div class="enquiry-time">guest</div>
+                  </td>
+                  <td>
+                    <span class="status-badge expired">Expired</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$300</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">Reopen</button>
+                      <button class="btn btn-secondary btn-small">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="enquiry-date">Feb 6</div>
+                    <div class="enquiry-time">9:00 AM</div>
+                  </td>
+                  <td>
+                    <span class="enquiry-type-badge group-booking">Group</span>
+                  </td>
+                  <td>
+                    <div class="venue-name">Harmony Springs</div>
+                    <div class="venue-location">Daylesford, VIC</div>
+                  </td>
+                  <td>
+                    <div class="contact-name">Amanda Chen</div>
+                    <div class="contact-detail">amanda.c@gmail.com</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-summary">
+                      Girls Weekend Spa Package
+                      <div class="preview">Hot springs + treatments for 6...</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">Feb 22-23</div>
+                    <div class="enquiry-time">Full weekend</div>
+                  </td>
+                  <td>
+                    <div class="enquiry-date">6</div>
+                    <div class="enquiry-time">guests</div>
+                  </td>
+                  <td>
+                    <span class="status-badge converted">Converted</span>
+                  </td>
+                  <td>
+                    <div class="potential-value">$1,800</div>
+                  </td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-small">View Booking</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination">
+              <div class="pagination-info">Showing 1-6 of 24 wellness enquiries</div>
+              <div class="pagination-controls">
+                <button class="pagination-btn" disabled>Previous</button>
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">4</button>
+                <button class="pagination-btn">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>

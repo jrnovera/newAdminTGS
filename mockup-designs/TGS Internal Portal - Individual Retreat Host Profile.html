@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Retreat Host Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: rgba(0,0,0,0.5);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Modal Container */
+    .modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 1400px;
+      max-height: 95vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+
+    /* Modal Header */
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+      background-color: var(--white);
+    }
+
+    .modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .host-avatar-large {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--success), #B8860B);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 20px;
+      color: var(--white);
+    }
+
+    .host-header-info h2 {
+      font-size: 24px;
+      margin-bottom: 2px;
+    }
+
+    .host-header-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.vip {
+      background: linear-gradient(135deg, #E8F4EA 0%, #FEF9E7 100%);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .status-badge.verified {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .status-badge.pending {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .modal-header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background-color: #4a4a4a;
+    }
+
+    .btn-secondary {
+      background-color: var(--white);
+      color: var(--text);
+      border: 1px solid rgba(184, 184, 184, 0.4);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    .btn-icon {
+      padding: 8px;
+      border-radius: 6px;
+      background: none;
+      border: 1px solid rgba(184, 184, 184, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--secondary-bg);
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .btn-close:hover {
+      background-color: var(--secondary-bg);
+    }
+
+    /* Modal Body - Two Column Layout */
+    .modal-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left Sidebar */
+    .modal-sidebar {
+      width: 380px;
+      background-color: var(--secondary-bg);
+      border-right: 1px solid rgba(184, 184, 184, 0.2);
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 28px;
+    }
+
+    .sidebar-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .sidebar-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.3);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+    .info-label {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      text-align: right;
+      font-weight: 500;
+      max-width: 60%;
+      word-break: break-word;
+    }
+
+    .info-value a {
+      color: var(--info);
+      text-decoration: none;
+    }
+
+    .info-value a:hover {
+      text-decoration: underline;
+    }
+
+    .info-value.success {
+      color: var(--success);
+    }
+
+    .info-value.warning {
+      color: var(--warning);
+    }
+
+    .info-value.error {
+      color: var(--error);
+    }
+
+    /* Tags */
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.3);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .tag.specialty {
+      background-color: #E8EFF9;
+      border-color: var(--info);
+      color: var(--info);
+    }
+
+    .tag.location {
+      background-color: #E8F4EA;
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .tag-remove {
+      cursor: pointer;
+      opacity: 0.6;
+    }
+
+    .tag-remove:hover {
+      opacity: 1;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .stat-box {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-box-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .stat-box-value.success {
+      color: var(--success);
+    }
+
+    .stat-box-label {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Insurance Box */
+    .insurance-box {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .insurance-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+    }
+
+    .insurance-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .insurance-valid {
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .insurance-expiring {
+      color: var(--warning);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Right Panel */
+    .modal-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tabs */
+    .panel-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+      padding: 0 24px;
+      background-color: var(--white);
+    }
+
+    .panel-tab {
+      padding: 16px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .panel-tab:hover {
+      color: var(--text);
+    }
+
+    .panel-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+    }
+
+    .tab-badge {
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    .panel-tab.active .tab-badge {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    /* Tab Content */
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .panel-tab-content {
+      display: none;
+    }
+
+    .panel-tab-content.active {
+      display: block;
+    }
+
+    /* Content Sections */
+    .content-section {
+      margin-bottom: 28px;
+    }
+
+    .content-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .content-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .content-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Retreat Cards */
+    .retreat-card {
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .retreat-card:hover {
+      border-color: var(--text);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .retreat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .retreat-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .retreat-card-subtitle {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .retreat-type-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .retreat-card-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 16px 0;
+      border-top: 1px solid rgba(184, 184, 184, 0.1);
+      border-bottom: 1px solid rgba(184, 184, 184, 0.1);
+      margin-bottom: 12px;
+    }
+
+    .retreat-stat {
+      text-align: center;
+    }
+
+    .retreat-stat-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .retreat-stat-label {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .retreat-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .retreat-booking-count {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .retreat-booking-count strong {
+      color: var(--text);
+    }
+
+    /* Retreat Detail Panel */
+    .retreat-detail {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .retreat-detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .retreat-detail-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .retreat-detail-tagline {
+      font-size: 14px;
+      color: var(--accent);
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    .retreat-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .detail-card {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .detail-card-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .detail-card-content {
+      font-size: 13px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.1);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      color: var(--accent);
+    }
+
+    .detail-value {
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .detail-list {
+      list-style: none;
+    }
+
+    .detail-list li {
+      padding: 4px 0;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .detail-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-size: 10px;
+    }
+
+    /* Bookings Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(184, 184, 184, 0.1);
+      font-size: 13px;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover {
+      background-color: var(--secondary-bg);
+    }
+
+    .booking-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .booking-status.confirmed {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .booking-status.pending {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .booking-status.completed {
+      background-color: var(--secondary-bg);
+      color: var(--accent);
+    }
+
+    .booking-status.enquiry {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background-color: rgba(184, 184, 184, 0.3);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--accent);
+    }
+
+    .timeline-dot.booking {
+      background-color: var(--success);
+    }
+
+    .timeline-dot.payment {
+      background-color: var(--info);
+    }
+
+    .timeline-dot.message {
+      background-color: var(--warning);
+    }
+
+    .timeline-dot.system {
+      background-color: var(--accent);
+    }
+
+    .timeline-date {
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .timeline-title {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .timeline-description {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Communication Log */
+    .comm-item {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .comm-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .comm-icon.email {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .comm-icon.phone {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .comm-icon.meeting {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .comm-content {
+      flex: 1;
+    }
+
+    .comm-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .comm-type {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .comm-date {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .comm-preview {
+      font-size: 12px;
+      color: var(--accent);
+      line-height: 1.5;
+    }
+
+    .comm-meta {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 8px;
+    }
+
+    /* Notes */
+    .note-card {
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .note-author {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .note-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: var(--secondary-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .note-meta {
+      font-size: 12px;
+    }
+
+    .note-meta strong {
+      display: block;
+    }
+
+    .note-date {
+      color: var(--accent);
+      font-size: 11px;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .note-action {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px 8px;
+    }
+
+    .note-action:hover {
+      color: var(--text);
+    }
+
+    .note-content {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Documents */
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .doc-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .doc-icon.pdf {
+      background-color: #FCE8E8;
+      color: var(--error);
+    }
+
+    .doc-icon.image {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .doc-icon.cert {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .doc-info {
+      flex: 1;
+    }
+
+    .doc-name {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .doc-meta {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .doc-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .doc-status.valid {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .doc-status.expiring {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Add Note Form */
+    .add-note-form {
+      background-color: var(--white);
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .add-note-form textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 12px;
+      border: 1px solid rgba(184, 184, 184, 0.3);
+      border-radius: 6px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+
+    .add-note-form textarea:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    .add-note-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .visibility-select {
+      padding: 6px 12px;
+      border: 1px solid rgba(184, 184, 184, 0.3);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed rgba(184, 184, 184, 0.4);
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .upload-area:hover {
+      border-color: var(--text);
+      background-color: var(--secondary-bg);
+    }
+
+    .upload-icon {
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+
+    .upload-text {
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    /* Quick Actions Bar */
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--accent);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* Expandable Sections */
+    .expandable-section {
+      border: 1px solid rgba(184, 184, 184, 0.2);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .expandable-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--white);
+      cursor: pointer;
+    }
+
+    .expandable-header:hover {
+      background-color: var(--secondary-bg);
+    }
+
+    .expandable-title {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .expandable-content {
+      padding: 16px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184, 184, 184, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="modal">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="host-avatar-large">TC</div>
+        <div class="host-header-info">
+          <h2>Tom Cronin</h2>
+          <div class="host-header-meta">
+            <span>The Stillness Project</span>
+            <span>•</span>
+            <span class="status-badge vip">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+              </svg>
+              VIP Partner
+            </span>
+            <span class="status-badge verified">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+              Verified
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-header-actions">
+        <button class="btn btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Email
+        </button>
+        <button class="btn btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          Call
+        </button>
+        <button class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+        <button class="btn-close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Left Sidebar -->
+      <div class="modal-sidebar">
+        <!-- Contact Information -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Contact Information</div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value"><a href="mailto:tom@thestillnessproject.com">tom@thestillnessproject.com</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Phone</span>
+            <span class="info-value">+61 412 345 678</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Location</span>
+            <span class="info-value">Sydney, Australia</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Timezone</span>
+            <span class="info-value">AEST (UTC+10)</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Preferred Contact</span>
+            <span class="info-value">Email</span>
+          </div>
+        </div>
+
+        <!-- Business Information -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Business Information</div>
+          <div class="info-row">
+            <span class="info-label">Business Name</span>
+            <span class="info-value">The Stillness Project Pty Ltd</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">ABN</span>
+            <span class="info-value">12 345 678 901</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Website</span>
+            <span class="info-value"><a href="#">thestillnessproject.com</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Instagram</span>
+            <span class="info-value"><a href="#">@tomcronin</a></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Facebook</span>
+            <span class="info-value"><a href="#">The Stillness Project</a></span>
+          </div>
+        </div>
+
+        <!-- Experience & Credentials -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Experience & Credentials</div>
+          <div class="info-row">
+            <span class="info-label">Years Hosting</span>
+            <span class="info-value">12 years</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Total Retreats</span>
+            <span class="info-value">180+</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Retreats/Year</span>
+            <span class="info-value">15-20</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Typical Group</span>
+            <span class="info-value">16-20 participants</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Certifications</span>
+            <span class="info-value">Vedic Meditation Teacher, Corporate Wellness Facilitator</span>
+          </div>
+        </div>
+
+        <!-- Insurance -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Insurance</div>
+          <div class="insurance-box">
+            <div class="insurance-row">
+              <span class="info-label">Provider</span>
+              <span class="info-value">QBE Insurance</span>
+            </div>
+            <div class="insurance-row">
+              <span class="info-label">Policy #</span>
+              <span class="info-value">PLI-2024-78542</span>
+            </div>
+            <div class="insurance-row">
+              <span class="info-label">Public Liability</span>
+              <span class="info-value">$20,000,000</span>
+            </div>
+            <div class="insurance-status">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22,4 12,14.01 9,11.01"/>
+              </svg>
+              <span class="insurance-valid">Valid until Dec 15, 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform Stats -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Platform Performance</div>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-box-value">12</div>
+              <div class="stat-box-label">Bookings</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-value">3</div>
+              <div class="stat-box-label">Upcoming</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-value success">$127,500</div>
+              <div class="stat-box-label">Total GMV</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-value success">$6,375</div>
+              <div class="stat-box-label">Commission</div>
+            </div>
+          </div>
+          <div class="info-row" style="margin-top: 12px;">
+            <span class="info-label">Commission Rate</span>
+            <span class="info-value success">5% (VIP)</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Network Size</span>
+            <span class="info-value">150 facilitators</span>
+          </div>
+        </div>
+
+        <!-- Specialties -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Specialties</div>
+          <div class="tags-container">
+            <span class="tag specialty">Meditation</span>
+            <span class="tag specialty">Corporate Wellness</span>
+            <span class="tag specialty">Breathwork</span>
+            <span class="tag specialty">Mindfulness</span>
+            <span class="tag specialty">Leadership</span>
+          </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Venue Preferences</div>
+          <div class="info-row">
+            <span class="info-label">Preferred Locations</span>
+            <span class="info-value">Australia, Bali, Thailand</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Settings</span>
+            <span class="info-value">Beachfront, Rural, Mountains</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Standard</span>
+            <span class="info-value">Premium / Luxury</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Budget Range</span>
+            <span class="info-value">$25K - $50K</span>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Tags</div>
+          <div class="tags-container">
+            <span class="tag">VIP <span class="tag-remove">×</span></span>
+            <span class="tag">Strategic Partner <span class="tag-remove">×</span></span>
+            <span class="tag">Network Lead <span class="tag-remove">×</span></span>
+            <span class="tag">High Value <span class="tag-remove">×</span></span>
+            <span class="tag location">NSW <span class="tag-remove">×</span></span>
+            <span class="tag" style="border-style: dashed; cursor: pointer;">+ Add Tag</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="modal-main">
+        <!-- Tabs -->
+        <div class="panel-tabs">
+          <div class="panel-tab active" data-tab="overview">Overview</div>
+          <div class="panel-tab" data-tab="retreats">Retreats <span class="tab-badge">4</span></div>
+          <div class="panel-tab" data-tab="bookings">Bookings <span class="tab-badge">12</span></div>
+          <div class="panel-tab" data-tab="communications">Communications</div>
+          <div class="panel-tab" data-tab="documents">Documents <span class="tab-badge">6</span></div>
+          <div class="panel-tab" data-tab="notes">Notes <span class="tab-badge">3</span></div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="panel-content">
+          
+          <!-- OVERVIEW TAB -->
+          <div id="overview" class="panel-tab-content active">
+            <!-- Bio Section -->
+            <div class="content-section">
+              <div class="content-section-header">
+                <div class="content-section-title">About</div>
+              </div>
+              <p style="font-size: 14px; line-height: 1.8; color: var(--text);">
+                Tom Cronin is a meditation teacher, author, and founder of The Stillness Project. After 26 years in finance as one of Sydney's leading bond and swap brokers, Tom experienced a personal transformation through meditation that led him to leave the corporate world and dedicate his life to sharing stillness with others.
+              </p>
+              <p style="font-size: 14px; line-height: 1.8; color: var(--text); margin-top: 12px;">
+                Tom has facilitated over 180 retreats across Australia, Bali, Thailand, and Europe. His corporate wellness programs have been delivered to organizations including Google, Westpac, and Qantas. He is the producer of the documentary "The Portal" and author of "The Portal: How Meditation Can Save the World."
+              </p>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="content-section">
+              <div class="content-section-header">
+                <div class="content-section-title">Recent Activity</div>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="timeline-dot booking"></div>
+                  <div class="timeline-date">Today, 10:30 AM</div>
+                  <div class="timeline-title">New booking confirmed</div>
+                  <div class="timeline-description">5-Day Meditation Immersion • Moraea Farm • Mar 15-20, 2026 • $22,000</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot message"></div>
+                  <div class="timeline-date">Yesterday, 3:45 PM</div>
+                  <div class="timeline-title">Enquiry received</div>
+                  <div class="timeline-description">Corporate retreat for 25 executives • Requesting Byron Bay venues • Budget $35K</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot payment"></div>
+                  <div class="timeline-date">Feb 8, 2026</div>
+                  <div class="timeline-title">Payment received</div>
+                  <div class="timeline-description">Final balance for Women's Stillness Retreat • $9,000</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot booking"></div>
+                  <div class="timeline-date">Feb 5, 2026</div>
+                  <div class="timeline-title">Retreat completed</div>
+                  <div class="timeline-description">Corporate Mindfulness Weekend • Serenity Retreat Centre • 18 participants</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot system"></div>
+                  <div class="timeline-date">Jan 28, 2026</div>
+                  <div class="timeline-title">Profile updated</div>
+                  <div class="timeline-description">Insurance certificate renewed for 2026</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preferred Venues -->
+            <div class="content-section">
+              <div class="content-section-header">
+                <div class="content-section-title">Preferred Venues</div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                <div style="background: var(--white); border: 1px solid rgba(184,184,184,0.2); border-radius: 8px; padding: 12px;">
+                  <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px;">Moraea Farm</div>
+                  <div style="font-size: 11px; color: var(--accent);">Hunter Valley, NSW</div>
+                  <div style="font-size: 11px; color: var(--success); margin-top: 4px;">5 bookings</div>
+                </div>
+                <div style="background: var(--white); border: 1px solid rgba(184,184,184,0.2); border-radius: 8px; padding: 12px;">
+                  <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px;">Serenity Retreat Centre</div>
+                  <div style="font-size: 11px; color: var(--accent);">Blue Mountains, NSW</div>
+                  <div style="font-size: 11px; color: var(--success); margin-top: 4px;">4 bookings</div>
+                </div>
+                <div style="background: var(--white); border: 1px solid rgba(184,184,184,0.2); border-radius: 8px; padding: 12px;">
+                  <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px;">Mountain Sanctuary</div>
+                  <div style="font-size: 11px; color: var(--accent);">Byron Hinterland, NSW</div>
+                  <div style="font-size: 11px; color: var(--success); margin-top: 4px;">3 bookings</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RETREATS TAB -->
+          <div id="retreats" class="panel-tab-content">
+            <div class="content-section">
+              <div class="content-section-header">
+                <div class="content-section-title">Tom's Retreat Programs</div>
+                <button class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add New Retreat
+                </button>
+              </div>
+              <p style="font-size: 13px; color: var(--accent); margin-bottom: 20px;">
+                These are Tom's retreat programs — reusable templates that can be booked at different venues and dates.
+              </p>
+
+              <!-- Retreat Card 1 -->
+              <div class="retreat-card">
+                <div class="retreat-card-header">
+                  <div>
+                    <div class="retreat-card-title">5-Day Meditation Immersion</div>
+                    <div class="retreat-card-subtitle">Transcend the mind. Transform your life.</div>
+                  </div>
+                  <span class="retreat-type-badge">Meditation</span>
+                </div>
+                <div class="retreat-card-stats">
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">16-20</div>
+                    <div class="retreat-stat-label">Participants</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">5 nights</div>
+                    <div class="retreat-stat-label">Duration</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">$2,450</div>
+                    <div class="retreat-stat-label">Per Person</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">Premium</div>
+                    <div class="retreat-stat-label">Standard</div>
+                  </div>
+                </div>
+                <div class="retreat-card-footer">
+                  <div class="retreat-booking-count">
+                    <strong>8 bookings</strong> via TGS • Last: Mar 15, 2026
+                  </div>
+                  <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">View Details</button>
+                </div>
+              </div>
+
+              <!-- Retreat Card 2 -->
+              <div class="retreat-card">
+                <div class="retreat-card-header">
+                  <div>
+                    <div class="retreat-card-title">Corporate Mindfulness Weekend</div>
+                    <div class="retreat-card-subtitle">Building resilient, focused teams through stillness.</div>
+                  </div>
+                  <span class="retreat-type-badge" style="background-color: var(--secondary-bg); color: var(--text);">Corporate</span>
+                </div>
+                <div class="retreat-card-stats">
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">20-30</div>
+                    <div class="retreat-stat-label">Participants</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">2 nights</div>
+                    <div class="retreat-stat-label">Duration</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">$28-35K</div>
+                    <div class="retreat-stat-label">Total Cost</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">Premium</div>
+                    <div class="retreat-stat-label">Standard</div>
+                  </div>
+                </div>
+                <div class="retreat-card-footer">
+                  <div class="retreat-booking-count">
+                    <strong>3 bookings</strong> via TGS • Last: Feb 5, 2026
+                  </div>
+                  <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">View Details</button>
+                </div>
+              </div>
+
+              <!-- Retreat Card 3 -->
+              <div class="retreat-card">
+                <div class="retreat-card-header">
+                  <div>
+                    <div class="retreat-card-title">Women's Stillness Retreat</div>
+                    <div class="retreat-card-subtitle">A sacred space for feminine wisdom and renewal.</div>
+                  </div>
+                  <span class="retreat-type-badge" style="background-color: #F3E8F9; color: #8B5A8B;">Women's Wellness</span>
+                </div>
+                <div class="retreat-card-stats">
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">12-16</div>
+                    <div class="retreat-stat-label">Participants</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">4 nights</div>
+                    <div class="retreat-stat-label">Duration</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">$1,950</div>
+                    <div class="retreat-stat-label">Per Person</div>
+                  </div>
+                  <div class="retreat-stat">
+                    <div class="retreat-stat-value">Luxury</div>
+                    <div class="retreat-stat-label">Standard</div>
+                  </div>
+                </div>
+                <div class="retreat-card-footer">
+                  <div class="retreat-booking-count">
+                    <strong>1 booking</strong> via TGS • Last: Feb 20, 2026
+                  </div>
+                  <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">View Details</button>
+                </div>
+              </div>
+
+              <!-- Expanded Retreat Detail Example -->
+              <div class="retreat-detail" style="margin-top: 24px;">
+                <div class="retreat-detail-header">
+                  <div>
+                    <div class="retreat-detail-title">5-Day Meditation Immersion</div>
+                    <div class="retreat-detail-tagline">Transcend the mind. Transform your life.</div>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Edit Retreat</button>
+                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Create Booking</button>
+                  </div>
+                </div>
+
+                <div class="retreat-detail-grid">
+                  <!-- Participants -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Participants</div>
+                    <div class="detail-card-content">
+                      <div class="detail-row">
+                        <span class="detail-label">Min/Max</span>
+                        <span class="detail-value">16 - 20</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Gender</span>
+                        <span class="detail-value">Mixed</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Experience</span>
+                        <span class="detail-value">All Levels</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Age Range</span>
+                        <span class="detail-value">25-65</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Accommodation -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Accommodation</div>
+                    <div class="detail-card-content">
+                      <div class="detail-row">
+                        <span class="detail-label">Rooms Needed</span>
+                        <span class="detail-value">18-20</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Configuration</span>
+                        <span class="detail-value">Private singles preferred</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Ensuite</span>
+                        <span class="detail-value">All ensuite</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Standard</span>
+                        <span class="detail-value">Premium</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Catering -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Catering</div>
+                    <div class="detail-card-content">
+                      <div class="detail-row">
+                        <span class="detail-label">Meal Service</span>
+                        <span class="detail-value">Full Board</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Default Menu</span>
+                        <span class="detail-value">Vegetarian</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Must Cater</span>
+                        <span class="detail-value">GF, DF, Vegan</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Alcohol</span>
+                        <span class="detail-value">Alcohol-free</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Facilities -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Facilities Required</div>
+                    <div class="detail-card-content">
+                      <ul class="detail-list">
+                        <li>Meditation hall (20+ capacity)</li>
+                        <li>Outdoor ceremony space</li>
+                        <li>Pool or natural water</li>
+                        <li>Walking trails</li>
+                        <li>Fire pit area</li>
+                        <li>Treatment rooms (2+)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <!-- Program -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Program Schedule</div>
+                    <div class="detail-card-content">
+                      <div class="detail-row">
+                        <span class="detail-label">Wake Up</span>
+                        <span class="detail-value">5:30 AM</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">First Session</span>
+                        <span class="detail-value">6:00 AM</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Sessions/Day</span>
+                        <span class="detail-value">4-5</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Last Session</span>
+                        <span class="detail-value">8:30 PM</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Pricing -->
+                  <div class="detail-card">
+                    <div class="detail-card-title">Pricing</div>
+                    <div class="detail-card-content">
+                      <div class="detail-row">
+                        <span class="detail-label">Per Person</span>
+                        <span class="detail-value" style="color: var(--success); font-weight: 600;">$2,450</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Early Bird</span>
+                        <span class="detail-value">$2,195</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Private Upgrade</span>
+                        <span class="detail-value">+$350</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Deposit</span>
+                        <span class="detail-value">$500</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Inclusions -->
+                <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="detail-card">
+                    <div class="detail-card-title">Inclusions</div>
+                    <div class="detail-card-content">
+                      <ul class="detail-list">
+                        <li>5 nights premium accommodation</li>
+                        <li>All vegetarian meals & beverages</li>
+                        <li>Daily meditation sessions with Tom</li>
+                        <li>Breathwork workshops</li>
+                        <li>1x massage treatment</li>
+                        <li>Meditation materials & journal</li>
+                        <li>Airport transfers (group)</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="detail-card">
+                    <div class="detail-card-title">Not Included</div>
+                    <div class="detail-card-content">
+                      <ul class="detail-list" style="color: var(--accent);">
+                        <li style="color: var(--accent);">Flights</li>
+                        <li style="color: var(--accent);">Travel insurance</li>
+                        <li style="color: var(--accent);">Additional spa treatments</li>
+                        <li style="color: var(--accent);">Personal expenses</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOOKINGS TAB -->
+          <div id="bookings" class="panel-tab-content">
+            <div class="content-section">
+              <div class="content-section-header">
+                <div class="content-section-title">Booking History</div>
+                <button class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  New Booking
+                </button>
+              </div>
+
+              <!-- Stats -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div class="stat-box">
+                  <div class="stat-box-value">12</div>
+                  <div class="stat-box-label">Total Bookings</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value" style="color: var(--info);">3</div>
+                  <div class="stat-box-label">Upcoming</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value success">$127,500</div>
+                  <div class="stat-box-label">Total GMV</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value success">$6,375</div>
+                  <div class="stat-box-label">Commission (5%)</div>
+                </div>
+              </div>
+
+              <!-- Bookings Table -->
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Dates</th>
+                    <th>Retreat</th>
+                    <th>Venue</th>
+                    <th>Guests</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Commission</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="font-weight: 500;">Mar 15-20, 2026</div>
+                      <div style="font-size: 11px; color: var(--accent);">5 nights</div>
+                    </td>
+                    <td>5-Day Meditation Immersion</td>
+                    <td>
+                      <div>Moraea Farm</div>
+                      <div style="font-size: 11px; color: var(--accent);">Hunter Valley, NSW</div>
+                    </td>
+                    <td>18</td>
+                    <td><span class="booking-status confirmed">Confirmed</span></td>
+                    <td style="font-weight: 500;">$22,000</td>
+                    <td style="color: var(--success);">$1,100</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-weight: 500;">Feb 20-24, 2026</div>
+                      <div style="font-size: 11px; color: var(--accent);">4 nights</div>
+                    </td>
+                    <td>Women's Stillness Retreat</td>
+                    <td>
+                      <div>Serenity Retreat Centre</div>
+                      <div style="font-size: 11px; color: var(--accent);">Blue Mountains, NSW</div>
+                    </td>
+                    <td>14</td>
+                    <td><span class="booking-status confirmed">Confirmed</span></td>
+                    <td style="font-weight: 500;">$18,000</td>
+                    <td style="color: var(--success);">$900</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-weight: 500;">Apr 5-10, 2026</div>
+                      <div style="font-size: 11px; color: var(--accent);">5 nights</div>
+                    </td>
+                    <td>5-Day Meditation Immersion</td>
+                    <td>
+                      <div>Mountain Sanctuary</div>
+                      <div style="font-size: 11px; color: var(--accent);">Byron Hinterland, NSW</div>
+                    </td>
+                    <td>20</td>
+                    <td><span class="booking-status pending">Deposit Paid</span></td>
+                    <td style="font-weight: 500;">$24,000</td>
+                    <td style="color: var(--success);">$1,200</td>
+                  </tr>
+                  <tr style="background-color: var(--secondary-bg);">
+                    <td>
+                      <div style="font-weight: 500;">Feb 3-5, 2026</div>
+                      <div style="font-size: 11px; color: var(--accent);">2 nights</div>
+                    </td>
+                    <td>Corporate Mindfulness Weekend</td>
+                    <td>
+                      <div>Serenity Retreat Centre</div>
+                      <div style="font-size: 11px; color: var(--accent);">Blue Mountains, NSW</div>
+                    </td>
+                    <td>18</td>
+                    <td><span class="booking-status completed">Completed</span></td>
+                    <td style="font-weight: 500;">$28,000</td>
+                    <td style="color: var(--success);">$1,400</td>
+                  </tr>
+                  <tr style="background-color: var(--secondary-bg);">
+                    <td>
+                      <div style="font-weight: 500;">Jan 10-15, 2026</div>
+                      <div style="font-size: 11px; color: var(--accent);">5 nights</div>
+                    </td>
+                    <td>5-Day Meditation Immersion</td>
+                    <td>
+                      <div>Moraea Farm</div>
+                      <div style="font-size: 11px; color: var(--accent);">Hunter Valley, NSW</div>
+                    </td>
+                    <td>16</td>
+                    <td><span class="booking-status completed">Completed</span></td>
+                    <td style="font-weight: 500;">$20,000</td>
+                    <td style="color: var(--success);">$1,000</td>
+                  </tr>
+                  <tr style="background-color: var(--secondary-bg);">
+                    <td>
+                      <div style="font-weight: 500;">Dec 2-4, 2025</div>
+                      <div style="font-size: 11px; color: var(--accent);">2 nights</div>
+                    </td>
+                    <td>Corporate Mindfulness Weekend</td>
+                    <td>
+                      <div>Moraea Farm</div>
+                      <div style="font-size: 11px; color: var(--accent);">Hunter Valley, NSW</div>
+                    </td>
+                    <td>24</td>
+                    <td><span class="booking-status completed">Completed</span></td>
+                    <td style="font-weight: 500;">$32,000</td>
+                    <td style="color: var(--success);">$1,600</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Active Enquiries -->
+            <div class="content-section" style="margin-top: 32px;">
+              <div class="content-section-header">
+                <div class="content-section-title">Active Enquiries</div>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Enquiry Date</th>
+                    <th>Retreat</th>
+                    <th>Preferred Dates</th>
+                    <th>Location Request</th>
+                    <th>Budget</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Feb 11, 2026</td>
+                    <td>Corporate Mindfulness Weekend</td>
+                    <td>May 2026 (flexible)</td>
+                    <td>Byron Bay area</td>
+                    <td>$35,000</td>
+                    <td><span class="booking-status enquiry">Venue Matching</span></td>
+                    <td>
+                      <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- COMMUNICATIONS TAB -->
+          <div id="communications" class="panel-tab-content">
+            <div class="content-section">
+              <div class="quick-actions">
+                <button class="btn btn-primary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  Send Email
+                </button>
+                <button class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                  </svg>
+                  Log Call
+                </button>
+                <button class="btn btn-secondary">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Log Meeting
+                </button>
+              </div>
+
+              <!-- Stats -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div class="stat-box">
+                  <div class="stat-box-value">32</div>
+                  <div class="stat-box-label">Total Emails</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value" style="color: var(--success);">94%</div>
+                  <div class="stat-box-label">Open Rate</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value">8</div>
+                  <div class="stat-box-label">Phone Calls</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-box-value">4</div>
+                  <div class="stat-box-label">Meetings</div>
+                </div>
+              </div>
+
+              <div class="content-section-title" style="margin-bottom: 16px;">Communication History</div>
+
+              <div class="comm-item">
+                <div class="comm-icon email">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </div>
+                <div class="comm-content">
+                  <div class="comm-header">
+                    <span class="comm-type">Booking Confirmation Sent</span>
+                    <span class="comm-date">Today, 10:45 AM</span>
+                  </div>
+                  <div class="comm-preview">
+                    Confirmation for 5-Day Meditation Immersion at Moraea Farm (Mar 15-20). Includes venue details, check-in instructions, and what to bring...
+                  </div>
+                  <div class="comm-meta">Sent by Kate • <span style="color: var(--success);">Opened</span></div>
+                </div>
+              </div>
+
+              <div class="comm-item">
+                <div class="comm-icon phone">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+                  </svg>
+                </div>
+                <div class="comm-content">
+                  <div class="comm-header">
+                    <span class="comm-type">Phone Call (Outbound)</span>
+                    <span class="comm-date">Feb 11, 2026, 2:30 PM</span>
+                  </div>
+                  <div class="comm-preview">
+                    Discussed new corporate enquiry for May 2026. Tom prefers Byron Bay area. Budget is $35K for 25 executives. Need venues with boardroom facilities...
+                  </div>
+                  <div class="comm-meta">Logged by Kate • Duration: 18 mins</div>
+                </div>
+              </div>
+
+              <div class="comm-item">
+                <div class="comm-icon meeting">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </div>
+                <div class="comm-content">
+                  <div class="comm-header">
+                    <span class="comm-type">Video Meeting (Zoom)</span>
+                    <span class="comm-date">Jan 15, 2026, 10:00 AM</span>
+                  </div>
+                  <div class="comm-preview">
+                    Partnership discussion - Tom's network of 150 facilitators. Agreed on VIP commission rate of 5%. Will introduce key facilitators to TGS platform...
+                  </div>
+                  <div class="comm-meta">Logged by Kate • Duration: 45 mins</div>
+                </div>
+              </div>
+
+              <div class="comm-item">
+                <div class="comm-icon email">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </div>
+                <div class="comm-content">
+                  <div class="comm-header">
+                    <span class="comm-type">Welcome to TGS - VIP Partner</span>
+                    <span class="comm-date">Jan 10, 2026, 9:00 AM</span>
+                  </div>
+                  <div class="comm-preview">
+                    Welcome email with VIP partner benefits, dedicated support contact, and introduction to platform features...
+                  </div>
+                  <div class="comm-meta">Sent by Kate • <span style="color: var(--success);">Opened</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOCUMENTS TAB -->
+          <div id="documents" class="panel-tab-content">
+            <div class="content-section">
+              <div class="upload-area">
+                <div class="upload-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17,8 12,3 7,8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <div class="upload-text">Drag and drop files here or click to browse</div>
+                <button class="btn btn-secondary">Upload Document</button>
+              </div>
+
+              <div class="content-section-title" style="margin-bottom: 16px;">Documents (6)</div>
+
+              <div class="doc-item">
+                <div class="doc-icon cert">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">Public Liability Insurance Certificate</div>
+                  <div class="doc-meta">PDF • 512 KB • Uploaded Jan 10, 2026</div>
+                </div>
+                <span class="doc-status valid">Valid until Dec 2026</span>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+
+              <div class="doc-item">
+                <div class="doc-icon pdf">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">VIP Partner Agreement - Signed</div>
+                  <div class="doc-meta">PDF • 245 KB • Uploaded Jan 15, 2026</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+
+              <div class="doc-item">
+                <div class="doc-icon pdf">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">ABN Registration</div>
+                  <div class="doc-meta">PDF • 89 KB • Uploaded Jan 10, 2026</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+
+              <div class="doc-item">
+                <div class="doc-icon cert">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">Meditation Teacher Certification</div>
+                  <div class="doc-meta">PDF • 156 KB • Uploaded Jan 10, 2026</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+
+              <div class="doc-item">
+                <div class="doc-icon image">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">Profile Photo - High Resolution</div>
+                  <div class="doc-meta">JPG • 2.4 MB • Uploaded Jan 10, 2026</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+
+              <div class="doc-item">
+                <div class="doc-icon pdf">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name">Media Kit - The Stillness Project</div>
+                  <div class="doc-meta">PDF • 8.2 MB • Uploaded Jan 12, 2026</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">View</button>
+                  <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;">Download</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTES TAB -->
+          <div id="notes" class="panel-tab-content">
+            <div class="content-section">
+              <div class="add-note-form">
+                <textarea placeholder="Add a note about Tom Cronin..."></textarea>
+                <div class="add-note-actions">
+                  <select class="visibility-select">
+                    <option>Visible to all team</option>
+                    <option>Private - only me</option>
+                  </select>
+                  <button class="btn btn-primary">Add Note</button>
+                </div>
+              </div>
+
+              <div class="content-section-title" style="margin-bottom: 16px;">Previous Notes</div>
+
+              <div class="note-card">
+                <div class="note-header">
+                  <div class="note-author">
+                    <div class="note-avatar">K</div>
+                    <div class="note-meta">
+                      <strong>Kate</strong>
+                      <div class="note-date">Feb 11, 2026 at 3:15 PM</div>
+                    </div>
+                  </div>
+                  <div class="note-actions">
+                    <button class="note-action">Edit</button>
+                    <button class="note-action">Delete</button>
+                  </div>
+                </div>
+                <div class="note-content">
+                  New corporate enquiry came in - 25 executives for a May retreat. Tom specifically mentioned wanting Byron Bay area with boardroom facilities. Budget is healthy at $35K. Need to find venues that can accommodate both the wellness aspects and corporate meeting requirements. Tom mentioned his client is a major bank - potential for ongoing partnership if this goes well.
+                </div>
+              </div>
+
+              <div class="note-card">
+                <div class="note-header">
+                  <div class="note-author">
+                    <div class="note-avatar">K</div>
+                    <div class="note-meta">
+                      <strong>Kate</strong>
+                      <div class="note-date">Jan 15, 2026 at 11:30 AM</div>
+                    </div>
+                  </div>
+                  <div class="note-actions">
+                    <button class="note-action">Edit</button>
+                    <button class="note-action">Delete</button>
+                  </div>
+                </div>
+                <div class="note-content">
+                  Partnership meeting went really well. Tom has a network of 150 facilitators through The Stillness Project. He's agreed to introduce key facilitators to TGS. In exchange, he gets VIP rate of 5% commission. His network includes meditation teachers, breathwork practitioners, and corporate wellness facilitators. This could be a major source of high-quality hosts. He's also happy to provide testimonials and be featured in Sanctum Journal.
+                </div>
+              </div>
+
+              <div class="note-card">
+                <div class="note-header">
+                  <div class="note-author">
+                    <div class="note-avatar">K</div>
+                    <div class="note-meta">
+                      <strong>Kate</strong>
+                      <div class="note-date">Jan 10, 2026 at 2:00 PM</div>
+                    </div>
+                  </div>
+                  <div class="note-actions">
+                    <button class="note-action">Edit</button>
+                    <button class="note-action">Delete</button>
+                  </div>
+                </div>
+                <div class="note-content">
+                  Initial call with Tom Cronin. Former finance broker turned meditation teacher - really interesting background. Produced "The Portal" documentary. Has been running retreats for 12 years, primarily at premium venues in NSW and Bali. Looking for a platform partner to handle venue sourcing so he can focus on teaching. Very aligned with TGS vision. Suggested VIP partnership.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabs = document.querySelectorAll('.panel-tab');
+      const tabContents = document.querySelectorAll('.panel-tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.classList.remove('active'));
+          const tabId = this.getAttribute('data-tab');
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

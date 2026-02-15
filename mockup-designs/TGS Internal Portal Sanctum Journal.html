@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Sanctum Journal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+      --journal: #8B5A8B;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav { padding: 24px 0; }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-item.active { background-color: rgba(255,255,255,0.1); color: var(--white); border-right: 3px solid var(--white); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-title { font-size: 32px; }
+
+    .page-badge {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #F3E8F9, #E8EFF9);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--journal);
+    }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary { background-color: var(--text); color: var(--white); }
+    .btn-primary:hover { background-color: #4a4a4a; }
+    .btn-secondary { background-color: var(--white); color: var(--text); border: 1px solid rgba(184,184,184,0.4); }
+    .btn-secondary:hover { border-color: var(--text); }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-success { background-color: var(--success); color: var(--white); }
+    .btn-journal { background-color: var(--journal); color: var(--white); }
+    .btn-journal:hover { background-color: #7a4a7a; }
+
+    /* Beehiiv Sync Banner */
+    .sync-banner {
+      background: linear-gradient(135deg, #F3E8F9, #E8EFF9);
+      border: 1px solid var(--journal);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .sync-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sync-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background-color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--journal);
+    }
+
+    .sync-text {
+      font-size: 13px;
+    }
+
+    .sync-status {
+      font-weight: 600;
+      color: var(--journal);
+    }
+
+    .sync-time {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Performance Cards */
+    .performance-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .performance-card {
+      background-color: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .performance-card.highlight {
+      background: linear-gradient(135deg, var(--journal) 0%, #6B4A6B 100%);
+      color: var(--white);
+    }
+
+    .performance-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    .performance-card-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .performance-card-change {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .performance-card-change.positive { color: var(--success); }
+    .performance-card.highlight .performance-card-change.positive { color: #90EE90; }
+
+    /* Stats Row */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(184,184,184,0.2);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.info { color: var(--info); }
+    .stat-value.journal { color: var(--journal); }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(184,184,184,0.3);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+    .tab-count {
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .tab.active .tab-count { background-color: var(--text); color: var(--white); }
+
+    .tab-count.draft { background-color: #FEF9E7; color: var(--warning); }
+    .tab-count.scheduled { background-color: #E8EFF9; color: var(--info); }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--white);
+      min-width: 150px;
+    }
+
+    .search-input {
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      width: 280px;
+      background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    }
+
+    /* Data Table */
+    .table-container {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .data-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .data-table tbody tr:hover { background-color: var(--secondary-bg); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Edition Cell */
+    .edition-cell {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .edition-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #F3E8F9, #E8EFF9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .edition-number-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--journal);
+    }
+
+    .edition-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .edition-theme {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.sent { background-color: #E8F4EA; color: var(--success); }
+    .status-badge.draft { background-color: #FEF9E7; color: var(--warning); }
+    .status-badge.scheduled { background-color: #E8EFF9; color: var(--info); }
+    .status-badge.planning { background-color: #F3E8F9; color: var(--journal); }
+
+    /* Metrics */
+    .metric-group {
+      display: flex;
+      gap: 16px;
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .metric-value.good { color: var(--success); }
+    .metric-value.average { color: var(--warning); }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    /* Actions */
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Pagination */
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .pagination-info { font-size: 13px; color: var(--accent); }
+
+    .pagination-controls { display: flex; gap: 8px; }
+
+    .pagination-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-btn:hover { border-color: var(--text); }
+    .pagination-btn.active { background-color: var(--text); color: var(--white); border-color: var(--text); }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Next Edition Card */
+    .next-edition-card {
+      background: linear-gradient(135deg, var(--journal), #6B4A6B);
+      border-radius: 16px;
+      padding: 32px;
+      color: var(--white);
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .next-edition-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .next-edition-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .next-edition-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .next-edition-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .countdown {
+      text-align: right;
+    }
+
+    .countdown-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 600;
+    }
+
+    .countdown-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    /* Content Queue */
+    .content-queue {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .queue-section {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .queue-header {
+      padding: 16px 20px;
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .queue-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .queue-count {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .queue-items {
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background-color: var(--secondary-bg);
+      cursor: grab;
+      transition: all 0.2s;
+    }
+
+    .queue-item:hover {
+      background-color: #EDE8E4;
+    }
+
+    .queue-item:last-child { margin-bottom: 0; }
+
+    .queue-item-drag {
+      color: var(--accent);
+      cursor: grab;
+    }
+
+    .queue-item-content {
+      flex: 1;
+    }
+
+    .queue-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .queue-item-source {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .queue-item-action {
+      padding: 4px 8px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      background: var(--white);
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .queue-item-action:hover {
+      border-color: var(--text);
+    }
+
+    /* Segment Cards */
+    .segment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .segment-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .segment-card:hover {
+      border-color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .segment-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .segment-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .segment-icon.owners { background-color: #E8F4EA; }
+    .segment-icon.hosts { background-color: #E8EFF9; }
+    .segment-icon.travelers { background-color: #F3E8F9; }
+
+    .segment-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .segment-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .segment-desc {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .segment-stats {
+      display: flex;
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .segment-stat {
+      text-align: center;
+      flex: 1;
+    }
+
+    .segment-stat-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .segment-stat-value.good { color: var(--success); }
+
+    .segment-stat-label {
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    /* Template Cards */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .template-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .template-card:hover {
+      border-color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .template-preview {
+      height: 120px;
+      background: linear-gradient(135deg, var(--secondary-bg), #E8E4E0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 32px;
+    }
+
+    .template-info {
+      padding: 16px;
+    }
+
+    .template-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .template-desc {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Subscriber Table */
+    .subscriber-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .subscriber-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--info), var(--success));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--white);
+    }
+
+    .subscriber-name {
+      font-weight: 500;
+    }
+
+    .subscriber-email {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Segment Tag */
+    .segment-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .segment-tag.owner { background-color: #E8F4EA; color: var(--success); }
+    .segment-tag.host { background-color: #E8EFF9; color: var(--info); }
+    .segment-tag.traveler { background-color: #F3E8F9; color: var(--journal); }
+
+    /* Engagement Score */
+    .engagement-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .engagement-bar {
+      width: 50px;
+      height: 6px;
+      background-color: var(--secondary-bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .engagement-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .engagement-fill.high { background-color: var(--success); }
+    .engagement-fill.medium { background-color: var(--warning); }
+    .engagement-fill.low { background-color: var(--error); }
+
+    /* Alert Box */
+    .alert-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .alert-box.info {
+      background-color: #E8EFF9;
+      border: 1px solid var(--info);
+      color: var(--info);
+    }
+
+    .alert-box.success {
+      background-color: #E8F4EA;
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .btn-close:hover { background-color: var(--secondary-bg); }
+
+    .modal-body { padding: 24px; }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section:last-child { margin-bottom: 0; }
+
+    .modal-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .modal-footer-left {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Section Checklist */
+    .section-checklist {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+    }
+
+    .checklist-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--accent);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .checklist-checkbox.checked {
+      background-color: var(--success);
+      border-color: var(--success);
+    }
+
+    .checklist-label {
+      font-size: 13px;
+    }
+
+    .checklist-label.checked {
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            Dashboard
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            All Venues
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Users</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Venue Owners
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Retreat Hosts
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Payments
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Subscriptions
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item active" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sanctum Journal
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Wellness Edit
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">Sanctum Journal</h1>
+          <span class="page-badge">Weekly Newsletter</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open Beehiiv
+          </button>
+          <button class="btn btn-journal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Plan New Edition
+          </button>
+        </div>
+      </div>
+
+      <!-- Beehiiv Sync Banner -->
+      <div class="sync-banner">
+        <div class="sync-info">
+          <div class="sync-icon">🐝</div>
+          <div class="sync-text">
+            <div class="sync-status">Beehiiv Connected</div>
+            <div class="sync-time">Last synced: 5 minutes ago • Subscribers and analytics auto-sync hourly</div>
+          </div>
+        </div>
+        <button class="btn btn-small btn-secondary">Sync Now</button>
+      </div>
+
+      <!-- Next Edition Card -->
+      <div class="next-edition-card">
+        <div>
+          <div class="next-edition-label">Next Edition • #24</div>
+          <div class="next-edition-title">The Art of Winter Wellness</div>
+          <div class="next-edition-meta">
+            <span>📅 Thursday, Feb 13 at 9:00 AM AEST</span>
+            <span>👥 2,847 subscribers</span>
+            <span>📝 4 of 6 sections complete</span>
+          </div>
+        </div>
+        <div class="next-edition-actions">
+          <div class="countdown">
+            <div class="countdown-value">1 day</div>
+            <div class="countdown-label">until send</div>
+          </div>
+          <button class="btn btn-small" style="background: rgba(255,255,255,0.2); color: white;">Preview & Edit</button>
+        </div>
+      </div>
+
+      <!-- Performance Cards -->
+      <div class="performance-cards">
+        <div class="performance-card highlight">
+          <div class="performance-card-label">Total Subscribers</div>
+          <div class="performance-card-value">2,847</div>
+          <div class="performance-card-change positive">↑ 124 this month</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Avg Open Rate</div>
+          <div class="performance-card-value">52.4%</div>
+          <div class="performance-card-change positive">↑ 3.2% vs industry</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Avg Click Rate</div>
+          <div class="performance-card-value">8.7%</div>
+          <div class="performance-card-change positive">↑ 1.4% vs industry</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Editions Sent</div>
+          <div class="performance-card-value">23</div>
+          <div class="performance-card-change">Weekly since Aug 2025</div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value">847</div>
+          <div class="stat-label">Venue Owners</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">1,245</div>
+          <div class="stat-label">Retreat Hosts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">755</div>
+          <div class="stat-label">Wellness Travelers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">4.2%</div>
+          <div class="stat-label">Growth Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warning">0.3%</div>
+          <div class="stat-label">Unsubscribe Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value info">12</div>
+          <div class="stat-label">Referrals</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <div class="tab active" data-tab="editions">Editions <span class="tab-count">23</span></div>
+        <div class="tab" data-tab="subscribers">Subscribers <span class="tab-count">2,847</span></div>
+        <div class="tab" data-tab="content-queue">Content Queue <span class="tab-count">8</span></div>
+        <div class="tab" data-tab="segments">Segments <span class="tab-count">3</span></div>
+        <div class="tab" data-tab="analytics">Analytics</div>
+        <div class="tab" data-tab="templates">Templates</div>
+      </div>
+
+      <!-- Editions Tab -->
+      <div id="editions" class="tab-content active">
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Sent</option>
+            <option>Scheduled</option>
+            <option>Draft</option>
+            <option>Planning</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search editions...">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Edition</th>
+                <th>Status</th>
+                <th>Send Date</th>
+                <th>Recipients</th>
+                <th>Open Rate</th>
+                <th>Click Rate</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="edition-cell">
+                    <div class="edition-number">
+                      <div class="edition-number-text">#24</div>
+                    </div>
+                    <div>
+                      <div class="edition-title">The Art of Winter Wellness</div>
+                      <div class="edition-theme">Seasonal rituals, thermal springs, winter retreats</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge scheduled">Scheduled</span></td>
+                <td>
+                  <div>Feb 13, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM AEST</div>
+                </td>
+                <td>2,847</td>
+                <td><span style="color: var(--accent);">—</span></td>
+                <td><span style="color: var(--accent);">—</span></td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                  <button class="btn btn-secondary btn-small">Preview</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="edition-cell">
+                    <div class="edition-number">
+                      <div class="edition-number-text">#23</div>
+                    </div>
+                    <div>
+                      <div class="edition-title">Sacred Spaces: Architecture of Healing</div>
+                      <div class="edition-theme">Wellness architecture, biophilic design, featured venues</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge sent">Sent</span></td>
+                <td>
+                  <div>Feb 6, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM AEST</div>
+                </td>
+                <td>2,723</td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value good">54.2%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value good">9.1%</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                  <button class="btn btn-secondary btn-small">Duplicate</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="edition-cell">
+                    <div class="edition-number">
+                      <div class="edition-number-text">#22</div>
+                    </div>
+                    <div>
+                      <div class="edition-title">The Japanese Onsen Guide</div>
+                      <div class="edition-theme">Japan wellness travel, ryokans, bathing rituals</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge sent">Sent</span></td>
+                <td>
+                  <div>Jan 30, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM AEST</div>
+                </td>
+                <td>2,654</td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value good">58.7%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value good">11.3%</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                  <button class="btn btn-secondary btn-small">Duplicate</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="edition-cell">
+                    <div class="edition-number">
+                      <div class="edition-number-text">#21</div>
+                    </div>
+                    <div>
+                      <div class="edition-title">Meditation Retreats for Beginners</div>
+                      <div class="edition-theme">First retreat guide, meditation basics, venue spotlights</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge sent">Sent</span></td>
+                <td>
+                  <div>Jan 23, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">9:00 AM AEST</div>
+                </td>
+                <td>2,598</td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value good">51.4%</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="metric-group">
+                    <div class="metric-item">
+                      <div class="metric-value">7.8%</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">View</button>
+                  <button class="btn btn-secondary btn-small">Duplicate</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="edition-cell">
+                    <div class="edition-number">
+                      <div class="edition-number-text">#25</div>
+                    </div>
+                    <div>
+                      <div class="edition-title">Untitled Edition</div>
+                      <div class="edition-theme">Planning for Feb 20</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="status-badge planning">Planning</span></td>
+                <td>
+                  <div style="color: var(--accent);">Feb 20, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">TBD</div>
+                </td>
+                <td>—</td>
+                <td><span style="color: var(--accent);">—</span></td>
+                <td><span style="color: var(--accent);">—</span></td>
+                <td class="table-actions">
+                  <button class="btn btn-journal btn-small">Plan</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <div class="pagination-info">Showing 1-5 of 24 editions</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn">Previous</button>
+              <button class="pagination-btn active">1</button>
+              <button class="pagination-btn">2</button>
+              <button class="pagination-btn">3</button>
+              <button class="pagination-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscribers Tab -->
+      <div id="subscribers" class="tab-content">
+        <div class="segment-grid">
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon owners">🏠</div>
+              <div class="segment-count">847</div>
+            </div>
+            <div class="segment-name">Venue Owners</div>
+            <div class="segment-desc">Property owners and venue managers on the platform</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value good">58.2%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value good">12.4%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+            </div>
+          </div>
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon hosts">🧘</div>
+              <div class="segment-count">1,245</div>
+            </div>
+            <div class="segment-name">Retreat Hosts</div>
+            <div class="segment-desc">Facilitators and retreat leaders seeking venues</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value good">54.8%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value good">9.7%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+            </div>
+          </div>
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon travelers">✈️</div>
+              <div class="segment-count">755</div>
+            </div>
+            <div class="segment-name">Wellness Travelers</div>
+            <div class="segment-desc">Individuals seeking wellness retreat experiences</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value">46.3%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value">6.2%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Segments</option>
+            <option>Venue Owners</option>
+            <option>Retreat Hosts</option>
+            <option>Wellness Travelers</option>
+          </select>
+          <select class="filter-select">
+            <option>All Engagement</option>
+            <option>Highly Engaged</option>
+            <option>Moderately Engaged</option>
+            <option>Low Engagement</option>
+            <option>Inactive (30+ days)</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search subscribers...">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Subscriber</th>
+                <th>Segment</th>
+                <th>Subscribed</th>
+                <th>Engagement</th>
+                <th>Last Opened</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="subscriber-cell">
+                    <div class="subscriber-avatar">EM</div>
+                    <div>
+                      <div class="subscriber-name">Emily Watson</div>
+                      <div class="subscriber-email">emily@moraeafarm.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="segment-tag owner">Venue Owner</span></td>
+                <td>Jan 15, 2026</td>
+                <td>
+                  <div class="engagement-score">
+                    <div class="engagement-bar"><div class="engagement-fill high" style="width: 92%;"></div></div>
+                    <span style="font-size: 12px; font-weight: 500;">92%</span>
+                  </div>
+                </td>
+                <td>Feb 6, 2026</td>
+                <td>Super Founder</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="subscriber-cell">
+                    <div class="subscriber-avatar">TC</div>
+                    <div>
+                      <div class="subscriber-name">Tom Cronin</div>
+                      <div class="subscriber-email">tom@stillnessproject.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="segment-tag host">Retreat Host</span></td>
+                <td>Aug 12, 2025</td>
+                <td>
+                  <div class="engagement-score">
+                    <div class="engagement-bar"><div class="engagement-fill high" style="width: 100%;"></div></div>
+                    <span style="font-size: 12px; font-weight: 500;">100%</span>
+                  </div>
+                </td>
+                <td>Feb 6, 2026</td>
+                <td>VIP Partner</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="subscriber-cell">
+                    <div class="subscriber-avatar">AR</div>
+                    <div>
+                      <div class="subscriber-name">Anna Roberts</div>
+                      <div class="subscriber-email">anna@sacredwellness.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="segment-tag host">Retreat Host</span></td>
+                <td>Sep 5, 2025</td>
+                <td>
+                  <div class="engagement-score">
+                    <div class="engagement-bar"><div class="engagement-fill high" style="width: 85%;"></div></div>
+                    <span style="font-size: 12px; font-weight: 500;">85%</span>
+                  </div>
+                </td>
+                <td>Feb 6, 2026</td>
+                <td>Referral</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="subscriber-cell">
+                    <div class="subscriber-avatar">JW</div>
+                    <div>
+                      <div class="subscriber-name">Jane Williams</div>
+                      <div class="subscriber-email">jane.williams@gmail.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="segment-tag traveler">Traveler</span></td>
+                <td>Jan 28, 2026</td>
+                <td>
+                  <div class="engagement-score">
+                    <div class="engagement-bar"><div class="engagement-fill medium" style="width: 50%;"></div></div>
+                    <span style="font-size: 12px; font-weight: 500;">50%</span>
+                  </div>
+                </td>
+                <td>Jan 30, 2026</td>
+                <td>Website</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="subscriber-cell">
+                    <div class="subscriber-avatar">ML</div>
+                    <div>
+                      <div class="subscriber-name">Marcus Lee</div>
+                      <div class="subscriber-email">marcus@breathedeep.com.au</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="segment-tag host">Retreat Host</span></td>
+                <td>Oct 14, 2025</td>
+                <td>
+                  <div class="engagement-score">
+                    <div class="engagement-bar"><div class="engagement-fill medium" style="width: 67%;"></div></div>
+                    <span style="font-size: 12px; font-weight: 500;">67%</span>
+                  </div>
+                </td>
+                <td>Feb 6, 2026</td>
+                <td>Direct</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <div class="pagination-info">Showing 1-5 of 2,847 subscribers</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn">Previous</button>
+              <button class="pagination-btn active">1</button>
+              <button class="pagination-btn">2</button>
+              <button class="pagination-btn">...</button>
+              <button class="pagination-btn">570</button>
+              <button class="pagination-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Queue Tab -->
+      <div id="content-queue" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <strong>Content Curation:</strong> Drag articles from Wellness Edit to queue for upcoming editions. Featured content appears at the top of the newsletter.
+          </div>
+        </div>
+
+        <div class="content-queue">
+          <div class="queue-section">
+            <div class="queue-header">
+              <div class="queue-title">Available from Wellness Edit</div>
+              <div class="queue-count">12 articles</div>
+            </div>
+            <div class="queue-items">
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">The Art of the Japanese Onsen</div>
+                  <div class="queue-item-source">Destinations • 3,240 views</div>
+                </div>
+                <button class="queue-item-action">+ Add</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">Finding Stillness in Bali's Sacred Valleys</div>
+                  <div class="queue-item-source">Experiences • 2,890 views</div>
+                </div>
+                <button class="queue-item-action">+ Add</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">Hunter Valley: Wine Country's Wellness Renaissance</div>
+                  <div class="queue-item-source">Destinations • 1,820 views</div>
+                </div>
+                <button class="queue-item-action">+ Add</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">The Science of Sound Healing</div>
+                  <div class="queue-item-source">Wellness • Scheduled Feb 14</div>
+                </div>
+                <button class="queue-item-action">+ Add</button>
+              </div>
+            </div>
+          </div>
+          <div class="queue-section">
+            <div class="queue-header">
+              <div class="queue-title">Edition #24 Content</div>
+              <div class="queue-count">4 items queued</div>
+            </div>
+            <div class="queue-items">
+              <div class="queue-item" style="border-left: 3px solid var(--journal);">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">Featured: Winter Wellness Guide</div>
+                  <div class="queue-item-source">Hero Article • New for this edition</div>
+                </div>
+                <button class="queue-item-action">Remove</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">Wellness Architecture: Designing for Healing</div>
+                  <div class="queue-item-source">Architecture • 2,450 views</div>
+                </div>
+                <button class="queue-item-action">Remove</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">New Venue: Mountain Sanctuary</div>
+                  <div class="queue-item-source">Venue Spotlight • Partner content</div>
+                </div>
+                <button class="queue-item-action">Remove</button>
+              </div>
+              <div class="queue-item">
+                <div class="queue-item-drag">⋮⋮</div>
+                <div class="queue-item-content">
+                  <div class="queue-item-title">Thermal Springs of Iceland</div>
+                  <div class="queue-item-source">Destinations • 1,450 views</div>
+                </div>
+                <button class="queue-item-action">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segments Tab -->
+      <div id="segments" class="tab-content">
+        <div class="segment-grid">
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon owners">🏠</div>
+              <div class="segment-count">847</div>
+            </div>
+            <div class="segment-name">Venue Owners</div>
+            <div class="segment-desc">Property owners and venue managers subscribed to the platform</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value good">58.2%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value good">12.4%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value">+34</div>
+                <div class="segment-stat-label">This Month</div>
+              </div>
+            </div>
+          </div>
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon hosts">🧘</div>
+              <div class="segment-count">1,245</div>
+            </div>
+            <div class="segment-name">Retreat Hosts</div>
+            <div class="segment-desc">Facilitators and retreat leaders seeking venues for their programs</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value good">54.8%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value good">9.7%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value">+62</div>
+                <div class="segment-stat-label">This Month</div>
+              </div>
+            </div>
+          </div>
+          <div class="segment-card">
+            <div class="segment-card-header">
+              <div class="segment-icon travelers">✈️</div>
+              <div class="segment-count">755</div>
+            </div>
+            <div class="segment-name">Wellness Travelers</div>
+            <div class="segment-desc">Individuals seeking wellness and retreat experiences</div>
+            <div class="segment-stats">
+              <div class="segment-stat">
+                <div class="segment-stat-value">46.3%</div>
+                <div class="segment-stat-label">Open Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value">6.2%</div>
+                <div class="segment-stat-label">Click Rate</div>
+              </div>
+              <div class="segment-stat">
+                <div class="segment-stat-value">+28</div>
+                <div class="segment-stat-label">This Month</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-box success">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+          <div>
+            <strong>Segment sync enabled:</strong> Subscribers are automatically tagged based on their TGS account type. Manual segment assignment available for imported contacts.
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Tab -->
+      <div id="analytics" class="tab-content">
+        <div class="performance-cards">
+          <div class="performance-card">
+            <div class="performance-card-label">Avg Open Rate (All Time)</div>
+            <div class="performance-card-value">52.4%</div>
+            <div class="performance-card-change positive">Industry avg: 21.5%</div>
+          </div>
+          <div class="performance-card">
+            <div class="performance-card-label">Avg Click Rate (All Time)</div>
+            <div class="performance-card-value">8.7%</div>
+            <div class="performance-card-change positive">Industry avg: 2.3%</div>
+          </div>
+          <div class="performance-card">
+            <div class="performance-card-label">List Growth (Monthly)</div>
+            <div class="performance-card-value">+4.2%</div>
+            <div class="performance-card-change positive">124 new this month</div>
+          </div>
+          <div class="performance-card">
+            <div class="performance-card-label">Unsubscribe Rate</div>
+            <div class="performance-card-value">0.3%</div>
+            <div class="performance-card-change positive">Industry avg: 0.5%</div>
+          </div>
+        </div>
+
+        <div style="background: var(--secondary-bg); border-radius: 12px; height: 300px; display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 24px;">
+          📈 Open Rate & Click Rate Chart (from Beehiiv API)
+        </div>
+
+        <h3 style="margin-bottom: 16px;">Top Performing Editions</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Edition</th>
+                <th>Open Rate</th>
+                <th>Click Rate</th>
+                <th>Clicks</th>
+                <th>Unsubscribes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#22 - The Japanese Onsen Guide</td>
+                <td style="color: var(--success); font-weight: 600;">58.7%</td>
+                <td style="color: var(--success); font-weight: 600;">11.3%</td>
+                <td>300</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>#23 - Sacred Spaces: Architecture of Healing</td>
+                <td style="color: var(--success); font-weight: 600;">54.2%</td>
+                <td style="color: var(--success); font-weight: 600;">9.1%</td>
+                <td>248</td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>#18 - Bali's Hidden Wellness Sanctuaries</td>
+                <td style="color: var(--success); font-weight: 600;">56.1%</td>
+                <td style="color: var(--success); font-weight: 600;">10.4%</td>
+                <td>265</td>
+                <td>3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Templates Tab -->
+      <div id="templates" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <div>
+            <strong>Newsletter Sections:</strong> Consistent sections help readers know what to expect. Edit these in Beehiiv's template builder.
+          </div>
+        </div>
+
+        <div class="template-grid">
+          <div class="template-card">
+            <div class="template-preview">📰</div>
+            <div class="template-info">
+              <div class="template-name">Featured Article</div>
+              <div class="template-desc">Hero story with large image</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">🏠</div>
+            <div class="template-info">
+              <div class="template-name">Venue Spotlight</div>
+              <div class="template-desc">Featured venue of the week</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">🧘</div>
+            <div class="template-info">
+              <div class="template-name">Host Profile</div>
+              <div class="template-desc">Featured retreat facilitator</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">📖</div>
+            <div class="template-info">
+              <div class="template-name">From the Edit</div>
+              <div class="template-desc">Curated Wellness Edit articles</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">📅</div>
+            <div class="template-info">
+              <div class="template-name">Upcoming Retreats</div>
+              <div class="template-desc">Retreat calendar highlights</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">💡</div>
+            <div class="template-info">
+              <div class="template-name">Founder's Note</div>
+              <div class="template-desc">Personal message from Kate</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">🎁</div>
+            <div class="template-info">
+              <div class="template-name">Exclusive Offer</div>
+              <div class="template-desc">Member-only deals</div>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-preview">✨</div>
+            <div class="template-info">
+              <div class="template-name">Community News</div>
+              <div class="template-desc">Platform updates & milestones</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Edition Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Plan New Edition</h2>
+        <button class="btn-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">Edition Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Edition Number</label>
+              <input type="text" class="form-input" value="#25" readonly style="background: var(--secondary-bg);">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Send Date</label>
+              <input type="datetime-local" class="form-input" value="2026-02-20T09:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Edition Title</label>
+            <input type="text" class="form-input" placeholder="e.g., The Art of Morning Rituals">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Theme / Focus</label>
+            <textarea class="form-textarea" placeholder="Brief description of this edition's theme..." style="min-height: 60px;"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Content Sections</div>
+          <div class="section-checklist">
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">Featured Article</span>
+            </div>
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">Venue Spotlight</span>
+            </div>
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">Host Profile</span>
+            </div>
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">From the Edit</span>
+            </div>
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">Upcoming Retreats</span>
+            </div>
+            <div class="checklist-item">
+              <div class="checklist-checkbox"></div>
+              <span class="checklist-label">Founder's Note</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Target Segments</div>
+          <div class="form-group">
+            <select class="form-select">
+              <option>All Subscribers (2,847)</option>
+              <option>Venue Owners Only (847)</option>
+              <option>Retreat Hosts Only (1,245)</option>
+              <option>Wellness Travelers Only (755)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-footer-left">
+          <button class="btn btn-secondary">Save as Draft</button>
+        </div>
+        <div>
+          <button class="btn btn-secondary">Open in Beehiiv</button>
+          <button class="btn btn-journal">Create Edition</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tabs
+      const tabs = document.querySelectorAll('.tabs-container .tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.classList.remove('active'));
+          document.getElementById(this.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Modal
+      const modal = document.getElementById('modalOverlay');
+      const closeBtn = document.getElementById('closeModal');
+      const newEditionBtn = document.querySelector('.header-actions .btn-journal');
+
+      newEditionBtn.addEventListener('click', function() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+        }
+      });
+
+      // Checklist items
+      const checklistItems = document.querySelectorAll('.checklist-checkbox');
+      checklistItems.forEach(item => {
+        item.addEventListener('click', function() {
+          this.classList.toggle('checked');
+          this.nextElementSibling.classList.toggle('checked');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

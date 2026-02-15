@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+      --journal: #8B5A8B;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav { padding: 24px 0; }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-item.active { background-color: rgba(255,255,255,0.1); color: var(--white); border-right: 3px solid var(--white); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-title { font-size: 32px; }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary { background-color: var(--text); color: var(--white); }
+    .btn-primary:hover { background-color: #4a4a4a; }
+    .btn-secondary { background-color: var(--white); color: var(--text); border: 1px solid rgba(184,184,184,0.4); }
+    .btn-secondary:hover { border-color: var(--text); }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-success { background-color: var(--success); color: var(--white); }
+    .btn-danger { background-color: var(--error); color: var(--white); }
+
+    /* Settings Layout */
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 32px;
+    }
+
+    /* Settings Nav */
+    .settings-nav {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      padding: 16px 0;
+      height: fit-content;
+      position: sticky;
+      top: 32px;
+    }
+
+    .settings-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .settings-nav-item:hover {
+      background-color: var(--secondary-bg);
+      color: var(--text);
+    }
+
+    .settings-nav-item.active {
+      background-color: var(--secondary-bg);
+      color: var(--text);
+      border-left-color: var(--text);
+      font-weight: 500;
+    }
+
+    .settings-nav-section {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      padding: 16px 20px 8px;
+      margin-top: 8px;
+    }
+
+    .settings-nav-section:first-child { margin-top: 0; }
+
+    /* Settings Content */
+    .settings-content {
+      display: none;
+    }
+
+    .settings-content.active {
+      display: block;
+    }
+
+    /* Settings Card */
+    .settings-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      margin-bottom: 24px;
+    }
+
+    .settings-card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .settings-card-desc {
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .settings-card-body {
+      padding: 24px;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    .form-input.mono {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      background-color: var(--secondary-bg);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-info {
+      flex: 1;
+    }
+
+    .toggle-label {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .toggle-desc {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .toggle-switch {
+      width: 48px;
+      height: 26px;
+      background-color: var(--accent);
+      border-radius: 13px;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .toggle-switch.active {
+      background-color: var(--success);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      background-color: var(--white);
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(22px);
+    }
+
+    /* Integration Cards */
+    .integrations-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .integration-card {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      transition: all 0.2s;
+    }
+
+    .integration-card:hover {
+      background-color: #EDE8E4;
+    }
+
+    .integration-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background-color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .integration-info {
+      flex: 1;
+    }
+
+    .integration-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .integration-status {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .integration-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .integration-dot.connected { background-color: var(--success); }
+    .integration-dot.disconnected { background-color: var(--accent); }
+    .integration-dot.error { background-color: var(--error); }
+
+    .integration-action {
+      margin-top: 12px;
+    }
+
+    /* API Key Display */
+    .api-key-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--secondary-bg);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+    }
+
+    .api-key-value {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .api-key-action {
+      color: var(--info);
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* Plan Cards */
+    .plan-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .plan-card {
+      background-color: var(--secondary-bg);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .plan-card.featured {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    .plan-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .plan-price {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .plan-price span {
+      font-size: 14px;
+      font-weight: 400;
+      opacity: 0.7;
+    }
+
+    .plan-venues {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 12px;
+    }
+
+    .plan-commission {
+      font-size: 11px;
+      padding: 4px 8px;
+      background-color: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .plan-card:not(.featured) .plan-commission {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    /* Commission Table */
+    .commission-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .commission-table th,
+    .commission-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .commission-table th {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+    }
+
+    .commission-table td {
+      font-size: 13px;
+    }
+
+    .commission-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .commission-input {
+      width: 80px;
+      padding: 6px 10px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Color Swatches */
+    .color-swatches {
+      display: flex;
+      gap: 12px;
+    }
+
+    .color-swatch {
+      text-align: center;
+    }
+
+    .swatch-preview {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .swatch-name {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .swatch-hex {
+      font-size: 10px;
+      color: var(--accent);
+      font-family: 'Monaco', 'Consolas', monospace;
+    }
+
+    /* Alert Boxes */
+    .alert-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .alert-box.info {
+      background-color: #E8EFF9;
+      border: 1px solid var(--info);
+      color: var(--info);
+    }
+
+    .alert-box.success {
+      background-color: #E8F4EA;
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .alert-box.warning {
+      background-color: #FEF9E7;
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+
+    .alert-box.danger {
+      background-color: #FCE8E8;
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    /* Danger Zone */
+    .danger-zone {
+      border-color: var(--error);
+    }
+
+    .danger-zone .settings-card-header {
+      background-color: #FCE8E8;
+    }
+
+    .danger-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .danger-item:last-child { border-bottom: none; }
+
+    .danger-info h4 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .danger-info p {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Backup History */
+    .backup-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .backup-item:last-child { margin-bottom: 0; }
+
+    .backup-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .backup-icon {
+      width: 36px;
+      height: 36px;
+      background-color: var(--white);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .backup-name {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .backup-meta {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Notification Preferences */
+    .notification-group {
+      margin-bottom: 24px;
+    }
+
+    .notification-group:last-child { margin-bottom: 0; }
+
+    .notification-group-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    /* Settings Footer */
+    .settings-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+      margin-top: 20px;
+    }
+
+    /* Status Indicator */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-indicator.live {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .status-indicator.test {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            Dashboard
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            All Venues
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Platform Users</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Venue Owners
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Retreat Hosts
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Payments
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Subscriptions
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sanctum Journal
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Wellness Edit
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Users & Team
+          </a>
+          <a class="nav-item active" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">Settings</h1>
+        </div>
+        <div class="header-actions">
+          <span class="status-indicator live">
+            <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
+            Production Environment
+          </span>
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Settings Navigation -->
+        <nav class="settings-nav">
+          <div class="settings-nav-section">General</div>
+          <div class="settings-nav-item active" data-section="general">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            Business Info
+          </div>
+          <div class="settings-nav-item" data-section="branding">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Branding
+          </div>
+          
+          <div class="settings-nav-section">Integrations</div>
+          <div class="settings-nav-item" data-section="integrations">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            Connected Apps
+          </div>
+          <div class="settings-nav-item" data-section="api">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+            API Keys
+          </div>
+
+          <div class="settings-nav-section">Payments</div>
+          <div class="settings-nav-item" data-section="stripe">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Stripe Connect
+          </div>
+          <div class="settings-nav-item" data-section="pricing">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Pricing & Commission
+          </div>
+
+          <div class="settings-nav-section">Notifications</div>
+          <div class="settings-nav-item" data-section="email">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email Settings
+          </div>
+          <div class="settings-nav-item" data-section="notifications">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Notifications
+          </div>
+
+          <div class="settings-nav-section">System</div>
+          <div class="settings-nav-item" data-section="security">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Security
+          </div>
+          <div class="settings-nav-item" data-section="backup">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Backup & Export
+          </div>
+          <div class="settings-nav-item" data-section="danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Danger Zone
+          </div>
+        </nav>
+
+        <!-- Settings Content Panels -->
+        <div class="settings-panels">
+          <!-- General / Business Info -->
+          <div id="general" class="settings-content active">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Business Information</div>
+                  <div class="settings-card-desc">Core business details used across the platform</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label class="form-label">Business Name</label>
+                  <input type="text" class="form-input" value="The Global Sanctum Pty Ltd">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">ABN</label>
+                    <input type="text" class="form-input" value="12 345 678 901">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">ACN</label>
+                    <input type="text" class="form-input" value="123 456 789">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Business Address</label>
+                  <input type="text" class="form-input" value="Brisbane, Queensland, Australia">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Primary Email</label>
+                    <input type="email" class="form-input" value="hello@theglobalsanctum.com">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Support Email</label>
+                    <input type="email" class="form-input" value="support@theglobalsanctum.com">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" class="form-input" value="0434 777 032">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Timezone</label>
+                    <select class="form-select">
+                      <option selected>Australia/Brisbane (AEST)</option>
+                      <option>Australia/Sydney (AEDT)</option>
+                      <option>Australia/Melbourne (AEDT)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="settings-footer">
+                  <button class="btn btn-secondary">Cancel</button>
+                  <button class="btn btn-primary">Save Changes</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Website URLs</div>
+                  <div class="settings-card-desc">Primary website and domain configuration</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label class="form-label">Primary Domain</label>
+                  <input type="text" class="form-input" value="www.theglobalsanctum.com">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Webflow Staging</label>
+                    <input type="text" class="form-input mono" value="tgs-staging.webflow.io" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Portal URL</label>
+                    <input type="text" class="form-input mono" value="portal.theglobalsanctum.com" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Branding -->
+          <div id="branding" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Brand Colors</div>
+                  <div class="settings-card-desc">Primary color palette for TGS brand</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="color-swatches">
+                  <div class="color-swatch">
+                    <div class="swatch-preview" style="background-color: #F5F0E5;"></div>
+                    <div class="swatch-name">Sacred Sand</div>
+                    <div class="swatch-hex">#F5F0E5</div>
+                  </div>
+                  <div class="color-swatch">
+                    <div class="swatch-preview" style="background-color: #F9F6F0;"></div>
+                    <div class="swatch-name">Warm Linen</div>
+                    <div class="swatch-hex">#F9F6F0</div>
+                  </div>
+                  <div class="color-swatch">
+                    <div class="swatch-preview" style="background-color: #7A644F;"></div>
+                    <div class="swatch-name">Canyon Clay</div>
+                    <div class="swatch-hex">#7A644F</div>
+                  </div>
+                  <div class="color-swatch">
+                    <div class="swatch-preview" style="background-color: #313131;"></div>
+                    <div class="swatch-name">Charcoal</div>
+                    <div class="swatch-hex">#313131</div>
+                  </div>
+                  <div class="color-swatch">
+                    <div class="swatch-preview" style="background-color: #3B5E4C;"></div>
+                    <div class="swatch-name">Mineral Green</div>
+                    <div class="swatch-hex">#3B5E4C</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Typography</div>
+                  <div class="settings-card-desc">Font families used across TGS properties</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Headline Font</label>
+                    <input type="text" class="form-input" value="Cormorant Garamond" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Body Font</label>
+                    <input type="text" class="form-input" value="Montserrat" readonly>
+                  </div>
+                </div>
+                <div class="form-hint">Typography is managed in Webflow. Contact developer to make changes.</div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Brand Assets</div>
+                  <div class="settings-card-desc">Logos and visual identity files</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Primary Logo (Dark)</label>
+                    <div class="api-key-display">
+                      <span class="api-key-value">/assets/logo-dark.svg</span>
+                      <span class="api-key-action">Download</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Primary Logo (Light)</label>
+                    <div class="api-key-display">
+                      <span class="api-key-value">/assets/logo-light.svg</span>
+                      <span class="api-key-action">Download</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Integrations -->
+          <div id="integrations" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Connected Applications</div>
+                  <div class="settings-card-desc">Third-party services integrated with TGS</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="integrations-grid">
+                  <div class="integration-card">
+                    <div class="integration-icon">🔷</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Webflow</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        Connected
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">📊</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Airtable</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        Connected • 28 tables
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">💳</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Stripe Connect</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        Live Mode
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Dashboard</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">⚡</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Make.com</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        12 active scenarios
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">🐝</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Beehiiv</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        2,847 subscribers
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">📧</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Brevo</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        Transactional emails
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">🔐</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Memberstack</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        User authentication
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="integration-card">
+                    <div class="integration-icon">📝</div>
+                    <div class="integration-info">
+                      <div class="integration-name">Typeform</div>
+                      <div class="integration-status">
+                        <div class="integration-dot connected"></div>
+                        Booking forms
+                      </div>
+                      <div class="integration-action">
+                        <button class="btn btn-small btn-secondary">Configure</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- API Keys -->
+          <div id="api" class="settings-content">
+            <div class="alert-box warning">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div>
+                <strong>Keep API keys secure.</strong> Never share these keys publicly or commit them to version control.
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">API Keys</div>
+                  <div class="settings-card-desc">Authentication keys for third-party integrations</div>
+                </div>
+                <button class="btn btn-small btn-primary">+ Generate New Key</button>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label class="form-label">Airtable API Key</label>
+                  <div class="api-key-display">
+                    <span class="api-key-value">pat••••••••••••••••••••••Xk9</span>
+                    <span class="api-key-action">Show</span>
+                    <span class="api-key-action">Copy</span>
+                  </div>
+                  <div class="form-hint">Last used: Today at 9:42 AM</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Stripe Secret Key (Live)</label>
+                  <div class="api-key-display">
+                    <span class="api-key-value">sk_live_••••••••••••••••••••••••</span>
+                    <span class="api-key-action">Show</span>
+                    <span class="api-key-action">Copy</span>
+                  </div>
+                  <div class="form-hint">Live mode • Last used: Today at 8:15 AM</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Beehiiv API Key</label>
+                  <div class="api-key-display">
+                    <span class="api-key-value">bh_••••••••••••••••••••••••••</span>
+                    <span class="api-key-action">Show</span>
+                    <span class="api-key-action">Copy</span>
+                  </div>
+                  <div class="form-hint">Last synced: 5 minutes ago</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Brevo API Key</label>
+                  <div class="api-key-display">
+                    <span class="api-key-value">xkeysib-••••••••••••••••••••</span>
+                    <span class="api-key-action">Show</span>
+                    <span class="api-key-action">Copy</span>
+                  </div>
+                  <div class="form-hint">Last used: Yesterday at 4:30 PM</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Make.com Webhook URL</label>
+                  <div class="api-key-display">
+                    <span class="api-key-value">https://hook.make.com/••••••••</span>
+                    <span class="api-key-action">Show</span>
+                    <span class="api-key-action">Copy</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stripe Connect -->
+          <div id="stripe" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Stripe Connect Configuration</div>
+                  <div class="settings-card-desc">Payment processing and venue payouts</div>
+                </div>
+                <span class="status-indicator live">
+                  <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
+                  Live Mode
+                </span>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Account ID</label>
+                    <input type="text" class="form-input mono" value="acct_1Ox7kL9..." readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Account Status</label>
+                    <input type="text" class="form-input" value="Verified ✓" readonly>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Default Currency</label>
+                    <select class="form-select">
+                      <option selected>AUD - Australian Dollar</option>
+                      <option>USD - US Dollar</option>
+                      <option>EUR - Euro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Payout Schedule</label>
+                    <select class="form-select">
+                      <option selected>Weekly (Wednesdays)</option>
+                      <option>Daily</option>
+                      <option>Monthly</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Automatic Payouts</div>
+                    <div class="toggle-desc">Automatically transfer funds to venue connected accounts</div>
+                  </div>
+                  <div class="toggle-switch active"></div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Hold Funds for Disputes</div>
+                    <div class="toggle-desc">Retain funds for 7 days before releasing to venues</div>
+                  </div>
+                  <div class="toggle-switch active"></div>
+                </div>
+                <div class="settings-footer">
+                  <button class="btn btn-secondary">Open Stripe Dashboard</button>
+                  <button class="btn btn-primary">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing & Commission -->
+          <div id="pricing" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Subscription Plans</div>
+                  <div class="settings-card-desc">Venue subscription tiers and pricing</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="plan-grid">
+                  <div class="plan-card">
+                    <div class="plan-name">Basic</div>
+                    <div class="plan-price">$79<span>/mo</span></div>
+                    <div class="plan-venues">24 venues</div>
+                    <div class="plan-commission">7% commission</div>
+                  </div>
+                  <div class="plan-card">
+                    <div class="plan-name">Standard</div>
+                    <div class="plan-price">$149<span>/mo</span></div>
+                    <div class="plan-venues">38 venues</div>
+                    <div class="plan-commission">7% commission</div>
+                  </div>
+                  <div class="plan-card featured">
+                    <div class="plan-name">Featured</div>
+                    <div class="plan-price">$249<span>/mo</span></div>
+                    <div class="plan-venues">22 venues</div>
+                    <div class="plan-commission">5% commission</div>
+                  </div>
+                  <div class="plan-card">
+                    <div class="plan-name">Premium</div>
+                    <div class="plan-price">$399<span>/mo</span></div>
+                    <div class="plan-venues">12 venues</div>
+                    <div class="plan-commission">5% commission</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Commission Rates</div>
+                  <div class="settings-card-desc">Transaction fees by venue type and tier</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <table class="commission-table">
+                  <thead>
+                    <tr>
+                      <th>Venue Type</th>
+                      <th>Basic/Standard</th>
+                      <th>Featured/Premium</th>
+                      <th>Founder</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Retreat Venues</strong></td>
+                      <td><input type="text" class="commission-input" value="7%"></td>
+                      <td><input type="text" class="commission-input" value="5%"></td>
+                      <td><input type="text" class="commission-input" value="5%"></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Wellness Venues</strong></td>
+                      <td><input type="text" class="commission-input" value="15%"></td>
+                      <td><input type="text" class="commission-input" value="10%"></td>
+                      <td><input type="text" class="commission-input" value="10%"></td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="form-hint" style="margin-top: 16px;">+ 3% Stripe processing fee applies to all transactions</div>
+                <div class="settings-footer">
+                  <button class="btn btn-secondary">Cancel</button>
+                  <button class="btn btn-primary">Save Changes</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Founder Discounts</div>
+                  <div class="settings-card-desc">Special pricing for founding members</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Super Founder Discount</label>
+                    <input type="text" class="form-input" value="60%">
+                    <div class="form-hint">8 venues • Lifetime discount</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Founder Discount</label>
+                    <input type="text" class="form-input" value="40%">
+                    <div class="form-hint">7 venues • Lifetime discount</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Settings -->
+          <div id="email" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Email Configuration</div>
+                  <div class="settings-card-desc">Transactional email settings via Brevo</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">From Name</label>
+                    <input type="text" class="form-input" value="The Global Sanctum">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">From Email</label>
+                    <input type="email" class="form-input" value="hello@theglobalsanctum.com">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Reply-To Email</label>
+                  <input type="email" class="form-input" value="support@theglobalsanctum.com">
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Email Templates</div>
+                  <div class="settings-card-desc">Automated email templates</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Booking Confirmation</div>
+                    <div class="toggle-desc">Sent to retreat host and venue owner on booking</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Edit Template</button>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Enquiry Notification</div>
+                    <div class="toggle-desc">Sent to venue owner when new enquiry received</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Edit Template</button>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Payment Receipt</div>
+                    <div class="toggle-desc">Sent to host after successful payment</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Edit Template</button>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Payout Notification</div>
+                    <div class="toggle-desc">Sent to venue owner when payout processed</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Edit Template</button>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Welcome Email</div>
+                    <div class="toggle-desc">Sent to new venue owners on signup</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Edit Template</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div id="notifications" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Admin Notifications</div>
+                  <div class="settings-card-desc">Alerts sent to TGS team members</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="notification-group">
+                  <div class="notification-group-title">Bookings</div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">New Booking</div>
+                      <div class="toggle-desc">Get notified when a new booking is confirmed</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">Booking Cancelled</div>
+                      <div class="toggle-desc">Get notified when a booking is cancelled</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">High-Value Booking</div>
+                      <div class="toggle-desc">Notify when booking exceeds $10,000</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                </div>
+
+                <div class="notification-group">
+                  <div class="notification-group-title">Venues</div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">New Venue Signup</div>
+                      <div class="toggle-desc">Get notified when a venue owner signs up</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">Subscription Cancelled</div>
+                      <div class="toggle-desc">Get notified when a venue cancels subscription</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                </div>
+
+                <div class="notification-group">
+                  <div class="notification-group-title">Payments</div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">Payment Failed</div>
+                      <div class="toggle-desc">Get notified when a payment fails</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <div class="toggle-label">Refund Requested</div>
+                      <div class="toggle-desc">Get notified when a refund is requested</div>
+                    </div>
+                    <div class="toggle-switch active"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security -->
+          <div id="security" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Security Settings</div>
+                  <div class="settings-card-desc">Account security and access controls</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Two-Factor Authentication</div>
+                    <div class="toggle-desc">Require 2FA for all admin accounts</div>
+                  </div>
+                  <div class="toggle-switch active"></div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Session Timeout</div>
+                    <div class="toggle-desc">Automatically log out after 24 hours of inactivity</div>
+                  </div>
+                  <div class="toggle-switch active"></div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">IP Allowlist</div>
+                    <div class="toggle-desc">Restrict portal access to specific IP addresses</div>
+                  </div>
+                  <div class="toggle-switch"></div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">Login Notifications</div>
+                    <div class="toggle-desc">Email alert on new device login</div>
+                  </div>
+                  <div class="toggle-switch active"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Active Sessions</div>
+                  <div class="settings-card-desc">Devices currently logged into this account</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">MacBook Pro • Brisbane, AU</div>
+                    <div class="toggle-desc">Chrome • Current session</div>
+                  </div>
+                  <span style="color: var(--success); font-size: 12px;">Active now</span>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <div class="toggle-label">iPhone 15 Pro • Brisbane, AU</div>
+                    <div class="toggle-desc">Safari • Last active 2 hours ago</div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Revoke</button>
+                </div>
+                <div class="settings-footer">
+                  <button class="btn btn-danger">Sign Out All Devices</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backup & Export -->
+          <div id="backup" class="settings-content">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Data Export</div>
+                  <div class="settings-card-desc">Download platform data for backup or analysis</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label class="form-label">Export Type</label>
+                  <select class="form-select">
+                    <option>Full Database Export</option>
+                    <option>Venues Only</option>
+                    <option>Bookings Only</option>
+                    <option>Users Only</option>
+                    <option>Financial Data</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Format</label>
+                    <select class="form-select">
+                      <option>CSV</option>
+                      <option>JSON</option>
+                      <option>Excel (.xlsx)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select">
+                      <option>All Time</option>
+                      <option>Last 30 Days</option>
+                      <option>Last 90 Days</option>
+                      <option>This Year</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn btn-primary">Generate Export</button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title">Recent Exports</div>
+                  <div class="settings-card-desc">Previously generated data exports</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="backup-item">
+                  <div class="backup-info">
+                    <div class="backup-icon">📊</div>
+                    <div>
+                      <div class="backup-name">full-export-2026-02-10.csv</div>
+                      <div class="backup-meta">Full Database • 2.4 MB • Feb 10, 2026</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Download</button>
+                </div>
+                <div class="backup-item">
+                  <div class="backup-info">
+                    <div class="backup-icon">🏠</div>
+                    <div>
+                      <div class="backup-name">venues-export-2026-02-01.xlsx</div>
+                      <div class="backup-meta">Venues • 1.8 MB • Feb 1, 2026</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Download</button>
+                </div>
+                <div class="backup-item">
+                  <div class="backup-info">
+                    <div class="backup-icon">💰</div>
+                    <div>
+                      <div class="backup-name">financial-jan-2026.csv</div>
+                      <div class="backup-meta">Financial • 450 KB • Jan 31, 2026</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-small btn-secondary">Download</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div id="danger" class="settings-content">
+            <div class="alert-box danger">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div>
+                <strong>Warning:</strong> Actions in this section are destructive and may be irreversible. Proceed with caution.
+              </div>
+            </div>
+
+            <div class="settings-card danger-zone">
+              <div class="settings-card-header">
+                <div>
+                  <div class="settings-card-title" style="color: var(--error);">Danger Zone</div>
+                  <div class="settings-card-desc">Irreversible and destructive actions</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="danger-item">
+                  <div class="danger-info">
+                    <h4>Clear Test Data</h4>
+                    <p>Remove all test bookings, users, and transactions from staging environment</p>
+                  </div>
+                  <button class="btn btn-danger btn-small">Clear Test Data</button>
+                </div>
+                <div class="danger-item">
+                  <div class="danger-info">
+                    <h4>Reset Analytics</h4>
+                    <p>Clear all analytics data and start fresh. Historical data will be lost.</p>
+                  </div>
+                  <button class="btn btn-danger btn-small">Reset Analytics</button>
+                </div>
+                <div class="danger-item">
+                  <div class="danger-info">
+                    <h4>Purge Cache</h4>
+                    <p>Clear all cached data across Webflow, Airtable, and CDN</p>
+                  </div>
+                  <button class="btn btn-danger btn-small">Purge Cache</button>
+                </div>
+                <div class="danger-item">
+                  <div class="danger-info">
+                    <h4>Emergency Maintenance Mode</h4>
+                    <p>Take the entire platform offline for emergency maintenance</p>
+                  </div>
+                  <button class="btn btn-danger btn-small">Enable Maintenance</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Settings navigation
+      const navItems = document.querySelectorAll('.settings-nav-item');
+      const contentPanels = document.querySelectorAll('.settings-content');
+      
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const sectionId = this.dataset.section;
+          
+          navItems.forEach(nav => nav.classList.remove('active'));
+          this.classList.add('active');
+          
+          contentPanels.forEach(panel => panel.classList.remove('active'));
+          document.getElementById(sectionId).classList.add('active');
+        });
+      });
+
+      // Toggle switches
+      const toggles = document.querySelectorAll('.toggle-switch');
+      toggles.forEach(toggle => {
+        toggle.addEventListener('click', function() {
+          this.classList.toggle('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

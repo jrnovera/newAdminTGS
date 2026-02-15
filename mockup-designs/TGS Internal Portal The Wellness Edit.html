@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - The Wellness Edit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav { padding: 24px 0; }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-item.active { background-color: rgba(255,255,255,0.1); color: var(--white); border-right: 3px solid var(--white); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-title { font-size: 32px; }
+
+    .page-badge {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #E8F4EA, #FEF9E7);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--success);
+    }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary { background-color: var(--text); color: var(--white); }
+    .btn-primary:hover { background-color: #4a4a4a; }
+    .btn-secondary { background-color: var(--white); color: var(--text); border: 1px solid rgba(184,184,184,0.4); }
+    .btn-secondary:hover { border-color: var(--text); }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-success { background-color: var(--success); color: var(--white); }
+
+    /* Performance Cards */
+    .performance-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .performance-card {
+      background-color: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .performance-card.highlight {
+      background: linear-gradient(135deg, var(--text) 0%, #4a4a4a 100%);
+      color: var(--white);
+    }
+
+    .performance-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    .performance-card-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .performance-card-change {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .performance-card-change.positive { color: var(--success); }
+    .performance-card.highlight .performance-card-change.positive { color: #90EE90; }
+
+    /* Stats Row */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(184,184,184,0.2);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.info { color: var(--info); }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(184,184,184,0.3);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+    .tab-count {
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .tab.active .tab-count { background-color: var(--text); color: var(--white); }
+
+    .tab-count.draft { background-color: #FEF9E7; color: var(--warning); }
+    .tab-count.scheduled { background-color: #E8EFF9; color: var(--info); }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--white);
+      min-width: 150px;
+    }
+
+    .search-input {
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      width: 280px;
+      background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    }
+
+    .clear-filters {
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* Data Table */
+    .table-container {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .data-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .data-table tbody tr:hover { background-color: var(--secondary-bg); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Article Cell */
+    .article-cell {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .article-thumbnail {
+      width: 80px;
+      height: 56px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #E8F4EA, #FEF9E7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .article-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .article-thumbnail-placeholder {
+      font-size: 20px;
+      color: var(--accent);
+    }
+
+    .article-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .article-excerpt {
+      font-size: 12px;
+      color: var(--accent);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.published { background-color: #E8F4EA; color: var(--success); }
+    .status-badge.draft { background-color: #FEF9E7; color: var(--warning); }
+    .status-badge.scheduled { background-color: #E8EFF9; color: var(--info); }
+    .status-badge.archived { background-color: var(--secondary-bg); color: var(--accent); }
+
+    /* Category Badge */
+    .category-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      background-color: var(--secondary-bg);
+      color: var(--text);
+    }
+
+    .category-badge.destinations { background-color: #E8EFF9; color: var(--info); }
+    .category-badge.wellness { background-color: #E8F4EA; color: var(--success); }
+    .category-badge.experiences { background-color: #F3E8F9; color: #8B5A8B; }
+    .category-badge.architecture { background-color: #FEF9E7; color: var(--warning); }
+    .category-badge.interviews { background-color: #FCE8EC; color: var(--error); }
+    .category-badge.guides { background-color: var(--secondary-bg); color: var(--text); }
+
+    /* Author Cell */
+    .author-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .author-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--info), var(--success));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 10px;
+      color: var(--white);
+    }
+
+    .author-name { font-size: 12px; }
+
+    /* Metrics */
+    .metrics-cell {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    /* Actions */
+    .table-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Pagination */
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .pagination-info { font-size: 13px; color: var(--accent); }
+
+    .pagination-controls { display: flex; gap: 8px; }
+
+    .pagination-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-btn:hover { border-color: var(--text); }
+    .pagination-btn.active { background-color: var(--text); color: var(--white); border-color: var(--text); }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Content Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .calendar-nav-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(184,184,184,0.3);
+      background-color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-nav-btn:hover { border-color: var(--text); }
+
+    .calendar-month {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background-color: rgba(184,184,184,0.2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .calendar-day-header {
+      background-color: var(--secondary-bg);
+      padding: 12px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .calendar-day {
+      background-color: var(--white);
+      min-height: 100px;
+      padding: 8px;
+    }
+
+    .calendar-day.other-month {
+      background-color: var(--secondary-bg);
+      opacity: 0.5;
+    }
+
+    .calendar-day.today {
+      background-color: #E8F4EA;
+    }
+
+    .calendar-date {
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .calendar-event {
+      font-size: 10px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-event.published { background-color: #E8F4EA; color: var(--success); }
+    .calendar-event.scheduled { background-color: #E8EFF9; color: var(--info); }
+    .calendar-event.draft { background-color: #FEF9E7; color: var(--warning); }
+
+    /* Category Cards */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .category-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .category-card:hover {
+      border-color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .category-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .category-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .category-icon.destinations { background-color: #E8EFF9; }
+    .category-icon.wellness { background-color: #E8F4EA; }
+    .category-icon.experiences { background-color: #F3E8F9; }
+    .category-icon.architecture { background-color: #FEF9E7; }
+    .category-icon.interviews { background-color: #FCE8EC; }
+    .category-icon.guides { background-color: var(--secondary-bg); }
+
+    .category-card-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .category-card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .category-card-desc {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .category-card-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .category-card-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Author Grid */
+    .author-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .author-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .author-card:hover {
+      border-color: var(--text);
+    }
+
+    .author-card-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--info), var(--success));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 20px;
+      color: var(--white);
+      margin: 0 auto 12px;
+    }
+
+    .author-card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .author-card-role {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .author-card-stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .author-stat {
+      text-align: center;
+    }
+
+    .author-stat-value {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .author-stat-label {
+      font-size: 10px;
+      color: var(--accent);
+    }
+
+    /* SEO Score */
+    .seo-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .seo-bar {
+      width: 60px;
+      height: 6px;
+      background-color: var(--secondary-bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .seo-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .seo-bar-fill.excellent { background-color: var(--success); }
+    .seo-bar-fill.good { background-color: #8BC34A; }
+    .seo-bar-fill.average { background-color: var(--warning); }
+    .seo-bar-fill.poor { background-color: var(--error); }
+
+    .seo-value {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .seo-value.excellent { color: var(--success); }
+    .seo-value.good { color: #8BC34A; }
+    .seo-value.average { color: var(--warning); }
+    .seo-value.poor { color: var(--error); }
+
+    /* Quick Actions Bar */
+    .quick-actions-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .quick-action {
+      flex: 1;
+      background-color: var(--white);
+      border: 1px solid rgba(184,184,184,0.2);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-action:hover {
+      border-color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .quick-action-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quick-action-icon.write { background-color: #E8F4EA; color: var(--success); }
+    .quick-action-icon.upload { background-color: #E8EFF9; color: var(--info); }
+    .quick-action-icon.schedule { background-color: #FEF9E7; color: var(--warning); }
+    .quick-action-icon.analytics { background-color: #F3E8F9; color: #8B5A8B; }
+
+    .quick-action-text {
+      flex: 1;
+    }
+
+    .quick-action-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .quick-action-desc {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .btn-close:hover { background-color: var(--secondary-bg); }
+
+    .modal-body { padding: 24px; }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section:last-child { margin-bottom: 0; }
+
+    .modal-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .modal-footer-left {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Top Performers */
+    .top-articles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .top-article-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .top-article-image {
+      height: 120px;
+      background: linear-gradient(135deg, #E8F4EA, #FEF9E7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .top-article-content {
+      padding: 16px;
+    }
+
+    .top-article-rank {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .top-article-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .top-article-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Alert */
+    .alert-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .alert-box.info {
+      background-color: #E8EFF9;
+      border: 1px solid var(--info);
+      color: var(--info);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            Dashboard
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            All Venues
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Users</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Venue Owners
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Retreat Hosts
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Bookings</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            All Bookings
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Payments
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Subscriptions
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sanctum Journal
+          </a>
+          <a class="nav-item active" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Wellness Edit
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">The Wellness Edit</h1>
+          <span class="page-badge">Editorial Blog</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            View Live Site
+          </button>
+          <button class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            New Article
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions-bar">
+        <div class="quick-action">
+          <div class="quick-action-icon write">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <div class="quick-action-title">Write New Article</div>
+            <div class="quick-action-desc">Start creating editorial content</div>
+          </div>
+        </div>
+        <div class="quick-action">
+          <div class="quick-action-icon upload">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <div class="quick-action-title">Upload Media</div>
+            <div class="quick-action-desc">Add images to media library</div>
+          </div>
+        </div>
+        <div class="quick-action">
+          <div class="quick-action-icon schedule">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <div class="quick-action-title">Content Calendar</div>
+            <div class="quick-action-desc">Plan upcoming publications</div>
+          </div>
+        </div>
+        <div class="quick-action">
+          <div class="quick-action-icon analytics">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <div class="quick-action-title">View Analytics</div>
+            <div class="quick-action-desc">Track content performance</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance Cards -->
+      <div class="performance-cards">
+        <div class="performance-card highlight">
+          <div class="performance-card-label">Total Page Views (Feb)</div>
+          <div class="performance-card-value">24,850</div>
+          <div class="performance-card-change positive">↑ 32% from Jan</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Unique Visitors</div>
+          <div class="performance-card-value">8,420</div>
+          <div class="performance-card-change positive">↑ 28% from Jan</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Avg Time on Page</div>
+          <div class="performance-card-value">4:32</div>
+          <div class="performance-card-change positive">↑ 45 sec</div>
+        </div>
+        <div class="performance-card">
+          <div class="performance-card-label">Journal Sign-ups</div>
+          <div class="performance-card-value">342</div>
+          <div class="performance-card-change positive">↑ 18% conversion</div>
+        </div>
+      </div>
+
+      <!-- Content Stats -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value">47</div>
+          <div class="stat-label">Total Articles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">38</div>
+          <div class="stat-label">Published</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warning">5</div>
+          <div class="stat-label">Drafts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value info">4</div>
+          <div class="stat-label">Scheduled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">6</div>
+          <div class="stat-label">Categories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">4</div>
+          <div class="stat-label">Authors</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <div class="tab active" data-tab="all-articles">All Articles <span class="tab-count">47</span></div>
+        <div class="tab" data-tab="published">Published <span class="tab-count">38</span></div>
+        <div class="tab" data-tab="drafts">Drafts <span class="tab-count draft">5</span></div>
+        <div class="tab" data-tab="scheduled">Scheduled <span class="tab-count scheduled">4</span></div>
+        <div class="tab" data-tab="calendar">Calendar</div>
+        <div class="tab" data-tab="categories">Categories</div>
+        <div class="tab" data-tab="authors">Authors</div>
+      </div>
+
+      <!-- All Articles Tab -->
+      <div id="all-articles" class="tab-content active">
+        <!-- Top Performers -->
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 18px; margin-bottom: 16px;">Top Performing Articles</h3>
+          <div class="top-articles">
+            <div class="top-article-card">
+              <div class="top-article-image">🏔️</div>
+              <div class="top-article-content">
+                <div class="top-article-rank">#1 This Month</div>
+                <div class="top-article-title">The Art of the Japanese Onsen</div>
+                <div class="top-article-stats">
+                  <span>👁️ 3,240 views</span>
+                  <span>⏱️ 6:12 avg</span>
+                </div>
+              </div>
+            </div>
+            <div class="top-article-card">
+              <div class="top-article-image">🧘</div>
+              <div class="top-article-content">
+                <div class="top-article-rank">#2 This Month</div>
+                <div class="top-article-title">Finding Stillness in Bali's Sacred Valleys</div>
+                <div class="top-article-stats">
+                  <span>👁️ 2,890 views</span>
+                  <span>⏱️ 5:45 avg</span>
+                </div>
+              </div>
+            </div>
+            <div class="top-article-card">
+              <div class="top-article-image">🌿</div>
+              <div class="top-article-content">
+                <div class="top-article-rank">#3 This Month</div>
+                <div class="top-article-title">Wellness Architecture: Designing for Healing</div>
+                <div class="top-article-stats">
+                  <span>👁️ 2,450 views</span>
+                  <span>⏱️ 7:20 avg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Categories</option>
+            <option>Destinations</option>
+            <option>Wellness Practices</option>
+            <option>Experiences</option>
+            <option>Architecture</option>
+            <option>Interviews</option>
+            <option>Guides</option>
+          </select>
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Published</option>
+            <option>Draft</option>
+            <option>Scheduled</option>
+            <option>Archived</option>
+          </select>
+          <select class="filter-select">
+            <option>All Authors</option>
+            <option>Kate Morrison</option>
+            <option>Sarah Chen</option>
+            <option>James Liu</option>
+            <option>Guest Writers</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search articles...">
+          <span class="clear-filters">Clear filters</span>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 40%;">Article</th>
+                <th>Category</th>
+                <th>Author</th>
+                <th>Status</th>
+                <th>Views</th>
+                <th>SEO</th>
+                <th>Published</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">🏔️</div>
+                    <div>
+                      <div class="article-title">The Art of the Japanese Onsen: A Journey Through Tradition</div>
+                      <div class="article-excerpt">Exploring the ancient rituals and modern interpretations of Japan's sacred bathing culture...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge destinations">Destinations</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">KM</div>
+                    <span class="author-name">Kate Morrison</span>
+                  </div>
+                </td>
+                <td><span class="status-badge published">Published</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">3,240</div>
+                    <div class="metric-label">views</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill excellent" style="width: 92%;"></div></div>
+                    <span class="seo-value excellent">92</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Jan 15, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">28 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">🧘</div>
+                    <div>
+                      <div class="article-title">Finding Stillness in Bali's Sacred Valleys</div>
+                      <div class="article-excerpt">Where ancient spirituality meets modern wellness in Ubud's hidden retreats...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge experiences">Experiences</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">SC</div>
+                    <span class="author-name">Sarah Chen</span>
+                  </div>
+                </td>
+                <td><span class="status-badge published">Published</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">2,890</div>
+                    <div class="metric-label">views</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill good" style="width: 85%;"></div></div>
+                    <span class="seo-value good">85</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Jan 22, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">21 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">🌿</div>
+                    <div>
+                      <div class="article-title">Wellness Architecture: Designing Spaces for Healing</div>
+                      <div class="article-excerpt">How contemporary architects are creating environments that nurture body and mind...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge architecture">Architecture</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">JL</div>
+                    <span class="author-name">James Liu</span>
+                  </div>
+                </td>
+                <td><span class="status-badge published">Published</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">2,450</div>
+                    <div class="metric-label">views</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill excellent" style="width: 95%;"></div></div>
+                    <span class="seo-value excellent">95</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Feb 1, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">11 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">💆</div>
+                    <div>
+                      <div class="article-title">The Science of Sound Healing</div>
+                      <div class="article-excerpt">From Tibetan singing bowls to modern frequency therapy, exploring the evidence behind sonic wellness...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge wellness">Wellness</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">KM</div>
+                    <span class="author-name">Kate Morrison</span>
+                  </div>
+                </td>
+                <td><span class="status-badge scheduled">Scheduled</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">—</div>
+                    <div class="metric-label">Feb 14</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill good" style="width: 88%;"></div></div>
+                    <span class="seo-value good">88</span>
+                  </div>
+                </td>
+                <td>
+                  <div style="color: var(--info);">Feb 14, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">in 2 days</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">🎙️</div>
+                    <div>
+                      <div class="article-title">Tom Cronin on Meditation, Finance, and Finding Purpose</div>
+                      <div class="article-excerpt">An intimate conversation with the founder of The Stillness Project about transformation...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge interviews">Interviews</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">KM</div>
+                    <span class="author-name">Kate Morrison</span>
+                  </div>
+                </td>
+                <td><span class="status-badge draft">Draft</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">—</div>
+                    <div class="metric-label">draft</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill average" style="width: 65%;"></div></div>
+                    <span class="seo-value average">65</span>
+                  </div>
+                </td>
+                <td>
+                  <div style="color: var(--accent);">Not set</div>
+                  <div style="font-size: 11px; color: var(--accent);">Last edited today</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="article-cell">
+                    <div class="article-thumbnail">📍</div>
+                    <div>
+                      <div class="article-title">Hunter Valley: Wine Country's Wellness Renaissance</div>
+                      <div class="article-excerpt">How Australia's premier wine region is quietly becoming a sanctuary for mindful escapes...</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="category-badge destinations">Destinations</span></td>
+                <td>
+                  <div class="author-cell">
+                    <div class="author-avatar">SC</div>
+                    <span class="author-name">Sarah Chen</span>
+                  </div>
+                </td>
+                <td><span class="status-badge published">Published</span></td>
+                <td>
+                  <div class="metrics-cell">
+                    <div class="metric-value">1,820</div>
+                    <div class="metric-label">views</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="seo-score">
+                    <div class="seo-bar"><div class="seo-bar-fill good" style="width: 82%;"></div></div>
+                    <span class="seo-value good">82</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Feb 5, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">7 days ago</div>
+                </td>
+                <td class="table-actions">
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <div class="pagination-info">Showing 1-6 of 47 articles</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn">Previous</button>
+              <button class="pagination-btn active">1</button>
+              <button class="pagination-btn">2</button>
+              <button class="pagination-btn">3</button>
+              <button class="pagination-btn">...</button>
+              <button class="pagination-btn">8</button>
+              <button class="pagination-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Published Tab -->
+      <div id="published" class="tab-content">
+        <div class="table-container">
+          <p style="padding: 40px; text-align: center; color: var(--accent);">Published articles table with same format, filtered to published status only.</p>
+        </div>
+      </div>
+
+      <!-- Drafts Tab -->
+      <div id="drafts" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <div>
+            <strong>5 articles in draft</strong>
+            <div style="font-size: 12px; opacity: 0.8;">2 ready for review, 3 in progress</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <p style="padding: 40px; text-align: center; color: var(--accent);">Draft articles with last edited date and completion progress.</p>
+        </div>
+      </div>
+
+      <!-- Scheduled Tab -->
+      <div id="scheduled" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div>
+            <strong>4 articles scheduled</strong>
+            <div style="font-size: 12px; opacity: 0.8;">Next: "The Science of Sound Healing" on Feb 14</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <p style="padding: 40px; text-align: center; color: var(--accent);">Scheduled articles with publication countdown and reschedule options.</p>
+        </div>
+      </div>
+
+      <!-- Calendar Tab -->
+      <div id="calendar" class="tab-content">
+        <div class="calendar-header">
+          <div class="calendar-nav">
+            <button class="calendar-nav-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+            </button>
+            <span class="calendar-month">February 2026</span>
+            <button class="calendar-nav-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-primary btn-small">+ Schedule Article</button>
+        </div>
+
+        <div class="calendar-grid">
+          <div class="calendar-day-header">Sun</div>
+          <div class="calendar-day-header">Mon</div>
+          <div class="calendar-day-header">Tue</div>
+          <div class="calendar-day-header">Wed</div>
+          <div class="calendar-day-header">Thu</div>
+          <div class="calendar-day-header">Fri</div>
+          <div class="calendar-day-header">Sat</div>
+          
+          <div class="calendar-day other-month"><div class="calendar-date">26</div></div>
+          <div class="calendar-day other-month"><div class="calendar-date">27</div></div>
+          <div class="calendar-day other-month"><div class="calendar-date">28</div></div>
+          <div class="calendar-day other-month"><div class="calendar-date">29</div></div>
+          <div class="calendar-day other-month"><div class="calendar-date">30</div></div>
+          <div class="calendar-day other-month"><div class="calendar-date">31</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">1</div>
+            <div class="calendar-event published">Wellness Arch...</div>
+          </div>
+          
+          <div class="calendar-day"><div class="calendar-date">2</div></div>
+          <div class="calendar-day"><div class="calendar-date">3</div></div>
+          <div class="calendar-day"><div class="calendar-date">4</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">5</div>
+            <div class="calendar-event published">Hunter Valley...</div>
+          </div>
+          <div class="calendar-day"><div class="calendar-date">6</div></div>
+          <div class="calendar-day"><div class="calendar-date">7</div></div>
+          <div class="calendar-day"><div class="calendar-date">8</div></div>
+          
+          <div class="calendar-day"><div class="calendar-date">9</div></div>
+          <div class="calendar-day"><div class="calendar-date">10</div></div>
+          <div class="calendar-day"><div class="calendar-date">11</div></div>
+          <div class="calendar-day today">
+            <div class="calendar-date">12</div>
+            <div class="calendar-event draft">Tom Cronin Int...</div>
+          </div>
+          <div class="calendar-day"><div class="calendar-date">13</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">14</div>
+            <div class="calendar-event scheduled">Sound Healing</div>
+          </div>
+          <div class="calendar-day"><div class="calendar-date">15</div></div>
+          
+          <div class="calendar-day"><div class="calendar-date">16</div></div>
+          <div class="calendar-day"><div class="calendar-date">17</div></div>
+          <div class="calendar-day"><div class="calendar-date">18</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">19</div>
+            <div class="calendar-event scheduled">Breathwork 101</div>
+          </div>
+          <div class="calendar-day"><div class="calendar-date">20</div></div>
+          <div class="calendar-day"><div class="calendar-date">21</div></div>
+          <div class="calendar-day"><div class="calendar-date">22</div></div>
+          
+          <div class="calendar-day"><div class="calendar-date">23</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">24</div>
+            <div class="calendar-event scheduled">Byron Bay Guide</div>
+          </div>
+          <div class="calendar-day"><div class="calendar-date">25</div></div>
+          <div class="calendar-day"><div class="calendar-date">26</div></div>
+          <div class="calendar-day"><div class="calendar-date">27</div></div>
+          <div class="calendar-day">
+            <div class="calendar-date">28</div>
+            <div class="calendar-event scheduled">March Preview</div>
+          </div>
+          <div class="calendar-day other-month"><div class="calendar-date">1</div></div>
+        </div>
+      </div>
+
+      <!-- Categories Tab -->
+      <div id="categories" class="tab-content">
+        <div class="category-grid">
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon destinations">🌏</div>
+              <div class="category-card-count">14</div>
+            </div>
+            <div class="category-card-name">Destinations</div>
+            <div class="category-card-desc">Wellness destinations and retreat locations around the world</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 8,450 views</div>
+              <div class="category-card-stat">⏱️ 5:20 avg</div>
+            </div>
+          </div>
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon wellness">🧘</div>
+              <div class="category-card-count">12</div>
+            </div>
+            <div class="category-card-name">Wellness Practices</div>
+            <div class="category-card-desc">Meditation, yoga, breathwork, and holistic health practices</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 6,890 views</div>
+              <div class="category-card-stat">⏱️ 4:45 avg</div>
+            </div>
+          </div>
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon experiences">✨</div>
+              <div class="category-card-count">8</div>
+            </div>
+            <div class="category-card-name">Experiences</div>
+            <div class="category-card-desc">Transformative retreat experiences and personal journeys</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 5,240 views</div>
+              <div class="category-card-stat">⏱️ 6:10 avg</div>
+            </div>
+          </div>
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon architecture">🏛️</div>
+              <div class="category-card-count">6</div>
+            </div>
+            <div class="category-card-name">Architecture</div>
+            <div class="category-card-desc">Wellness architecture and biophilic design spaces</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 4,120 views</div>
+              <div class="category-card-stat">⏱️ 7:30 avg</div>
+            </div>
+          </div>
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon interviews">🎙️</div>
+              <div class="category-card-count">4</div>
+            </div>
+            <div class="category-card-name">Interviews</div>
+            <div class="category-card-desc">Conversations with wellness leaders and visionaries</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 2,890 views</div>
+              <div class="category-card-stat">⏱️ 8:45 avg</div>
+            </div>
+          </div>
+          <div class="category-card">
+            <div class="category-card-header">
+              <div class="category-icon guides">📖</div>
+              <div class="category-card-count">3</div>
+            </div>
+            <div class="category-card-name">Guides</div>
+            <div class="category-card-desc">Practical guides for planning wellness retreats</div>
+            <div class="category-card-stats">
+              <div class="category-card-stat">👁️ 1,850 views</div>
+              <div class="category-card-stat">⏱️ 4:15 avg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authors Tab -->
+      <div id="authors" class="tab-content">
+        <div class="author-grid">
+          <div class="author-card">
+            <div class="author-card-avatar">KM</div>
+            <div class="author-card-name">Kate Morrison</div>
+            <div class="author-card-role">Founder & Editor-in-Chief</div>
+            <div class="author-card-stats">
+              <div class="author-stat">
+                <div class="author-stat-value">18</div>
+                <div class="author-stat-label">Articles</div>
+              </div>
+              <div class="author-stat">
+                <div class="author-stat-value">12.4K</div>
+                <div class="author-stat-label">Views</div>
+              </div>
+            </div>
+          </div>
+          <div class="author-card">
+            <div class="author-card-avatar">SC</div>
+            <div class="author-card-name">Sarah Chen</div>
+            <div class="author-card-role">Senior Writer</div>
+            <div class="author-card-stats">
+              <div class="author-stat">
+                <div class="author-stat-value">14</div>
+                <div class="author-stat-label">Articles</div>
+              </div>
+              <div class="author-stat">
+                <div class="author-stat-value">8.9K</div>
+                <div class="author-stat-label">Views</div>
+              </div>
+            </div>
+          </div>
+          <div class="author-card">
+            <div class="author-card-avatar">JL</div>
+            <div class="author-card-name">James Liu</div>
+            <div class="author-card-role">Architecture Editor</div>
+            <div class="author-card-stats">
+              <div class="author-stat">
+                <div class="author-stat-value">8</div>
+                <div class="author-stat-label">Articles</div>
+              </div>
+              <div class="author-stat">
+                <div class="author-stat-value">5.2K</div>
+                <div class="author-stat-label">Views</div>
+              </div>
+            </div>
+          </div>
+          <div class="author-card">
+            <div class="author-card-avatar" style="background: linear-gradient(135deg, var(--warning), var(--error));">GW</div>
+            <div class="author-card-name">Guest Writers</div>
+            <div class="author-card-role">Contributing Authors</div>
+            <div class="author-card-stats">
+              <div class="author-stat">
+                <div class="author-stat-value">7</div>
+                <div class="author-stat-label">Articles</div>
+              </div>
+              <div class="author-stat">
+                <div class="author-stat-value">3.1K</div>
+                <div class="author-stat-label">Views</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Article Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">New Article</h2>
+        <button class="btn-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">Article Details</div>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" class="form-input" placeholder="Enter article title...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Excerpt</label>
+            <textarea class="form-textarea" placeholder="Brief description for previews and SEO..." style="min-height: 60px;"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select class="form-select">
+                <option>Select category...</option>
+                <option>Destinations</option>
+                <option>Wellness Practices</option>
+                <option>Experiences</option>
+                <option>Architecture</option>
+                <option>Interviews</option>
+                <option>Guides</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Author</label>
+              <select class="form-select">
+                <option>Select author...</option>
+                <option>Kate Morrison</option>
+                <option>Sarah Chen</option>
+                <option>James Liu</option>
+                <option>Guest Writer</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">SEO Settings</div>
+          <div class="form-group">
+            <label class="form-label">Meta Title (60 chars max)</label>
+            <input type="text" class="form-input" placeholder="SEO-optimized title...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Meta Description (160 chars max)</label>
+            <textarea class="form-textarea" placeholder="SEO meta description..." style="min-height: 60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Focus Keyword</label>
+            <input type="text" class="form-input" placeholder="Primary SEO keyword...">
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Publishing</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-select">
+                <option>Draft</option>
+                <option>Published</option>
+                <option>Scheduled</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Publish Date</label>
+              <input type="datetime-local" class="form-input">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-footer-left">
+          <button class="btn btn-secondary">Save as Draft</button>
+        </div>
+        <div>
+          <button class="btn btn-secondary">Preview</button>
+          <button class="btn btn-primary">Open Editor</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tabs
+      const tabs = document.querySelectorAll('.tabs-container .tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.classList.remove('active'));
+          document.getElementById(this.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Modal
+      const modal = document.getElementById('modalOverlay');
+      const closeBtn = document.getElementById('closeModal');
+      const newArticleBtn = document.querySelector('.header-actions .btn-primary');
+
+      newArticleBtn.addEventListener('click', function() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      });
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+          document.body.style.overflow = 'auto';
+        }
+      });
+
+      // Quick actions
+      const quickActions = document.querySelectorAll('.quick-action');
+      quickActions.forEach(action => {
+        action.addEventListener('click', function() {
+          if (this.querySelector('.quick-action-title').textContent === 'Write New Article') {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

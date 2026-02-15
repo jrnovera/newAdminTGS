@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Users & Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+      --journal: #8B5A8B;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+    }
+
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--text);
+      color: var(--white);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 32px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    .sidebar-nav { padding: 24px 0; }
+
+    .nav-section-title {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 8px 24px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-item.active { background-color: rgba(255,255,255,0.1); color: var(--white); border-right: 3px solid var(--white); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-title { font-size: 32px; }
+
+    .page-badge {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #E8EFF9, #E8F4EA);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--info);
+    }
+
+    .header-actions { display: flex; gap: 12px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary { background-color: var(--text); color: var(--white); }
+    .btn-primary:hover { background-color: #4a4a4a; }
+    .btn-secondary { background-color: var(--white); color: var(--text); border: 1px solid rgba(184,184,184,0.4); }
+    .btn-secondary:hover { border-color: var(--text); }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-success { background-color: var(--success); color: var(--white); }
+    .btn-danger { background-color: var(--error); color: var(--white); }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(184,184,184,0.2);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 600;
+    }
+
+    .stat-value.success { color: var(--success); }
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.info { color: var(--info); }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    /* Tabs */
+    .tabs-container {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid rgba(184,184,184,0.3);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+    .tab-count {
+      background-color: var(--secondary-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+
+    .tab.active .tab-count { background-color: var(--text); color: var(--white); }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--white);
+      min-width: 150px;
+    }
+
+    .search-input {
+      padding: 8px 12px 8px 36px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      width: 280px;
+      background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Data Table */
+    .table-container {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .data-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .data-table tbody tr:hover { background-color: var(--secondary-bg); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* User Cell */
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .user-avatar.admin { background: linear-gradient(135deg, var(--text), #4a4a4a); }
+    .user-avatar.developer { background: linear-gradient(135deg, var(--info), #5a7db8); }
+    .user-avatar.va { background: linear-gradient(135deg, var(--success), #3d6b4a); }
+    .user-avatar.advisor { background: linear-gradient(135deg, var(--journal), #6B4A6B); }
+    .user-avatar.content { background: linear-gradient(135deg, var(--warning), #b8923a); }
+    .user-avatar.support { background: linear-gradient(135deg, #6BC9C9, #5ab8b8); }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Role Badge */
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .role-badge.admin { background-color: var(--text); color: var(--white); }
+    .role-badge.developer { background-color: #E8EFF9; color: var(--info); }
+    .role-badge.va { background-color: #E8F4EA; color: var(--success); }
+    .role-badge.advisor { background-color: #F3E8F9; color: var(--journal); }
+    .role-badge.content { background-color: #FEF9E7; color: var(--warning); }
+    .role-badge.support { background-color: #E8F9F9; color: #5ab8b8; }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.active { background-color: #E8F4EA; color: var(--success); }
+    .status-badge.invited { background-color: #E8EFF9; color: var(--info); }
+    .status-badge.inactive { background-color: var(--secondary-bg); color: var(--accent); }
+    .status-badge.suspended { background-color: #FCE8E8; color: var(--error); }
+
+    /* Online Indicator */
+    .online-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .online-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .online-dot.online { background-color: var(--success); }
+    .online-dot.away { background-color: var(--warning); }
+    .online-dot.offline { background-color: var(--accent); }
+
+    /* Permissions Grid */
+    .permissions-cell {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .permission-tag {
+      padding: 2px 6px;
+      background-color: var(--secondary-bg);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text);
+    }
+
+    .permission-tag.full { background-color: var(--text); color: var(--white); }
+
+    /* Table Footer */
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--secondary-bg);
+      border-top: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .pagination-info { font-size: 13px; color: var(--accent); }
+
+    .pagination-controls { display: flex; gap: 8px; }
+
+    .pagination-btn {
+      padding: 6px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 4px;
+      background-color: var(--white);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pagination-btn:hover { border-color: var(--text); }
+    .pagination-btn.active { background-color: var(--text); color: var(--white); border-color: var(--text); }
+
+    /* Role Cards */
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .role-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(184,184,184,0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .role-card:hover {
+      border-color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .role-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .role-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .role-icon.admin { background-color: var(--text); color: var(--white); }
+    .role-icon.developer { background-color: #E8EFF9; }
+    .role-icon.va { background-color: #E8F4EA; }
+    .role-icon.advisor { background-color: #F3E8F9; }
+    .role-icon.content { background-color: #FEF9E7; }
+    .role-icon.support { background-color: #E8F9F9; }
+
+    .role-count {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .role-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .role-desc {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .role-permissions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .role-permission {
+      padding: 4px 8px;
+      background-color: var(--secondary-bg);
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    /* Activity Log */
+    .activity-log {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .activity-header {
+      padding: 16px 20px;
+      background-color: var(--secondary-bg);
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .activity-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .activity-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-text {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .activity-text strong { font-weight: 600; }
+
+    .activity-time {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .activity-type {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .activity-type.login { background-color: #E8F4EA; color: var(--success); }
+    .activity-type.edit { background-color: #E8EFF9; color: var(--info); }
+    .activity-type.create { background-color: #FEF9E7; color: var(--warning); }
+    .activity-type.delete { background-color: #FCE8E8; color: var(--error); }
+    .activity-type.export { background-color: #F3E8F9; color: var(--journal); }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+    }
+
+    .btn-close:hover { background-color: var(--secondary-bg); }
+
+    .modal-body { padding: 24px; }
+
+    .modal-section {
+      margin-bottom: 24px;
+    }
+
+    .modal-section:last-child { margin-bottom: 0; }
+
+    .modal-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(184,184,184,0.3);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(184,184,184,0.2);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* Permission Checkboxes */
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .permission-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .permission-item:hover {
+      background-color: #EDE8E4;
+    }
+
+    .permission-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--accent);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .permission-checkbox.checked {
+      background-color: var(--success);
+      border-color: var(--success);
+      color: var(--white);
+    }
+
+    .permission-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .permission-desc {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Alert Box */
+    .alert-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .alert-box.info {
+      background-color: #E8EFF9;
+      border: 1px solid var(--info);
+      color: var(--info);
+    }
+
+    .alert-box.warning {
+      background-color: #FEF9E7;
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+
+    /* Two Column Layout */
+    .two-column {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    /* User Detail Panel */
+    .user-detail-card {
+      background-color: var(--white);
+      border-radius: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+      overflow: hidden;
+    }
+
+    .user-detail-header {
+      padding: 24px;
+      text-align: center;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .user-detail-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 28px;
+      color: var(--white);
+      margin: 0 auto 16px;
+    }
+
+    .user-detail-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .user-detail-email {
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .user-detail-body {
+      padding: 20px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-label {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .detail-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">The Global Sanctum</div>
+        <div class="sidebar-subtitle">Internal Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Overview</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            Dashboard
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Venues</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            All Venues
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Platform Users</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Venue Owners
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Retreat Hosts
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Finance</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            Payments
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Subscriptions
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Content</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            Sanctum Journal
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            Wellness Edit
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">System</div>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a class="nav-item active" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            Users & Team
+          </a>
+          <a class="nav-item" href="#">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">Users & Team</h1>
+          <span class="page-badge">Internal Operations</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary" id="inviteUserBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Invite User
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value">8</div>
+          <div class="stat-label">Total Team</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">6</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value info">1</div>
+          <div class="stat-label">Pending Invite</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Online Now</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">6</div>
+          <div class="stat-label">Roles</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <div class="tab active" data-tab="all-users">All Users <span class="tab-count">8</span></div>
+        <div class="tab" data-tab="roles">Roles & Permissions</div>
+        <div class="tab" data-tab="activity">Activity Log</div>
+        <div class="tab" data-tab="invites">Pending Invites <span class="tab-count">1</span></div>
+      </div>
+
+      <!-- All Users Tab -->
+      <div id="all-users" class="tab-content active">
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Roles</option>
+            <option>Admin</option>
+            <option>Developer</option>
+            <option>Virtual Assistant</option>
+            <option>Advisor</option>
+            <option>Content Writer</option>
+            <option>Support</option>
+          </select>
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Invited</option>
+            <option>Inactive</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search team members...">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Permissions</th>
+                <th>Last Active</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar admin">KM</div>
+                    <div class="user-info">
+                      <div class="user-name">Kate Morrison</div>
+                      <div class="user-email">kate@theglobalsanctum.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge admin">Admin</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot online"></div>
+                    <span>Online</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag full">Full Access</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Now</div>
+                  <div style="font-size: 11px; color: var(--accent);">Brisbane, AU</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar developer">IZ</div>
+                    <div class="user-info">
+                      <div class="user-name">Izhar</div>
+                      <div class="user-email">izhar@webflow.dev</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge developer">Developer</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot online"></div>
+                    <span>Online</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Venues</span>
+                    <span class="permission-tag">Content</span>
+                    <span class="permission-tag">Settings</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Now</div>
+                  <div style="font-size: 11px; color: var(--accent);">Webflow Dev</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar developer">MH</div>
+                    <div class="user-info">
+                      <div class="user-name">Muhammad</div>
+                      <div class="user-email">muhammad@dev.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge developer">Developer</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot away"></div>
+                    <span>Away</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Venues</span>
+                    <span class="permission-tag">Bookings</span>
+                    <span class="permission-tag">Settings</span>
+                  </div>
+                </td>
+                <td>
+                  <div>2 hours ago</div>
+                  <div style="font-size: 11px; color: var(--accent);">Backend Dev</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar advisor">DN</div>
+                    <div class="user-info">
+                      <div class="user-name">Dan</div>
+                      <div class="user-email">dan@techadvisor.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge advisor">Technical Advisor</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot offline"></div>
+                    <span>Offline</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Analytics</span>
+                    <span class="permission-tag">Settings</span>
+                  </div>
+                </td>
+                <td>
+                  <div>3 days ago</div>
+                  <div style="font-size: 11px; color: var(--accent);">System Architecture</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar va">VA1</div>
+                    <div class="user-info">
+                      <div class="user-name">Maria Santos</div>
+                      <div class="user-email">maria@va-team.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge va">Virtual Assistant</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot online"></div>
+                    <span>Online</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Venues</span>
+                    <span class="permission-tag">Content</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Now</div>
+                  <div style="font-size: 11px; color: var(--accent);">Venue Curation</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar va">VA2</div>
+                    <div class="user-info">
+                      <div class="user-name">James Reyes</div>
+                      <div class="user-email">james@va-team.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge va">Virtual Assistant</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot offline"></div>
+                    <span>Offline</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Venues</span>
+                    <span class="permission-tag">Content</span>
+                  </div>
+                </td>
+                <td>
+                  <div>Yesterday</div>
+                  <div style="font-size: 11px; color: var(--accent);">Venue Curation</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar content">SC</div>
+                    <div class="user-info">
+                      <div class="user-name">Sarah Chen</div>
+                      <div class="user-email">sarah@theglobalsanctum.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge content">Content Writer</span></td>
+                <td>
+                  <span class="status-badge active">Active</span>
+                  <div class="online-indicator" style="margin-top: 4px;">
+                    <div class="online-dot offline"></div>
+                    <span>Offline</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Content</span>
+                    <span class="permission-tag">Analytics</span>
+                  </div>
+                </td>
+                <td>
+                  <div>2 days ago</div>
+                  <div style="font-size: 11px; color: var(--accent);">Wellness Edit</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Edit</button>
+                </td>
+              </tr>
+              <tr style="opacity: 0.7;">
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar support">JD</div>
+                    <div class="user-info">
+                      <div class="user-name">Julie Davis</div>
+                      <div class="user-email">julie@wellness.us</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge support">Partner</span></td>
+                <td>
+                  <span class="status-badge invited">Invited</span>
+                </td>
+                <td>
+                  <div class="permissions-cell">
+                    <span class="permission-tag">Venues</span>
+                    <span class="permission-tag">Bookings</span>
+                  </div>
+                </td>
+                <td>
+                  <div style="color: var(--accent);">Pending</div>
+                  <div style="font-size: 11px; color: var(--accent);">US Market Partner</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Resend</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <div class="pagination-info">Showing 1-8 of 8 users</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn active">1</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roles & Permissions Tab -->
+      <div id="roles" class="tab-content">
+        <div class="alert-box info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div>
+            <strong>Role-Based Access Control:</strong> Each role has predefined permissions. Admins can customize permissions for individual users.
+          </div>
+        </div>
+
+        <div class="roles-grid">
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon admin">👑</div>
+              <div class="role-count">1</div>
+            </div>
+            <div class="role-name">Admin</div>
+            <div class="role-desc">Full system access and user management</div>
+            <div class="role-permissions">
+              <span class="role-permission">Full Access</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon developer">💻</div>
+              <div class="role-count">2</div>
+            </div>
+            <div class="role-name">Developer</div>
+            <div class="role-desc">Technical implementation and system configuration</div>
+            <div class="role-permissions">
+              <span class="role-permission">Venues</span>
+              <span class="role-permission">Content</span>
+              <span class="role-permission">Settings</span>
+              <span class="role-permission">Bookings</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon va">📋</div>
+              <div class="role-count">2</div>
+            </div>
+            <div class="role-name">Virtual Assistant</div>
+            <div class="role-desc">Venue curation and data entry tasks</div>
+            <div class="role-permissions">
+              <span class="role-permission">Venues (View/Edit)</span>
+              <span class="role-permission">Content (View)</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon advisor">🎯</div>
+              <div class="role-count">1</div>
+            </div>
+            <div class="role-name">Technical Advisor</div>
+            <div class="role-desc">System architecture and technical guidance</div>
+            <div class="role-permissions">
+              <span class="role-permission">Analytics (View)</span>
+              <span class="role-permission">Settings (View)</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon content">✍️</div>
+              <div class="role-count">1</div>
+            </div>
+            <div class="role-name">Content Writer</div>
+            <div class="role-desc">Blog and newsletter content creation</div>
+            <div class="role-permissions">
+              <span class="role-permission">Content (Full)</span>
+              <span class="role-permission">Analytics (View)</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <div class="role-icon support">🤝</div>
+              <div class="role-count">1</div>
+            </div>
+            <div class="role-name">Partner</div>
+            <div class="role-desc">External partner with limited platform access</div>
+            <div class="role-permissions">
+              <span class="role-permission">Venues (View)</span>
+              <span class="role-permission">Bookings (View)</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 20px; margin-bottom: 16px;">Permission Matrix</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>Admin</th>
+                <th>Developer</th>
+                <th>VA</th>
+                <th>Advisor</th>
+                <th>Content</th>
+                <th>Partner</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Venues</strong></td>
+                <td>✅ Full</td>
+                <td>✅ Full</td>
+                <td>✏️ Edit</td>
+                <td>—</td>
+                <td>👁️ View</td>
+                <td>👁️ View</td>
+              </tr>
+              <tr>
+                <td><strong>Bookings</strong></td>
+                <td>✅ Full</td>
+                <td>✅ Full</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>👁️ View</td>
+              </tr>
+              <tr>
+                <td><strong>Payments</strong></td>
+                <td>✅ Full</td>
+                <td>👁️ View</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><strong>Content</strong></td>
+                <td>✅ Full</td>
+                <td>✅ Full</td>
+                <td>👁️ View</td>
+                <td>—</td>
+                <td>✅ Full</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><strong>Analytics</strong></td>
+                <td>✅ Full</td>
+                <td>✅ Full</td>
+                <td>—</td>
+                <td>👁️ View</td>
+                <td>👁️ View</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><strong>Users</strong></td>
+                <td>✅ Full</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><strong>Settings</strong></td>
+                <td>✅ Full</td>
+                <td>✏️ Edit</td>
+                <td>—</td>
+                <td>👁️ View</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Activity Log Tab -->
+      <div id="activity" class="tab-content">
+        <div class="filters-row">
+          <select class="filter-select">
+            <option>All Users</option>
+            <option>Kate Morrison</option>
+            <option>Izhar</option>
+            <option>Muhammad</option>
+            <option>Maria Santos</option>
+            <option>James Reyes</option>
+          </select>
+          <select class="filter-select">
+            <option>All Actions</option>
+            <option>Login</option>
+            <option>Create</option>
+            <option>Edit</option>
+            <option>Delete</option>
+            <option>Export</option>
+          </select>
+          <select class="filter-select">
+            <option>Last 24 hours</option>
+            <option>Last 7 days</option>
+            <option>Last 30 days</option>
+            <option>All time</option>
+          </select>
+          <input type="text" class="search-input" placeholder="Search activity...">
+        </div>
+
+        <div class="activity-log">
+          <div class="activity-header">
+            <div class="activity-title">Recent Activity</div>
+            <button class="btn btn-small btn-secondary">Export Log</button>
+          </div>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--text), #4a4a4a);">KM</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Kate Morrison</strong> logged in from Brisbane, AU</div>
+                <div class="activity-time">Today at 9:42 AM</div>
+              </div>
+              <span class="activity-type login">Login</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--success), #3d6b4a);">VA1</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Maria Santos</strong> added 12 new venues to the database</div>
+                <div class="activity-time">Today at 9:15 AM</div>
+              </div>
+              <span class="activity-type create">Create</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--info), #5a7db8);">IZ</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Izhar</strong> updated venue listing template settings</div>
+                <div class="activity-time">Today at 8:30 AM</div>
+              </div>
+              <span class="activity-type edit">Edit</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--text), #4a4a4a);">KM</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Kate Morrison</strong> exported subscriber list from Sanctum Journal</div>
+                <div class="activity-time">Yesterday at 4:22 PM</div>
+              </div>
+              <span class="activity-type export">Export</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--info), #5a7db8);">MH</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Muhammad</strong> updated booking confirmation email template</div>
+                <div class="activity-time">Yesterday at 2:15 PM</div>
+              </div>
+              <span class="activity-type edit">Edit</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--warning), #b8923a);">SC</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Sarah Chen</strong> published article "The Art of Winter Wellness"</div>
+                <div class="activity-time">Yesterday at 11:00 AM</div>
+              </div>
+              <span class="activity-type create">Create</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--text), #4a4a4a);">KM</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>Kate Morrison</strong> invited Julie Davis as Partner</div>
+                <div class="activity-time">2 days ago at 3:45 PM</div>
+              </div>
+              <span class="activity-type create">Create</span>
+            </div>
+            <div class="activity-item">
+              <div class="activity-avatar" style="background: linear-gradient(135deg, var(--success), #3d6b4a);">VA2</div>
+              <div class="activity-content">
+                <div class="activity-text"><strong>James Reyes</strong> updated 28 venue records with new imagery</div>
+                <div class="activity-time">2 days ago at 10:30 AM</div>
+              </div>
+              <span class="activity-type edit">Edit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Invites Tab -->
+      <div id="invites" class="tab-content">
+        <div class="alert-box warning">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <strong>1 pending invitation</strong> — Invite will expire in 5 days. Resend or revoke if needed.
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Invited User</th>
+                <th>Role</th>
+                <th>Invited By</th>
+                <th>Sent</th>
+                <th>Expires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar support">JD</div>
+                    <div class="user-info">
+                      <div class="user-name">Julie Davis</div>
+                      <div class="user-email">julie@wellness.us</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="role-badge support">Partner</span></td>
+                <td>Kate Morrison</td>
+                <td>Feb 10, 2026</td>
+                <td>
+                  <div style="color: var(--warning);">Feb 17, 2026</div>
+                  <div style="font-size: 11px; color: var(--accent);">5 days remaining</div>
+                </td>
+                <td>
+                  <button class="btn btn-secondary btn-small">Resend</button>
+                  <button class="btn btn-small" style="background: none; color: var(--error); border: 1px solid var(--error);">Revoke</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Invite User Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Invite Team Member</h2>
+        <button class="btn-close" id="closeModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div class="modal-section-title">User Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-input" placeholder="Enter full name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-input" placeholder="email@example.com">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select class="form-select">
+                <option>Select role...</option>
+                <option>Admin</option>
+                <option>Developer</option>
+                <option>Virtual Assistant</option>
+                <option>Technical Advisor</option>
+                <option>Content Writer</option>
+                <option>Partner</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department / Focus</label>
+              <input type="text" class="form-input" placeholder="e.g., Venue Curation">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Permissions</div>
+          <p style="font-size: 12px; color: var(--accent); margin-bottom: 12px;">Permissions are set based on role. Customize below if needed.</p>
+          <div class="permissions-grid">
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Venues</div>
+                <div class="permission-desc">View and edit venue listings</div>
+              </div>
+            </div>
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Bookings</div>
+                <div class="permission-desc">Manage booking requests</div>
+              </div>
+            </div>
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Payments</div>
+                <div class="permission-desc">View financial data</div>
+              </div>
+            </div>
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Content</div>
+                <div class="permission-desc">Manage blog and newsletter</div>
+              </div>
+            </div>
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Analytics</div>
+                <div class="permission-desc">View platform metrics</div>
+              </div>
+            </div>
+            <div class="permission-item">
+              <div class="permission-checkbox"></div>
+              <div>
+                <div class="permission-label">Settings</div>
+                <div class="permission-desc">Configure platform settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Personal Message (Optional)</div>
+          <div class="form-group">
+            <textarea class="form-input" placeholder="Add a personal note to the invitation email..." style="min-height: 80px;"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelModal">Cancel</button>
+        <button class="btn btn-primary">Send Invitation</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tabs
+      const tabs = document.querySelectorAll('.tabs-container .tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          tabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          tabContents.forEach(content => content.classList.remove('active'));
+          document.getElementById(this.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Modal
+      const modal = document.getElementById('modalOverlay');
+      const closeBtn = document.getElementById('closeModal');
+      const cancelBtn = document.getElementById('cancelModal');
+      const inviteBtn = document.getElementById('inviteUserBtn');
+
+      inviteBtn.addEventListener('click', function() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      }
+
+      closeBtn.addEventListener('click', closeModal);
+      cancelBtn.addEventListener('click', closeModal);
+
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
+      });
+
+      // Permission checkboxes
+      const permissionItems = document.querySelectorAll('.permission-item');
+      permissionItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const checkbox = this.querySelector('.permission-checkbox');
+          checkbox.classList.toggle('checked');
+          if (checkbox.classList.contains('checked')) {
+            checkbox.innerHTML = '✓';
+          } else {
+            checkbox.innerHTML = '';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

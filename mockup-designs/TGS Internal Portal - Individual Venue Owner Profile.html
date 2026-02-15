@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGS Internal Portal - Venue Owner Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-bg: #FDFCF9;
+      --secondary-bg: #F7F5F1;
+      --accent: #B8B8B8;
+      --text: #313131;
+      --white: #FFFFFF;
+      --success: #4A7C59;
+      --warning: #D4A853;
+      --error: #C45C5C;
+      --info: #6B8EC9;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: rgba(0,0,0,0.5);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Modal Container */
+    .profile-modal {
+      background-color: var(--white);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 1200px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+
+    /* Modal Header */
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 32px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+      background-color: var(--secondary-bg);
+    }
+
+    .modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .owner-avatar-large {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: var(--text);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 24px;
+    }
+
+    .owner-header-info h2 {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .owner-header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .owner-header-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .close-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(184,184,184,0.4);
+      background: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+      border-color: var(--text);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-primary {
+      background-color: var(--text);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background-color: #4a4a4a;
+    }
+
+    .btn-secondary {
+      background-color: var(--white);
+      color: var(--text);
+      border: 1px solid rgba(184, 184, 184, 0.4);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: var(--white);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Modal Body */
+    .modal-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left Column - Profile Details */
+    .profile-left {
+      width: 360px;
+      border-right: 1px solid rgba(184,184,184,0.2);
+      overflow-y: auto;
+      background-color: var(--primary-bg);
+    }
+
+    /* Right Column - Activity & Data */
+    .profile-right {
+      flex: 1;
+      overflow-y: auto;
+      background-color: var(--white);
+    }
+
+    /* Section Styles */
+    .profile-section {
+      padding: 24px;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .profile-section:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Status & Tier Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-badge.active {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .status-badge.onboarding {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .status-badge.payment-due {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .tier-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .tier-badge.super-founder {
+      background: linear-gradient(135deg, #E8F4EA 0%, #FEF9E7 100%);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .tier-badge.premium {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .tier-badge.featured {
+      background-color: #FEF9E7;
+      color: #B8860B;
+    }
+
+    .tier-badge.standard {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    /* Info Rows */
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      width: 100px;
+      font-size: 12px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      flex: 1;
+      font-size: 13px;
+    }
+
+    .info-value a {
+      color: var(--info);
+      text-decoration: none;
+    }
+
+    .info-value a:hover {
+      text-decoration: underline;
+    }
+
+    .info-value .copy-btn {
+      margin-left: 8px;
+      padding: 2px 6px;
+      font-size: 10px;
+      border: 1px solid rgba(184,184,184,0.4);
+      border-radius: 4px;
+      background: var(--white);
+      cursor: pointer;
+    }
+
+    /* Venues List */
+    .venue-card {
+      background-color: var(--white);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(184,184,184,0.2);
+    }
+
+    .venue-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .venue-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .venue-card-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .venue-card-location {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .venue-card-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .venue-stat {
+      text-align: center;
+    }
+
+    .venue-stat-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .venue-stat-label {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    /* Payment Card */
+    .payment-card {
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 32px;
+      background: linear-gradient(135deg, #1a1f71 0%, #2d4373 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .card-details {
+      flex: 1;
+    }
+
+    .card-number {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .card-expiry {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .card-status {
+      font-size: 11px;
+      color: var(--success);
+    }
+
+    .card-status.warning {
+      color: var(--warning);
+    }
+
+    /* Billing History */
+    .billing-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .billing-row:last-child {
+      border-bottom: none;
+    }
+
+    .billing-date {
+      font-size: 12px;
+      color: var(--accent);
+      width: 80px;
+    }
+
+    .billing-desc {
+      flex: 1;
+      font-size: 13px;
+    }
+
+    .billing-amount {
+      font-weight: 500;
+    }
+
+    .billing-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .billing-status.paid {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .billing-status.failed {
+      background-color: #FCE8E8;
+      color: var(--error);
+    }
+
+    .billing-status.pending {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    /* Tabs for Right Panel */
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(184,184,184,0.2);
+      background-color: var(--secondary-bg);
+    }
+
+    .panel-tab {
+      padding: 16px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .panel-tab:hover {
+      color: var(--text);
+    }
+
+    .panel-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--text);
+      background-color: var(--white);
+    }
+
+    .panel-content {
+      padding: 24px;
+    }
+
+    /* Activity Timeline */
+    .timeline {
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: rgba(184,184,184,0.3);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 48px;
+      padding-bottom: 24px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: 8px;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: var(--white);
+      border: 2px solid var(--accent);
+    }
+
+    .timeline-dot.booking {
+      border-color: var(--success);
+      background-color: #E8F4EA;
+    }
+
+    .timeline-dot.payment {
+      border-color: var(--info);
+      background-color: #E8EFF9;
+    }
+
+    .timeline-dot.message {
+      border-color: var(--warning);
+      background-color: #FEF9E7;
+    }
+
+    .timeline-dot.system {
+      border-color: var(--accent);
+      background-color: var(--secondary-bg);
+    }
+
+    .timeline-date {
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .timeline-content {
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .timeline-title {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .timeline-desc {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Communication Log */
+    .comm-item {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(184,184,184,0.1);
+    }
+
+    .comm-item:last-child {
+      border-bottom: none;
+    }
+
+    .comm-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--secondary-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .comm-icon.email {
+      background-color: #E8EFF9;
+      color: var(--info);
+    }
+
+    .comm-icon.call {
+      background-color: #E8F4EA;
+      color: var(--success);
+    }
+
+    .comm-icon.note {
+      background-color: #FEF9E7;
+      color: var(--warning);
+    }
+
+    .comm-content {
+      flex: 1;
+    }
+
+    .comm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .comm-type {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .comm-date {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .comm-preview {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .comm-by {
+      font-size: 11px;
+      color: var(--info);
+      margin-top: 4px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-card-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .stat-card-value.success {
+      color: var(--success);
+    }
+
+    .stat-card-label {
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Notes Section */
+    .note-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid rgba(184,184,184,0.4);
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 80px;
+      margin-bottom: 12px;
+    }
+
+    .note-input:focus {
+      outline: none;
+      border-color: var(--text);
+    }
+
+    .existing-note {
+      background-color: var(--secondary-bg);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .note-author {
+      font-weight: 500;
+      font-size: 12px;
+    }
+
+    .note-date {
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .note-text {
+      font-size: 13px;
+    }
+
+    /* Tags */
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background-color: var(--secondary-bg);
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .tag .remove {
+      cursor: pointer;
+      opacity: 0.5;
+    }
+
+    .tag .remove:hover {
+      opacity: 1;
+    }
+
+    .add-tag {
+      padding: 4px 12px;
+      border: 1px dashed rgba(184,184,184,0.4);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .add-tag:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-modal">
+    <!-- Modal Header -->
+    <header class="modal-header">
+      <div class="modal-header-left">
+        <div class="owner-avatar-large">JM</div>
+        <div class="owner-header-info">
+          <h2>Jennifer Morrison</h2>
+          <div class="owner-header-meta">
+            <span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Moraea Farm, Berry NSW
+            </span>
+            <span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+              </svg>
+              Joined Nov 15, 2025
+            </span>
+            <span class="status-badge active">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+              Active
+            </span>
+            <span class="tier-badge super-founder">Super Founder</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-header-actions">
+        <button class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Email
+        </button>
+        <button class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          Call
+        </button>
+        <button class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+        <button class="close-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Left Column - Profile Details -->
+      <div class="profile-left">
+        <!-- Contact Information -->
+        <div class="profile-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Contact Information
+            </div>
+            <button class="btn btn-secondary btn-small">Edit</button>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Email</div>
+            <div class="info-value">
+              <a href="mailto:jennifer@moraeafarm.com.au">jennifer@moraeafarm.com.au</a>
+              <button class="copy-btn">Copy</button>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Phone</div>
+            <div class="info-value">
+              <a href="tel:+61412345678">+61 412 345 678</a>
+              <button class="copy-btn">Copy</button>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Alt Phone</div>
+            <div class="info-value">+61 2 4464 1234 (Office)</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Address</div>
+            <div class="info-value">142 Moraea Lane<br>Berry, NSW 2535</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Timezone</div>
+            <div class="info-value">AEST (UTC+10)</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Preferred</div>
+            <div class="info-value">Email, then Phone</div>
+          </div>
+        </div>
+
+        <!-- Business Information -->
+        <div class="profile-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+              </svg>
+              Business Details
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Legal Name</div>
+            <div class="info-value">Moraea Farm Retreats Pty Ltd</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">ABN</div>
+            <div class="info-value">12 345 678 901</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">ACN</div>
+            <div class="info-value">123 456 789</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">GST Reg.</div>
+            <div class="info-value">Yes</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Insurance</div>
+            <div class="info-value">
+              QBE Public Liability<br>
+              <span style="color: var(--success); font-size: 11px;">Valid until Dec 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Venues -->
+        <div class="profile-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Venues (1)
+            </div>
+            <button class="btn btn-secondary btn-small">Add Venue</button>
+          </div>
+          <div class="venue-card">
+            <div class="venue-card-header">
+              <div>
+                <div class="venue-card-name">Moraea Farm</div>
+                <div class="venue-card-location">Berry, NSW • Retreat Venue</div>
+              </div>
+              <span class="tier-badge premium">Premium</span>
+            </div>
+            <div class="venue-card-stats">
+              <div class="venue-stat">
+                <div class="venue-stat-value">12</div>
+                <div class="venue-stat-label">Max Guests</div>
+              </div>
+              <div class="venue-stat">
+                <div class="venue-stat-value">6</div>
+                <div class="venue-stat-label">Rooms</div>
+              </div>
+              <div class="venue-stat">
+                <div class="venue-stat-value">8</div>
+                <div class="venue-stat-label">Bookings</div>
+              </div>
+              <div class="venue-stat">
+                <div class="venue-stat-value" style="color: var(--success);">$127K</div>
+                <div class="venue-stat-label">Revenue</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscription & Billing -->
+        <div class="profile-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+              Subscription & Billing
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Plan</div>
+            <div class="info-value">
+              <span class="tier-badge super-founder">Super Founder</span>
+              <div style="font-size: 11px; color: var(--success); margin-top: 4px;">60% lifetime discount</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Tier Access</div>
+            <div class="info-value">Premium ($399 → $159.60/mo)</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Commission</div>
+            <div class="info-value" style="color: var(--success); font-weight: 600;">5% (Premium rate)</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Billing Cycle</div>
+            <div class="info-value">Monthly (15th)</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">Next Invoice</div>
+            <div class="info-value">Feb 15, 2026 • $159.60</div>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <div class="section-title" style="margin-bottom: 12px;">Payment Method</div>
+            <div class="payment-card">
+              <div class="card-icon">VISA</div>
+              <div class="card-details">
+                <div class="card-number">•••• •••• •••• 4242</div>
+                <div class="card-expiry">Expires 08/2027</div>
+              </div>
+              <div class="card-status">Default</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div class="section-title" style="margin-bottom: 12px;">Recent Billing</div>
+            <div class="billing-row">
+              <div class="billing-date">Jan 15</div>
+              <div class="billing-desc">Monthly subscription</div>
+              <div class="billing-amount">$159.60</div>
+              <div class="billing-status paid">Paid</div>
+            </div>
+            <div class="billing-row">
+              <div class="billing-date">Dec 15</div>
+              <div class="billing-desc">Monthly subscription</div>
+              <div class="billing-amount">$159.60</div>
+              <div class="billing-status paid">Paid</div>
+            </div>
+            <div class="billing-row">
+              <div class="billing-date">Nov 15</div>
+              <div class="billing-desc">Monthly subscription</div>
+              <div class="billing-amount">$159.60</div>
+              <div class="billing-status paid">Paid</div>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="btn btn-secondary btn-small">View All Invoices</button>
+            <button class="btn btn-secondary btn-small">Update Card</button>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="profile-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+              Tags
+            </div>
+          </div>
+          <div class="tags-container">
+            <span class="tag">VIP <span class="remove">×</span></span>
+            <span class="tag">Super Founder <span class="remove">×</span></span>
+            <span class="tag">NSW <span class="remove">×</span></span>
+            <span class="tag">Retreat Venue <span class="remove">×</span></span>
+            <span class="tag">High Value <span class="remove">×</span></span>
+            <span class="add-tag">+ Add tag</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column - Activity & Data -->
+      <div class="profile-right">
+        <!-- Tabs -->
+        <nav class="panel-tabs">
+          <div class="panel-tab active">Activity</div>
+          <div class="panel-tab">Communications</div>
+          <div class="panel-tab">Bookings</div>
+          <div class="panel-tab">Notes</div>
+          <div class="panel-tab">Documents</div>
+        </nav>
+
+        <div class="panel-content">
+          <!-- Stats Summary -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-value">8</div>
+              <div class="stat-card-label">Total Retreats</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-value success">$127,000</div>
+              <div class="stat-card-label">Lifetime Revenue</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-value success">$6,350</div>
+              <div class="stat-card-label">Commission Earned</div>
+            </div>
+          </div>
+
+          <!-- Activity Timeline -->
+          <div class="section-title" style="margin-bottom: 16px;">Recent Activity</div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot booking"></div>
+              <div class="timeline-date">Today, 2:30 PM</div>
+              <div class="timeline-content">
+                <div class="timeline-title">New booking confirmed</div>
+                <div class="timeline-desc">Women's Wellness Retreat • Feb 20-23 • Emma Davis (Stillness Project) • $18,000</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot message"></div>
+              <div class="timeline-date">Yesterday, 4:15 PM</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Enquiry received</div>
+                <div class="timeline-desc">Corporate retreat enquiry from James Chen (Zenith Consulting) • Mar 15-18 • $28,000 potential</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot payment"></div>
+              <div class="timeline-date">Jan 15, 2026</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Subscription payment processed</div>
+                <div class="timeline-desc">Monthly subscription • $159.60 • Visa ending 4242</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot booking"></div>
+              <div class="timeline-date">Jan 10, 2026</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Retreat completed</div>
+                <div class="timeline-desc">Silent Meditation Retreat • Tom Cronin (The Stillness Project) • $13,500 • Commission: $675</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot system"></div>
+              <div class="timeline-date">Dec 20, 2025</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Profile updated</div>
+                <div class="timeline-desc">Added new photos to venue gallery (12 images)</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot message"></div>
+              <div class="timeline-date">Dec 15, 2025</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Email sent</div>
+                <div class="timeline-desc">Super Founder welcome email • Opened Dec 15</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot system"></div>
+              <div class="timeline-date">Nov 15, 2025</div>
+              <div class="timeline-content">
+                <div class="timeline-title">Account created</div>
+                <div class="timeline-desc">Signed up as Super Founder • Completed onboarding Nov 18</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Communication Log (hidden by default, shown when tab clicked) -->
+          <div style="display: none;">
+            <div class="section-title" style="margin-bottom: 16px;">Communication History</div>
+            <div class="comm-item">
+              <div class="comm-icon email">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+              <div class="comm-content">
+                <div class="comm-header">
+                  <div class="comm-type">Email: Booking Confirmation</div>
+                  <div class="comm-date">Today, 2:35 PM</div>
+                </div>
+                <div class="comm-preview">Your retreat booking has been confirmed. Women's Wellness Retreat with Emma Davis...</div>
+                <div class="comm-by">Sent automatically</div>
+              </div>
+            </div>
+            <div class="comm-item">
+              <div class="comm-icon call">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                </svg>
+              </div>
+              <div class="comm-content">
+                <div class="comm-header">
+                  <div class="comm-type">Phone Call (Outbound)</div>
+                  <div class="comm-date">Jan 8, 2026, 10:30 AM</div>
+                </div>
+                <div class="comm-preview">Discussed upcoming retreat schedule. Jennifer confirmed availability for Q1. Duration: 12 mins</div>
+                <div class="comm-by">By Kate</div>
+              </div>
+            </div>
+            <div class="comm-item">
+              <div class="comm-icon email">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+              <div class="comm-content">
+                <div class="comm-header">
+                  <div class="comm-type">Email: Super Founder Welcome</div>
+                  <div class="comm-date">Dec 15, 2025, 9:00 AM</div>
+                </div>
+                <div class="comm-preview">Welcome to The Global Sanctum family! As a Super Founder, you're among our most valued...</div>
+                <div class="comm-by">Sent via campaign • Opened Dec 15, 11:23 AM</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Section (hidden by default) -->
+          <div style="display: none;">
+            <div class="section-title" style="margin-bottom: 16px;">Internal Notes</div>
+            <textarea class="note-input" placeholder="Add a note about this venue owner..."></textarea>
+            <button class="btn btn-primary btn-small" style="margin-bottom: 24px;">Add Note</button>
+            
+            <div class="existing-note">
+              <div class="note-header">
+                <div class="note-author">Kate</div>
+                <div class="note-date">Jan 8, 2026</div>
+              </div>
+              <div class="note-text">Spoke with Jennifer about potential partnership with Tom Cronin's network. She's very enthusiastic and happy to host 3-4 additional retreats per quarter. Prefers weekday bookings to keep weekends for private events.</div>
+            </div>
+            <div class="existing-note">
+              <div class="note-header">
+                <div class="note-author">Kate</div>
+                <div class="note-date">Nov 20, 2025</div>
+              </div>
+              <div class="note-text">Onboarding call completed. Jennifer is a long-time retreat host with 8 years experience. Previously listed on BookRetreats and Retreat Guru but unhappy with commission rates. Perfect fit for Super Founder tier.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
