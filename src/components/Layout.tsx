@@ -1,8 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutGrid,
   Home,
-  CalendarDays,
   MessageSquare,
   User,
   Globe,
@@ -15,7 +15,19 @@ import {
   Settings,
 } from 'lucide-react';
 
-const navSections = [
+interface NavItem {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  badge?: string;
+}
+
+interface NavSection {
+  title?: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
   {
     items: [
       { to: '/', icon: LayoutGrid, label: 'Dashboard' },
