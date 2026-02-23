@@ -13,7 +13,9 @@ import {
   BookOpen,
   BarChart3,
   Settings,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface NavItem {
   to: string;
@@ -82,6 +84,11 @@ const navSections: NavSection[] = [
 ];
 
 export default function Layout() {
+  const { user, signOut } = useAuth();
+
+  const userEmail = user?.email ?? 'Admin';
+  const userInitial = userEmail.charAt(0).toUpperCase();
+
   return (
     <div className="app-container">
       <aside className="sidebar">
@@ -115,11 +122,14 @@ export default function Layout() {
         </nav>
 
         <div className="user-menu">
-          <div className="user-avatar">K</div>
-          <div>
-            <div className="user-name">Kate</div>
+          <div className="user-avatar">{userInitial}</div>
+          <div className="user-menu-info">
+            <div className="user-name">{userEmail}</div>
             <div className="user-role">Administrator</div>
           </div>
+          <button className="user-logout-btn" onClick={signOut} title="Sign out">
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
 

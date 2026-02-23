@@ -1,4 +1,4 @@
-import { Upload, Plus, Search, Filter, SlidersHorizontal, MoreHorizontal, ChevronLeft, ChevronRight, Eye, Edit3, Trash2, CheckCircle } from 'lucide-react';
+import { Upload, Plus, Search, Filter, SlidersHorizontal, MoreHorizontal, ChevronLeft, ChevronRight, Eye, Edit3, Trash2, CheckCircle, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVenues } from '../context/VenueContext';
@@ -7,7 +7,7 @@ import VenueFormModal from '../components/VenueFormModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 export default function Venues() {
-  const { venues, addVenue, updateVenue, deleteVenue } = useVenues();
+  const { venues, loading, addVenue, updateVenue, deleteVenue } = useVenues();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -77,25 +77,37 @@ export default function Venues() {
     { label: 'Inactive' },
   ];
 
-  const handleCreate = (data: Omit<Venue, 'id' | 'date'>) => {
-    addVenue(data);
-    showToast(`"${data.name}" has been created successfully`);
-  };
-
-  const handleUpdate = (data: Omit<Venue, 'id' | 'date'>) => {
-    if (editingVenue) {
-      updateVenue(editingVenue.id, data);
-      showToast(`"${data.name}" has been updated successfully`);
-      setEditingVenue(null);
+  const handleCreate = async (data: Omit<Venue, 'id' | 'date'>) => {
+    try {
+      await addVenue(data);
+      showToast(`"${data.name}" has been created successfully`);
+    } catch (err) {
+      showToast('Failed to create venue', 'error');
     }
   };
 
-  const handleDelete = () => {
+  const handleUpdate = async (data: Omit<Venue, 'id' | 'date'>) => {
+    if (editingVenue) {
+      try {
+        await updateVenue(editingVenue.id, data);
+        showToast(`"${data.name}" has been updated successfully`);
+        setEditingVenue(null);
+      } catch (err) {
+        showToast('Failed to update venue', 'error');
+      }
+    }
+  };
+
+  const handleDelete = async () => {
     if (deletingVenue) {
       const name = deletingVenue.name;
-      deleteVenue(deletingVenue.id);
-      showToast(`"${name}" has been deleted`, 'error');
-      setDeletingVenue(null);
+      try {
+        await deleteVenue(deletingVenue.id);
+        showToast(`"${name}" has been deleted`, 'error');
+        setDeletingVenue(null);
+      } catch (err) {
+        showToast('Failed to delete venue', 'error');
+      }
     }
   };
 
@@ -183,7 +195,14 @@ export default function Venues() {
             </tr>
           </thead>
           <tbody>
-            {filteredVenues.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '48px 20px' }}>
+                  <Loader2 className="animate-spin" size={32} style={{ margin: '0 auto', color: '#8B4513' }} />
+                  <div style={{ marginTop: 12, color: '#666' }}>Loading venues...</div>
+                </td>
+              </tr>
+            ) : filteredVenues.length === 0 ? (
               <tr>
                 <td colSpan={9} style={{ textAlign: 'center', padding: '48px 20px', color: '#B8B8B8' }}>
                   <div style={{ fontSize: 16, marginBottom: 8 }}>No venues found</div>
