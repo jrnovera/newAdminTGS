@@ -48,6 +48,10 @@ export interface VenuePackage {
   name: string;
   price: string;
   thumbnail?: string;
+  description?: string;
+  includedServices?: string[];
+  minGuests?: number;
+  maxGuests?: number;
 }
 
 export interface Practitioner {

@@ -159,6 +159,10 @@ export default function VenueFormModal({ isOpen, onClose, onSubmit, initialData,
   const [packageInput, setPackageInput] = useState('');
   const [packagePriceInput, setPackagePriceInput] = useState('');
   const [packageThumbnailInput, setPackageThumbnailInput] = useState('');
+  const [packageDescriptionInput, setPackageDescriptionInput] = useState('');
+  const [packageMinGuestsInput, setPackageMinGuestsInput] = useState('');
+  const [packageMaxGuestsInput, setPackageMaxGuestsInput] = useState('');
+  const [packageIncludedServices, setPackageIncludedServices] = useState<string[]>([]);
   const [languageInput, setLanguageInput] = useState('');
   const [whatsIncludedInput, setWhatsIncludedInput] = useState('');
   const [practitionerNameInput, setPractitionerNameInput] = useState('');
@@ -375,12 +379,20 @@ export default function VenueFormModal({ isOpen, onClose, onSubmit, initialData,
     const newPackage: VenuePackage = {
       name: packageInput.trim(),
       price: packagePriceInput.trim(),
-      thumbnail: packageThumbnailInput
+      thumbnail: packageThumbnailInput || undefined,
+      description: packageDescriptionInput.trim() || undefined,
+      includedServices: packageIncludedServices.length > 0 ? [...packageIncludedServices] : undefined,
+      minGuests: packageMinGuestsInput ? parseInt(packageMinGuestsInput) : undefined,
+      maxGuests: packageMaxGuestsInput ? parseInt(packageMaxGuestsInput) : undefined,
     };
     setForm((prev: VenueFormData) => ({ ...prev, packages: [...(prev.packages || []), newPackage] }));
     setPackageInput('');
     setPackagePriceInput('');
     setPackageThumbnailInput('');
+    setPackageDescriptionInput('');
+    setPackageMinGuestsInput('');
+    setPackageMaxGuestsInput('');
+    setPackageIncludedServices([]);
   };
 
   const handleRemovePackage = (index: number) => {
@@ -1255,11 +1267,8 @@ export default function VenueFormModal({ isOpen, onClose, onSubmit, initialData,
                     flexDirection: 'column',
                     gap: 12
                   }}>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 140px',
-                      gap: 12
-                    }}>
+                    {/* Name + Price row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
                       <input
                         className="form-input"
                         value={packageInput}
@@ -1276,12 +1285,87 @@ export default function VenueFormModal({ isOpen, onClose, onSubmit, initialData,
                       />
                     </div>
 
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      flexWrap: 'wrap'
-                    }}>
+                    {/* Min + Max Guests row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="1"
+                        value={packageMinGuestsInput}
+                        onChange={e => setPackageMinGuestsInput(e.target.value)}
+                        placeholder="Min guests (e.g. 2)"
+                        style={{ backgroundColor: '#FFF' }}
+                      />
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="1"
+                        value={packageMaxGuestsInput}
+                        onChange={e => setPackageMaxGuestsInput(e.target.value)}
+                        placeholder="Max guests (e.g. 10)"
+                        style={{ backgroundColor: '#FFF' }}
+                      />
+                    </div>
+
+                    {/* Description textarea */}
+                    <textarea
+                      className="form-input"
+                      value={packageDescriptionInput}
+                      onChange={e => setPackageDescriptionInput(e.target.value)}
+                      placeholder="Package description (optional)"
+                      rows={2}
+                      style={{ backgroundColor: '#FFF', resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+                    />
+
+                    {/* Included Services checkboxes */}
+                    {(form.services || []).length > 0 && (
+                      <div>
+                        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#666', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                          Included Services
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {(form.services || []).map((svc: VenueService, idx: number) => {
+                            const isChecked = packageIncludedServices.includes(svc.name);
+                            return (
+                              <label
+                                key={idx}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '5px 10px',
+                                  borderRadius: 20,
+                                  border: `1px solid ${isChecked ? '#9A7B3C' : '#DDD'}`,
+                                  backgroundColor: isChecked ? '#FEF9E7' : '#FFF',
+                                  cursor: 'pointer',
+                                  fontSize: 13,
+                                  color: isChecked ? '#9A7B3C' : '#555',
+                                  fontWeight: isChecked ? 600 : 400,
+                                  userSelect: 'none',
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setPackageIncludedServices(prev =>
+                                      prev.includes(svc.name)
+                                        ? prev.filter(s => s !== svc.name)
+                                        : [...prev, svc.name]
+                                    );
+                                  }}
+                                  style={{ display: 'none' }}
+                                />
+                                {svc.name}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Thumbnail + Add button row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 200 }}>
                         <div className="upload-container" style={{ minHeight: 46, backgroundColor: '#FFF' }}>
                           {packageThumbnailInput ? (
@@ -1323,19 +1407,47 @@ export default function VenueFormModal({ isOpen, onClose, onSubmit, initialData,
                         <div key={i} className="addon-item" style={{
                           backgroundColor: '#FEF9E7',
                           borderColor: '#9A7B3C20',
-                          padding: '10px 14px',
+                          padding: '12px 14px',
                           display: 'flex',
-                          alignItems: 'center',
+                          alignItems: 'flex-start',
                           borderRadius: 10
                         }}>
                           {pkg.thumbnail && (
-                            <img src={pkg.thumbnail} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', marginRight: 12 }} />
+                            <img src={pkg.thumbnail} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', marginRight: 12, flexShrink: 0 }} />
                           )}
-                          <div style={{ flex: 1 }}>
-                            <div className="addon-name" style={{ color: '#9A7B3C', fontWeight: 600 }}>{pkg.name}</div>
-                            <div className="addon-price" style={{ color: '#9A7B3C', opacity: 0.8, fontSize: 12 }}>{pkg.price}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                              <span className="addon-name" style={{ color: '#9A7B3C', fontWeight: 600 }}>{pkg.name}</span>
+                              <span className="addon-price" style={{ color: '#9A7B3C', opacity: 0.8, fontSize: 12 }}>{pkg.price}</span>
+                              {(pkg.minGuests || pkg.maxGuests) && (
+                                <span style={{ fontSize: 11, color: '#9A7B3C', opacity: 0.7 }}>
+                                  · {pkg.minGuests && pkg.maxGuests
+                                    ? `${pkg.minGuests}–${pkg.maxGuests} guests`
+                                    : pkg.minGuests
+                                    ? `Min ${pkg.minGuests} guests`
+                                    : `Max ${pkg.maxGuests} guests`}
+                                </span>
+                              )}
+                            </div>
+                            {pkg.description && (
+                              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9A7B3C', opacity: 0.75, lineHeight: 1.4 }}>{pkg.description}</p>
+                            )}
+                            {(pkg.includedServices || []).length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                                {pkg.includedServices!.map((s, si) => (
+                                  <span key={si} style={{
+                                    fontSize: 11,
+                                    padding: '2px 8px',
+                                    borderRadius: 12,
+                                    backgroundColor: '#9A7B3C18',
+                                    color: '#9A7B3C',
+                                    fontWeight: 500
+                                  }}>{s}</span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <button type="button" className="addon-remove" onClick={() => handleRemovePackage(i)}>×</button>
+                          <button type="button" className="addon-remove" style={{ marginLeft: 8 }} onClick={() => handleRemovePackage(i)}>×</button>
                         </div>
                       ))}
                     </div>
