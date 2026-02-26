@@ -348,11 +348,11 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     quote: v.brand_quote,
     galleryPhotos: v.gallery_photo_urls || [],
     amenities: v.modalities || [],
-    facilities: v.retreat_venue_types || [],
+    facilities: v.retreat_venue_type || [],
 
     // Retreat Specific Fields
     shortDescription: v.short_description,
-    retreatVenueType: v.retreat_venue_types || [],
+    retreatVenueType: v.retreat_venue_type || [],
     hireType: v.hire_type,
     experienceFeatureImage: v.experience_feature_image,
     introText: v.intro_text,
@@ -405,7 +405,7 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     featuredListing: v.featured_listing,
     instantBooking: v.instant_booking,
     internalNotes: v.internal_notes,
-    venuePolicies: v.venue_policies || '',
+    venuePolicies: v.house_rules || '',
 
     // Interface placeholders
     hasAccommodation: true, // Retreats typically have accommodation
@@ -443,7 +443,7 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     gallery_photo_urls: v.galleryPhotos,
     description: v.description,
     short_description: v.shortDescription,
-    retreat_venue_types: v.retreatVenueType,
+    retreat_venue_type: v.retreatVenueType,
     hire_type: v.hireType,
     experience_feature_image: v.experienceFeatureImage || '',
     intro_text: v.introText || '',
@@ -496,7 +496,10 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     featured_listing: v.featuredListing || false,
     instant_booking: v.instantBooking || false,
     internal_notes: v.internalNotes || '',
-    venue_policies: v.venuePolicies || '',
+    house_rules: v.houseRules || '',
+    health_safety: v.healthSafety || '',
+    cancellation_policy: v.cancellationPolicy || '',
+    booking_policy: v.bookingPolicy || '',
   });
 
   const fetchVenues = async () => {
