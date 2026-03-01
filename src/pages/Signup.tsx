@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Lock, Mail, User, Loader2 } from 'lucide-react';
 
 export default function Signup() {
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +31,7 @@ export default function Signup() {
         }
 
         setIsLoading(true);
-        const { error } = await signUp(email, password);
+        const { error } = await signUp(email, password, fullName);
 
         if (error) {
             setError(error);
@@ -69,6 +70,23 @@ export default function Signup() {
                     )}
 
                     <form onSubmit={handleSubmit} className="auth-form">
+                        <div className="auth-field">
+                            <label className="auth-label" htmlFor="fullName">Full Name</label>
+                            <div className="auth-input-wrapper">
+                                <User size={18} className="auth-input-icon" />
+                                <input
+                                    id="fullName"
+                                    type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Your full name"
+                                    className="auth-input"
+                                    required
+                                    autoComplete="name"
+                                />
+                            </div>
+                        </div>
+
                         <div className="auth-field">
                             <label className="auth-label" htmlFor="email">Email Address</label>
                             <div className="auth-input-wrapper">
@@ -114,7 +132,7 @@ export default function Signup() {
                         <div className="auth-field">
                             <label className="auth-label" htmlFor="confirmPassword">Confirm Password</label>
                             <div className="auth-input-wrapper">
-                                <User size={18} className="auth-input-icon" />
+                                <Lock size={18} className="auth-input-icon" />
                                 <input
                                     id="confirmPassword"
                                     type={showPassword ? 'text' : 'password'}
