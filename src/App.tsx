@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Venues from './pages/Venues';
 import VenueDetail from './pages/VenueDetail';
 import Enquiries from './pages/Enquiries';
+import Bookings from './pages/Bookings';
 import VenueOwners from './pages/VenueOwners';
 import VenueOwnerDetail from './pages/VenueOwnerDetail';
 import RetreatHosts from './pages/RetreatHosts';
@@ -77,6 +78,7 @@ function App() {
                 <Route path="/venues" element={<Venues />} />
                 <Route path="/venues/:id" element={<VenueDetail />} />
                 <Route path="/enquiries" element={<Enquiries />} />
+                <Route path="/bookings" element={<Bookings />} />
                 <Route path="/venue-owners" element={<VenueOwners />} />
                 <Route path="/venue-owners/:id" element={<VenueOwnerDetail />} />
                 <Route path="/retreat-hosts" element={<RetreatHosts />} />

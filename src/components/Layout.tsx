@@ -4,6 +4,7 @@ import {
   LayoutGrid,
   Home,
   MessageSquare,
+  CalendarCheck,
   User,
   Globe,
   Users,
@@ -40,6 +41,7 @@ const navSections: NavSection[] = [
     items: [
       { to: '/venues', icon: Home, label: 'Venues', badge: '47' },
       { to: '/enquiries', icon: MessageSquare, label: 'Enquiries', badge: '5' },
+      { to: '/bookings',  icon: CalendarCheck,  label: 'Bookings' },
     ],
   },
   {
