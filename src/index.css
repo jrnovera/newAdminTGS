@@ -875,6 +875,30 @@ a {
   border-color: var(--text);
 }
 
+/* ===== BULK ACTION BAR ===== */
+.bulk-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.bulk-action-bar .bulk-count {
+  font-weight: 600;
+  flex: 1;
+}
+
+.bulk-action-bar .btn {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 /* ===== PAGINATION ===== */
 .pagination {
   display: flex;

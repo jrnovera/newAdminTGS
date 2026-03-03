@@ -15,6 +15,8 @@ export default function Venues() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   // Close action menu on outside click
   useEffect(() => {
@@ -87,6 +89,33 @@ export default function Venues() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredVenues.length && filteredVenues.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredVenues.map(v => v.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const count = selectedIds.size;
+    try {
+      await Promise.all([...selectedIds].map(id => deleteVenue(id)));
+      showToast(`${count} venue(s) deleted`, 'error');
+      setSelectedIds(new Set());
+    } catch (err) {
+      showToast('Failed to delete some venues', 'error');
+    }
+  };
+
   const subClass = (sub: string) => {
     switch (sub) {
       case 'Essentials': return 'sub-essentials';
@@ -155,11 +184,30 @@ export default function Venues() {
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="bulk-action-bar">
+          <span className="bulk-count">{selectedIds.size} venue{selectedIds.size !== 1 ? 's' : ''} selected</span>
+          <button className="btn btn-danger" onClick={() => setShowBulkDeleteModal(true)}>
+            <Trash2 size={14} /> Delete Selected
+          </button>
+          <button className="btn btn-secondary" onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="data-table-container">
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: 40 }}><input type="checkbox" /></th>
+              <th style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  checked={filteredVenues.length > 0 && selectedIds.size === filteredVenues.length}
+                  ref={(el) => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredVenues.length; }}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="sortable">Venue Name</th>
               <th className="sortable">Type</th>
               <th className="sortable">Location</th>
@@ -189,8 +237,10 @@ export default function Venues() {
               </tr>
             ) : (
               filteredVenues.map((v) => (
-                <tr key={v.id}>
-                  <td onClick={(e) => e.stopPropagation()}><input type="checkbox" /></td>
+                <tr key={v.id} style={selectedIds.has(v.id) ? { backgroundColor: 'rgba(245, 158, 11, 0.06)' } : {}}>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={selectedIds.has(v.id)} onChange={() => toggleSelect(v.id)} />
+                  </td>
                   <td onClick={() => navigate(`/venues/${v.id}`)} style={{ cursor: 'pointer' }}>
                     <div style={{ fontWeight: 500 }}>{v.name}</div>
                     <div style={{ fontSize: 12, color: '#B8B8B8' }}>{v.location}</div>
@@ -250,7 +300,15 @@ export default function Venues() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Bulk Delete Modal */}
+      <DeleteConfirmModal
+        isOpen={showBulkDeleteModal}
+        onClose={() => setShowBulkDeleteModal(false)}
+        onConfirm={handleBulkDelete}
+        venueName={`${selectedIds.size} selected venue${selectedIds.size !== 1 ? 's' : ''}`}
+      />
+
+      {/* Single Delete Modal */}
       <DeleteConfirmModal
         isOpen={!!deletingVenue}
         onClose={() => setDeletingVenue(null)}

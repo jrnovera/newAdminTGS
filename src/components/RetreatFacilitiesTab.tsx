@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Image, Check } from 'lucide-react';
 import type { Venue, RetreatFacility } from '../context/VenueContext';
 
@@ -53,6 +53,7 @@ export default function RetreatFacilitiesTab({ venue, onUpdate }: RetreatFacilit
     const [notes, setNotes] = useState(venue.retreatFacilitiesNotes || '');
     const [supportedTypes, setSupportedTypes] = useState<string[]>(venue.supportedRetreatTypes || []);
     const [newEquipment, setNewEquipment] = useState<Record<string, string>>({});
+    const tabImageInputRef = useRef<HTMLInputElement>(null);
 
     // Sync changes back up whenever local state changes
     useEffect(() => {
@@ -126,11 +127,27 @@ export default function RetreatFacilitiesTab({ venue, onUpdate }: RetreatFacilit
                 <div className="rf-section-body">
                     <div className="rf-form-group">
                         <label className="rf-form-label">Retreat Spaces Tab Hero Image</label>
-                        <div className="rf-image-upload-area">
-                            <Image size={48} strokeWidth={1} style={{ marginBottom: 16, color: '#B8B8B8' }} />
-                            <p className="rf-image-upload-label">Click to upload or drag and drop</p>
-                            <p className="rf-image-upload-hint">Recommended: 1920×600px, JPG or PNG</p>
+                        <div className="rf-image-upload-area" onClick={() => tabImageInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+                            {tabImage ? (
+                                <img src={tabImage} alt="Tab hero" style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 8 }} />
+                            ) : (
+                                <>
+                                    <Image size={48} strokeWidth={1} style={{ marginBottom: 16, color: '#B8B8B8' }} />
+                                    <p className="rf-image-upload-label">Click to upload or drag and drop</p>
+                                    <p className="rf-image-upload-hint">Recommended: 1920×600px, JPG or PNG</p>
+                                </>
+                            )}
                         </div>
+                        <input
+                            ref={tabImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setTabImage(URL.createObjectURL(file));
+                            }}
+                        />
                     </div>
                 </div>
             </section>

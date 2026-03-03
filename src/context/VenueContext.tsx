@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
+// =============================================================================
+// INTERFACES  (kept identical to original so all downstream pages still work)
+// =============================================================================
+
 export interface PricingTier {
   label: string;
   days: number;
@@ -105,8 +109,6 @@ export interface Venue {
   description: string;
   website: string;
   amenities: string[];
-
-  // New comprehensive wellness fields
   services?: VenueService[];
   openingTime?: string;
   closingTime?: string;
@@ -125,31 +127,23 @@ export interface Venue {
   introParagraph1?: string;
   introParagraph2?: string;
   ownerAddress?: string;
-
   showAccommodationSection?: boolean;
   showOnWebsite?: boolean;
   whatsIncluded?: string[];
-
   accommodationAmenities?: string[];
   addOns?: AddOn[];
   bedConfiguration?: BedConfiguration;
   individualRooms?: IndividualRoom[];
-
   hasAccommodation: boolean;
-
   retreatType?: 'Separate Building' | 'Group Hosting';
   hasKitchen?: boolean;
   hasGarden?: boolean;
   hasMeditationHall?: boolean;
-
   wellnessType?: 'Bathhouse' | 'Treatment Centre' | 'Hotel' | 'Wellness Center';
   offersTherapeuticServices?: boolean;
-
   facilities: string[];
   pricingTiers: PricingTier[];
   practitioners?: Practitioner[];
-
-  // Detailed policies and practical info
   houseRules?: string;
   healthSafety?: string;
   ageRequirements?: string;
@@ -158,8 +152,6 @@ export interface Venue {
   directions?: string;
   modalities?: string[];
   locationSetting?: string;
-
-  // New Retreat-Specific Fields (Consistently CamelCased)
   retreatVenueType?: string[];
   experienceFeatureImage?: string;
   introText?: string;
@@ -214,8 +206,6 @@ export interface Venue {
   internalNotes?: string;
   shortDescription?: string;
   venuePolicies?: string;
-
-  // Retreat Facilities Tab
   retreatFacilities?: RetreatFacility[];
   retreatFacilitiesTabImage?: string;
   retreatFacilitiesLabel?: string;
@@ -224,8 +214,6 @@ export interface Venue {
   retreatFacilitiesIntro?: string;
   retreatFacilitiesNotes?: string;
   supportedRetreatTypes?: string[];
-
-  // New fields for modal
   startingPrice?: number;
   totalBookings?: number;
   primaryVenueType?: string;
@@ -243,359 +231,400 @@ interface VenueContextType {
 
 const VenueContext = createContext<VenueContextType | null>(null);
 
-const defaultBedConfig = {
-  kingBeds: 0, queenBeds: 0, doubleBeds: 0, singleBeds: 0,
-  twinBeds: 0, bunkBeds: 0, sofaBeds: 0, rollawayBeds: 0,
+// =============================================================================
+// HELPERS — value conversions between app (Title Case) and DB (snake_case)
+// =============================================================================
+
+const toAppStatus = (s: string): 'Active' | 'Draft' | 'Inactive' =>
+  (s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Draft') as 'Active' | 'Draft' | 'Inactive';
+
+const toAppSub = (s: string): 'Essentials' | 'Standard' | 'Featured' | 'Premium' =>
+  (s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Essentials') as 'Essentials' | 'Standard' | 'Featured' | 'Premium';
+
+// "Exclusive Use" → "exclusive_use"
+const toDbHireType = (h?: string): string | null => {
+  if (!h) return null;
+  return h.toLowerCase().replace(/\s+/g, '_');
 };
+
+// "Operational" → "operational", "Temporarily Closed" → "temporarily_closed"
+const toDbPropertyStatus = (s?: string): string => {
+  if (!s) return 'operational';
+  return s.toLowerCase().replace(/\s+/g, '_');
+};
+
+// "Square Metres" → "sqm"
+const toDbSizeUnit = (u?: string): string | null => {
+  if (!u) return null;
+  if (u.toLowerCase().includes('square')) return 'sqm';
+  return u.toLowerCase();
+};
+
+// =============================================================================
+// MAP FROM v_venues_full VIEW → Venue interface
+// =============================================================================
+
+const mapFromView = (v: any): Venue => ({
+  id: v.id,
+  type: v.venue_type === 'retreat' ? 'Retreat' : 'Wellness',
+  date: v.created_at,
+
+  // Basic Info
+  name: v.name || '',
+  primaryVenueType: v.primary_venue_type || '',
+  retreatVenueType: v.venue_type_tags || [],
+  hireType: v.hire_type ? v.hire_type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : '',
+  bestFor: v.best_for || [],
+  languages: v.languages_spoken || [],
+  wheelchairAccessible: v.is_wheelchair_accessible ?? false,
+
+  // Content
+  shortDescription: v.short_description || '',
+  description: v.description || '',
+  quote: v.brand_quote || '',
+  introParagraph1: v.intro_paragraph || '',
+  introParagraph2: '',
+
+  // Experience
+  experienceTitle: v.experience_title || '',
+  experienceSubtitle: v.experience_subtitle || '',
+  experienceDescription: v.experience_description || '',
+  modalities: v.modalities || [],
+  idealRetreatTypes: v.ideal_retreat_types || [],
+  retreatStyles: v.retreat_styles || [],
+
+  // Property Details
+  propertySizeValue: v.property_size_value || 0,
+  propertySizeUnit: v.property_size_unit
+    ? v.property_size_unit === 'sqm' ? 'Square Metres' : v.property_size_unit.charAt(0).toUpperCase() + v.property_size_unit.slice(1)
+    : 'Acres',
+  established: v.established_year || '',
+  architectureStyle: v.architecture_style || '',
+
+  // Location
+  streetAddress: v.street_address || '',
+  suburb: v.suburb || '',
+  postcode: v.postcode || '',
+  stateProvince: v.state_province || '',
+  country: v.country || 'Australia',
+  shortLoc: v.short_loc || '',
+  location: v.full_location || '',
+  gpsCoordinates: v.gps_lat != null && v.gps_lng != null ? `${v.gps_lat}, ${v.gps_lng}` : '',
+  climate: v.climate || '',
+  locationType: v.location_types || [],
+  locationSetting: v.location_setting || '',
+  nearestAirport: v.nearest_airport || '',
+  transportAccess: v.transport_access || [],
+  directions: v.directions || '',
+
+  // Status & Listing
+  status: toAppStatus(v.status),
+  propertyStatus: v.property_status
+    ? v.property_status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+    : 'Operational',
+  subscription: toAppSub(v.subscription_tier),
+  sanctumVetted: v.sanctum_vetted ?? false,
+  featuredListing: v.featured_listing ?? false,
+  instantBooking: v.instant_booking ?? false,
+  isAvailable: v.is_available ?? true,
+  showOnWebsite: v.show_on_website ?? true,
+  startingPrice: v.starting_price || 0,
+
+  // Accommodation
+  hasAccommodation: v.venue_type === 'retreat',
+  capacity: v.max_guests || 0,
+  maxGuests: v.max_guests || 0,
+  minGuests: v.min_guests || 1,
+  totalBedrooms: v.total_bedrooms || 0,
+  totalBathrooms: v.total_bathrooms || 0,
+  sharedBathrooms: v.shared_bathrooms || 0,
+  privateEnsuites: v.private_ensuites || 0,
+  accommodationStyle: v.accommodation_style || '',
+  propertyType: v.property_type || '',
+  accommodationDescription: v.accommodation_description || '',
+  showAccommodationSection: v.show_accommodation_section ?? true,
+  accommodationAmenities: v.accommodation_amenities || [],
+  bedConfigKing: v.beds_king || 0,
+  bedConfigQueen: v.beds_queen || 0,
+  bedConfigDouble: v.beds_double || 0,
+  bedConfigSingle: v.beds_single || 0,
+  bedConfigTwin: v.beds_twin || 0,
+  bedConfigBunk: v.beds_bunk || 0,
+  bedConfigSofa: v.beds_sofa || 0,
+  bedConfigRollaway: v.beds_rollaway || 0,
+  checkInTime: v.check_in_time || '',
+  checkOutTime: v.check_out_time || '',
+  earlyCheckInAvailable: v.early_check_in_available ?? false,
+  lateCheckOutAvailable: v.late_check_out_available ?? false,
+  childrenAllowed: v.children_allowed ?? true,
+  minimumChildAge: v.minimum_child_age || 0,
+  petsAllowed: v.pets_allowed ?? false,
+  smokingAllowed: v.smoking_allowed ?? false,
+
+  // Amenities
+  amenities: v.facilities_list || [],
+  facilities: v.facilities_list || [],
+  whatsIncluded: v.whats_included || [],
+
+  // Policies
+  cancellationPolicy: v.cancellation_policy || '',
+  bookingPolicy: v.booking_policy || '',
+  houseRules: v.house_rules || '',
+  healthSafety: v.health_safety || '',
+  ageRequirements: v.age_requirements || '',
+  policies: v.access_policies || '',
+  venuePolicies: v.general_policies || '',
+
+  // Owner / Manager
+  owner: v.owner_name || '',
+  email: v.owner_email || '',
+  phone: v.owner_phone || '',
+  ownerAddress: v.owner_address || '',
+  website: v.website_url || '',
+
+  // Internal / CRM
+  internalNotes: v.internal_notes || '',
+  availabilityTime: v.availability_notes || '',
+  totalBookings: v.total_bookings || 0,
+
+  // Retreat Facilities editorial
+  retreatFacilitiesTabImage: v.retreat_tab_image_url || '',
+  retreatFacilitiesLabel: v.retreat_facilities_label || 'Retreat Spaces',
+  retreatFacilitiesTitle: v.retreat_facilities_title || '',
+  retreatFacilitiesSubtitle: v.retreat_facilities_subtitle || '',
+  retreatFacilitiesIntro: v.retreat_facilities_intro || '',
+  retreatFacilitiesNotes: v.retreat_facilities_notes || '',
+  supportedRetreatTypes: v.retreat_supported_types || [],
+
+  // Child-table data (not in view — loaded separately on the detail page)
+  heroImage: '',
+  galleryPhotos: [],
+  experienceFeatureImage: '',
+  services: [],
+  packages: [],
+  addOns: [],
+  pricingTiers: [],
+  practitioners: [],
+  retreatFacilities: [],
+  individualRooms: [],
+  bedConfiguration: {
+    kingBeds: v.beds_king || 0,
+    queenBeds: v.beds_queen || 0,
+    doubleBeds: v.beds_double || 0,
+    singleBeds: v.beds_single || 0,
+    twinBeds: v.beds_twin || 0,
+    bunkBeds: v.beds_bunk || 0,
+    sofaBeds: v.beds_sofa || 0,
+    rollawayBeds: v.beds_rollaway || 0,
+  },
+});
+
+// =============================================================================
+// BUILD SATELLITE TABLE PAYLOADS
+// Converts a Venue object into row objects for each 1:1 satellite table.
+// =============================================================================
+
+function buildSatellitePayloads(venueId: string, venue: Partial<Venue>) {
+  // Split GPS coordinate string into separate lat/lng numbers
+  let gpsLat: number | null = null;
+  let gpsLng: number | null = null;
+  if (venue.gpsCoordinates) {
+    const parts = venue.gpsCoordinates.split(',').map((p) => parseFloat(p.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      [gpsLat, gpsLng] = parts;
+    }
+  }
+
+  return {
+    basic_info: {
+      venue_id: venueId,
+      name: venue.name ?? '',
+      primary_venue_type: venue.primaryVenueType ?? null,
+      venue_type_tags: venue.retreatVenueType ?? [],
+      hire_type: toDbHireType(venue.hireType),
+      best_for: venue.bestFor ?? [],
+      languages_spoken: venue.languages ?? [],
+      is_wheelchair_accessible: venue.wheelchairAccessible ?? false,
+    },
+    content: {
+      venue_id: venueId,
+      short_description: venue.shortDescription ?? null,
+      description: venue.description ?? null,
+      brand_quote: venue.quote ?? null,
+      intro_paragraph: venue.introParagraph1 ?? null,
+    },
+    experience: {
+      venue_id: venueId,
+      experience_title: venue.experienceTitle ?? null,
+      experience_subtitle: venue.experienceSubtitle ?? null,
+      experience_description: venue.experienceDescription ?? null,
+      modalities: venue.modalities ?? [],
+      ideal_retreat_types: venue.idealRetreatTypes ?? [],
+      retreat_styles: venue.retreatStyles ?? [],
+    },
+    property_details: {
+      venue_id: venueId,
+      property_size_value: venue.propertySizeValue ?? null,
+      property_size_unit: toDbSizeUnit(venue.propertySizeUnit),
+      established_year: venue.established ?? null,
+      architecture_style: venue.architectureStyle ?? null,
+    },
+    location: {
+      venue_id: venueId,
+      street_address: venue.streetAddress ?? null,
+      suburb: venue.suburb ?? null,
+      postcode: venue.postcode ?? null,
+      state_province: venue.stateProvince ?? null,
+      country: venue.country ?? 'Australia',
+      short_loc: venue.shortLoc ?? null,
+      full_location: venue.location ?? null,
+      gps_lat: gpsLat,
+      gps_lng: gpsLng,
+      climate: venue.climate ?? null,
+      location_types: venue.locationType ?? [],
+      location_setting: venue.locationSetting ?? null,
+      nearest_airport: venue.nearestAirport ?? null,
+      transport_access: venue.transportAccess ?? [],
+      directions: venue.directions ?? null,
+    },
+    status: {
+      venue_id: venueId,
+      status: (venue.status ?? 'Draft').toLowerCase(),
+      property_status: toDbPropertyStatus(venue.propertyStatus),
+      subscription_tier: (venue.subscription ?? 'Essentials').toLowerCase(),
+      sanctum_vetted: venue.sanctumVetted ?? false,
+      featured_listing: venue.featuredListing ?? false,
+      instant_booking: venue.instantBooking ?? false,
+      is_available: venue.isAvailable ?? true,
+      show_on_website: venue.showOnWebsite ?? true,
+      starting_price: venue.startingPrice ?? null,
+    },
+    accommodation: {
+      venue_id: venueId,
+      max_guests: venue.maxGuests ?? 0,
+      min_guests: venue.minGuests ?? 1,
+      total_bedrooms: venue.totalBedrooms ?? 0,
+      total_bathrooms: venue.totalBathrooms ?? 0,
+      shared_bathrooms: venue.sharedBathrooms ?? 0,
+      private_ensuites: venue.privateEnsuites ?? 0,
+      accommodation_style: venue.accommodationStyle ?? null,
+      property_type: venue.propertyType ?? null,
+      accommodation_description: venue.accommodationDescription ?? null,
+      show_accommodation_section: venue.showAccommodationSection ?? true,
+      accommodation_amenities: venue.accommodationAmenities ?? [],
+      beds_king: venue.bedConfigKing ?? 0,
+      beds_queen: venue.bedConfigQueen ?? 0,
+      beds_double: venue.bedConfigDouble ?? 0,
+      beds_single: venue.bedConfigSingle ?? 0,
+      beds_twin: venue.bedConfigTwin ?? 0,
+      beds_bunk: venue.bedConfigBunk ?? 0,
+      beds_sofa: venue.bedConfigSofa ?? 0,
+      beds_rollaway: venue.bedConfigRollaway ?? 0,
+      check_in_time: venue.checkInTime ?? null,
+      check_out_time: venue.checkOutTime ?? null,
+      early_check_in_available: venue.earlyCheckInAvailable ?? false,
+      late_check_out_available: venue.lateCheckOutAvailable ?? false,
+      children_allowed: venue.childrenAllowed ?? true,
+      minimum_child_age: venue.minimumChildAge ?? null,
+      pets_allowed: venue.petsAllowed ?? false,
+      smoking_allowed: venue.smokingAllowed ?? false,
+    },
+    amenities: {
+      venue_id: venueId,
+      facilities_list: venue.facilities ?? [],
+      whats_included: venue.whatsIncluded ?? [],
+    },
+    policies: {
+      venue_id: venueId,
+      cancellation_policy: venue.cancellationPolicy ?? null,
+      booking_policy: venue.bookingPolicy ?? null,
+      house_rules: venue.houseRules ?? null,
+      health_safety: venue.healthSafety ?? null,
+      age_requirements: venue.ageRequirements ?? null,
+      access_policies: venue.policies ?? null,
+      general_policies: venue.venuePolicies ?? null,
+    },
+    owner_info: {
+      venue_id: venueId,
+      owner_name: venue.owner ?? null,
+      owner_email: venue.email ?? null,
+      owner_phone: venue.phone ?? null,
+      owner_address: venue.ownerAddress ?? null,
+      website_url: venue.website ?? null,
+    },
+    internal: {
+      venue_id: venueId,
+      internal_notes: venue.internalNotes ?? null,
+      availability_notes: venue.availabilityTime ?? null,
+      total_bookings: venue.totalBookings ?? 0,
+    },
+    retreat_editorial: {
+      venue_id: venueId,
+      tab_image_url: venue.retreatFacilitiesTabImage ?? null,
+      label: venue.retreatFacilitiesLabel ?? 'Retreat Spaces',
+      title: venue.retreatFacilitiesTitle ?? null,
+      subtitle: venue.retreatFacilitiesSubtitle ?? null,
+      intro_text: venue.retreatFacilitiesIntro ?? null,
+      notes: venue.retreatFacilitiesNotes ?? null,
+      supported_retreat_types: venue.supportedRetreatTypes ?? [],
+    },
+  };
+}
+
+// Upsert all 1:1 satellite tables in parallel for a given venueId + venue data
+async function upsertSatelliteTables(venueId: string, venue: Partial<Venue>) {
+  const p = buildSatellitePayloads(venueId, venue);
+
+  const results = await Promise.allSettled([
+    supabase.from('venue_basic_info').upsert(p.basic_info, { onConflict: 'venue_id' }),
+    supabase.from('venue_content').upsert(p.content, { onConflict: 'venue_id' }),
+    supabase.from('venue_experience').upsert(p.experience, { onConflict: 'venue_id' }),
+    supabase.from('venue_property_details').upsert(p.property_details, { onConflict: 'venue_id' }),
+    supabase.from('venue_location').upsert(p.location, { onConflict: 'venue_id' }),
+    supabase.from('venue_status').upsert(p.status, { onConflict: 'venue_id' }),
+    supabase.from('venue_accommodation').upsert(p.accommodation, { onConflict: 'venue_id' }),
+    supabase.from('venue_amenities').upsert(p.amenities, { onConflict: 'venue_id' }),
+    supabase.from('venue_policies').upsert(p.policies, { onConflict: 'venue_id' }),
+    supabase.from('venue_owner_info').upsert(p.owner_info, { onConflict: 'venue_id' }),
+    supabase.from('venue_internal').upsert(p.internal, { onConflict: 'venue_id' }),
+    supabase.from('venue_retreat_editorial').upsert(p.retreat_editorial, { onConflict: 'venue_id' }),
+  ]);
+
+  results.forEach((r, i) => {
+    const tableNames = [
+      'venue_basic_info', 'venue_content', 'venue_experience', 'venue_property_details',
+      'venue_location', 'venue_status', 'venue_accommodation', 'venue_amenities',
+      'venue_policies', 'venue_owner_info', 'venue_internal', 'venue_retreat_editorial',
+    ];
+    if (r.status === 'rejected') {
+      console.error(`[VenueContext] upsert failed for ${tableNames[i]}:`, r.reason);
+    } else if (r.value.error) {
+      console.error(`[VenueContext] upsert error in ${tableNames[i]}:`, r.value.error.message);
+    }
+  });
+}
+
+// =============================================================================
+// PROVIDER
+// =============================================================================
 
 export function VenueProvider({ children }: { children: ReactNode }) {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const mapFromDB = (v: any): Venue => ({
-    id: v.id,
-    name: v.name,
-    location: v.location,
-    shortLoc: v.short_loc,
-    type: (v.venue_category === 'Retreat' || v.retreat_type) ? 'Retreat' : 'Wellness',
-    capacity: v.capacity,
-    status: v.status,
-    subscription: v.subscription,
-    date: v.date_added,
-    owner: v.owner_name,
-    email: v.owner_email,
-    phone: v.owner_phone,
-    description: v.description,
-    website: v.website_url,
-    amenities: v.facilities_list || [], // fallback
-    services: v.services,
-    openingTime: v.opening_time,
-    closingTime: v.closing_time,
-    packages: v.packages,
-    venueTypeCategory: v.venue_category,
-    established: v.established_date,
-    bestFor: v.best_for,
-    availabilityTime: v.availability_notes,
-    wheelchairAccessible: v.is_wheelchair_accessible,
-    languages: v.languages_spoken,
-    policies: v.access_policies,
-    isAvailable: v.is_available,
-    heroImage: v.hero_image_url,
-    galleryPhotos: v.gallery_photo_urls,
-    quote: v.brand_quote,
-    introParagraph1: v.intro_para_1,
-    introParagraph2: v.intro_para_2,
-    ownerAddress: v.owner_address,
-    showAccommodationSection: v.show_accommodation_section,
-    showOnWebsite: v.show_on_website,
-    whatsIncluded: v.whats_included,
-    accommodationAmenities: v.accommodation_amenities,
-    addOns: v.add_ons,
-    individualRooms: v.individual_rooms,
-    hasAccommodation: v.has_accommodation,
-    retreatType: v.retreat_type,
-    hasKitchen: v.has_kitchen,
-    hasGarden: v.has_garden,
-    hasMeditationHall: v.has_meditation_hall,
-    wellnessType: v.wellness_type,
-    offersTherapeuticServices: v.offers_therapeutic_services,
-    facilities: v.facilities_list || [],
-    pricingTiers: v.pricing_tiers || [],
-    practitioners: v.practitioners || [],
-
-    // Mapping new fields
-    houseRules: v.house_rules,
-    healthSafety: v.health_safety,
-    ageRequirements: v.age_requirements,
-    cancellationPolicy: v.cancellation_policy,
-    bookingPolicy: v.booking_policy,
-    directions: v.directions,
-    modalities: v.modalities || [],
-    locationSetting: v.location_setting,
-  });
-
-  const mapToDB = (v: any) => ({
-    name: v.name,
-    location: v.location,
-    short_loc: v.shortLoc,
-    capacity: v.capacity,
-    status: v.status,
-    subscription: v.subscription,
-    owner_name: v.owner,
-    owner_email: v.email,
-    owner_phone: v.phone,
-    description: v.description,
-    website_url: v.website,
-    services: v.services,
-    opening_time: v.openingTime,
-    closing_time: v.closingTime,
-    packages: v.packages,
-    venue_category: v.type === 'Retreat' ? 'Retreat' : v.venueTypeCategory,
-    established_date: v.established,
-    best_for: v.bestFor,
-    availability_notes: v.availabilityTime,
-    is_wheelchair_accessible: v.wheelchairAccessible,
-    languages_spoken: v.languages,
-    access_policies: v.policies,
-    is_available: v.isAvailable,
-    hero_image_url: v.heroImage,
-    gallery_photo_urls: v.galleryPhotos,
-    brand_quote: v.quote,
-    intro_para_1: v.introParagraph1,
-    intro_para_2: v.introParagraph2,
-    owner_address: v.ownerAddress,
-    show_accommodation_section: v.showAccommodationSection,
-    show_on_website: v.showOnWebsite,
-    whats_included: v.whatsIncluded,
-    accommodation_amenities: v.accommodationAmenities,
-    add_ons: v.addOns,
-    individual_rooms: v.individualRooms,
-    has_accommodation: v.hasAccommodation,
-    retreat_type: v.retreatType,
-    has_kitchen: v.hasKitchen,
-    has_garden: v.hasGarden,
-    has_meditation_hall: v.hasMeditationHall,
-    wellness_type: v.wellnessType,
-    offers_therapeutic_services: v.offersTherapeuticServices,
-    facilities_list: v.facilities,
-    pricing_tiers: v.pricingTiers,
-    practitioners: v.practitioners,
-
-    // Mapping new fields
-    house_rules: v.houseRules,
-    health_safety: v.healthSafety,
-    age_requirements: v.ageRequirements,
-    cancellation_policy: v.cancellationPolicy,
-    booking_policy: v.bookingPolicy,
-    directions: v.directions,
-    modalities: v.modalities || [],
-    location_setting: v.locationSetting,
-  });
-
-  // Specialized mapping for the new retreat_venues table
-  const mapRetreatFromDB = (v: any): Venue => ({
-    id: v.id,
-    name: v.name,
-    location: v.location,
-    shortLoc: v.short_loc,
-    type: 'Retreat',
-    capacity: v.max_guests,
-    status: v.status,
-    subscription: v.subscription,
-    date: v.created_at,
-    owner: v.owner_name,
-    email: v.owner_email,
-    phone: v.owner_phone,
-    description: v.description,
-    website: v.website_url,
-    heroImage: v.hero_image_url,
-    quote: v.brand_quote,
-    galleryPhotos: v.gallery_photo_urls || [],
-    amenities: v.modalities || [],
-    facilities: v.retreat_venue_type || [],
-
-    // Retreat Specific Fields
-    shortDescription: v.short_description,
-    retreatVenueType: v.retreat_venue_type || [],
-    hireType: v.hire_type,
-    experienceFeatureImage: v.experience_feature_image,
-    introText: v.intro_text,
-    retreatStyles: v.retreat_styles || [],
-    idealRetreatTypes: v.ideal_retreat_types || [],
-    experienceTitle: v.experience_title,
-    experienceSubtitle: v.experience_subtitle,
-    experienceDescription: v.experience_description,
-    propertySizeValue: v.property_size_value,
-    propertySizeUnit: v.property_size_unit,
-    architectureStyle: v.architecture_style,
-    established: v.established_date,
-    streetAddress: v.street_address,
-    suburb: v.suburb,
-    postcode: v.postcode,
-    stateProvince: v.state_province,
-    country: v.country,
-    climate: v.climate,
-    locationType: v.location_type || [],
-    gpsCoordinates: v.gps_coordinates,
-    nearestAirport: v.nearest_airport,
-    transportAccess: v.transport_access || [],
-    maxGuests: v.max_guests,
-    minGuests: v.min_guests,
-    totalBedrooms: v.total_bedrooms,
-    totalBathrooms: v.total_bathrooms,
-    sharedBathrooms: v.shared_bathrooms,
-    privateEnsuites: v.private_ensuites,
-    accommodationStyle: v.accommodation_style,
-    propertyType: v.property_type,
-    accommodationDescription: v.accommodation_description,
-    bedConfigKing: v.bed_config_king,
-    bedConfigQueen: v.bed_config_queen,
-    bedConfigDouble: v.bed_config_double,
-    bedConfigSingle: v.bed_config_single,
-    bedConfigTwin: v.bed_config_twin,
-    bedConfigBunk: v.bed_config_bunk,
-    bedConfigSofa: v.bed_config_sofa,
-    bedConfigRollaway: v.bed_config_rollaway,
-    checkInTime: v.check_in_time,
-    checkOutTime: v.check_out_time,
-    earlyCheckInAvailable: v.early_check_in_available,
-    lateCheckOutAvailable: v.late_check_out_available,
-    childrenAllowed: v.children_allowed,
-    minimumChildAge: v.minimum_child_age,
-    petsAllowed: v.pets_allowed,
-    smokingAllowed: v.smoking_allowed,
-    propertyStatus: v.property_status,
-    sanctumVetted: v.sanctum_vetted,
-    featuredListing: v.featured_listing,
-    instantBooking: v.instant_booking,
-    internalNotes: v.internal_notes,
-    venuePolicies: v.house_rules || '',
-
-    // Interface placeholders
-    hasAccommodation: true, // Retreats typically have accommodation
-    bestFor: v.best_for || [],
-    availabilityTime: v.availability_notes,
-    wheelchairAccessible: v.is_wheelchair_accessible,
-    languages: v.languages_spoken || [],
-    isAvailable: v.is_available,
-    ownerAddress: v.owner_address,
-    showAccommodationSection: true,
-    showOnWebsite: true,
-    whatsIncluded: v.whats_included || [],
-    accommodationAmenities: v.accommodation_amenities || [],
-    addOns: v.add_ons || [],
-    individualRooms: v.individual_rooms || [],
-    pricingTiers: v.pricing_tiers || [],
-    practitioners: v.practitioners || [],
-    services: v.services || [],
-    packages: v.packages || [],
-    bedConfiguration: { ...defaultBedConfig },
-
-    // Retreat Facilities
-    retreatFacilities: v.retreat_facilities || [],
-    retreatFacilitiesTabImage: v.retreat_facilities_tab_image || '',
-    retreatFacilitiesLabel: v.retreat_facilities_label || 'Retreat Spaces',
-    retreatFacilitiesTitle: v.retreat_facilities_title || '',
-    retreatFacilitiesSubtitle: v.retreat_facilities_subtitle || '',
-    retreatFacilitiesIntro: v.retreat_facilities_intro || '',
-    retreatFacilitiesNotes: v.retreat_facilities_notes || '',
-    supportedRetreatTypes: v.supported_retreat_types || [],
-
-    // New fields
-    startingPrice: v.starting_price || 0,
-    totalBookings: v.total_bookings || 0,
-    primaryVenueType: v.primary_venue_type || '',
-  });
-
-  const mapRetreatToDB = (v: any) => ({
-    name: v.name,
-    location: v.location,
-    short_loc: v.shortLoc,
-    status: v.status,
-    subscription: v.subscription,
-    owner_name: v.owner,
-    owner_email: v.email,
-    owner_phone: v.phone,
-    website_url: v.website,
-    hero_image_url: v.heroImage,
-    brand_quote: v.quote,
-    gallery_photo_urls: v.galleryPhotos,
-    description: v.description,
-    short_description: v.shortDescription,
-    retreat_venue_type: v.retreatVenueType,
-    hire_type: v.hireType,
-    experience_feature_image: v.experienceFeatureImage || '',
-    intro_text: v.introText || '',
-    retreat_styles: v.retreatStyles || [],
-    ideal_retreat_types: v.idealRetreatTypes || [],
-    experience_title: v.experienceTitle || '',
-    experience_subtitle: v.experienceSubtitle || '',
-    experience_description: v.experienceDescription || '',
-    property_size_value: v.propertySizeValue || 0,
-    property_size_unit: v.propertySizeUnit || 'Acres',
-    architecture_style: v.architectureStyle || '',
-    established_date: v.established || '',
-    street_address: v.streetAddress || '',
-    suburb: v.suburb || '',
-    postcode: v.postcode || '',
-    state_province: v.stateProvince || '',
-    country: v.country || '',
-    climate: v.climate || '',
-    location_type: v.locationType || [],
-    gps_coordinates: v.gpsCoordinates || '',
-    nearest_airport: v.nearestAirport || '',
-    transport_access: v.transportAccess || [],
-    max_guests: v.maxGuests || 0,
-    min_guests: v.minGuests || 1,
-    total_bedrooms: v.totalBedrooms || 0,
-    total_bathrooms: v.totalBathrooms || 0,
-    shared_bathrooms: v.sharedBathrooms || 0,
-    private_ensuites: v.privateEnsuites || 0,
-    accommodation_style: v.accommodationStyle || '',
-    property_type: v.propertyType || '',
-    accommodation_description: v.accommodationDescription || '',
-    bed_config_king: v.bedConfigKing || 0,
-    bed_config_queen: v.bedConfigQueen || 0,
-    bed_config_double: v.bedConfigDouble || 0,
-    bed_config_single: v.bedConfigSingle || 0,
-    bed_config_twin: v.bedConfigTwin || 0,
-    bed_config_bunk: v.bed_config_bunk, // Wait, fixing underscore here too
-    bed_config_sofa: v.bed_config_sofa,
-    bed_config_rollaway: v.bed_config_rollaway,
-    check_in_time: v.checkInTime || '',
-    check_out_time: v.checkOutTime || '',
-    early_check_in_available: v.earlyCheckInAvailable || false,
-    late_check_out_available: v.lateCheckInAvailable || false,
-    children_allowed: v.childrenAllowed || true,
-    minimum_child_age: v.minimumChildAge || 0,
-    pets_allowed: v.petsAllowed || false,
-    smoking_allowed: v.smokingAllowed || false,
-    property_status: v.propertyStatus || 'Operational',
-    sanctum_vetted: v.sanctumVetted || false,
-    featured_listing: v.featuredListing || false,
-    instant_booking: v.instantBooking || false,
-    internal_notes: v.internalNotes || '',
-    house_rules: v.houseRules || '',
-    health_safety: v.healthSafety || '',
-    cancellation_policy: v.cancellationPolicy || '',
-    booking_policy: v.bookingPolicy || '',
-
-    // Retreat Facilities
-    retreat_facilities: v.retreatFacilities || [],
-    retreat_facilities_tab_image: v.retreatFacilitiesTabImage || '',
-    retreat_facilities_label: v.retreatFacilitiesLabel || 'Retreat Spaces',
-    retreat_facilities_title: v.retreatFacilitiesTitle || '',
-    retreat_facilities_subtitle: v.retreatFacilitiesSubtitle || '',
-    retreat_facilities_intro: v.retreatFacilitiesIntro || '',
-    retreat_facilities_notes: v.retreatFacilitiesNotes || '',
-    supported_retreat_types: v.supportedRetreatTypes || [],
-
-    // New fields
-    starting_price: v.startingPrice || 0,
-    total_bookings: v.totalBookings || 0,
-    primary_venue_type: v.primaryVenueType || '',
-  });
-
+  // ── Fetch all venues from the v_venues_full convenience view ───────────────
   const fetchVenues = async () => {
     try {
       setLoading(true);
-      // Fetch from both tables in parallel
-      const [wellnessRes, retreatRes] = await Promise.all([
-        supabase.from('wellness_venues').select('*').order('created_at', { ascending: false }),
-        supabase.from('retreat_venues').select('*').order('created_at', { ascending: false })
-      ]);
+      const { data, error } = await supabase
+        .from('v_venues_full')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (wellnessRes.error) throw wellnessRes.error;
-      if (retreatRes.error) throw retreatRes.error;
-
-      const combinedVenues = [
-        ...(wellnessRes.data || []).map(mapFromDB),
-        ...(retreatRes.data || []).map(mapRetreatFromDB)
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      setVenues(combinedVenues);
+      if (error) throw error;
+      setVenues((data || []).map(mapFromView));
     } catch (err) {
-      console.error('Error fetching venues:', err);
+      console.error('[VenueContext] fetchVenues error:', err);
     } finally {
       setLoading(false);
     }
@@ -605,104 +634,76 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     fetchVenues();
   }, []);
 
+  // ── Create venue ───────────────────────────────────────────────────────────
+  // 1. Insert a core row into `venues` to get the id
+  // 2. Upsert all 1:1 satellite tables with that id
+  // 3. Re-fetch the full row from v_venues_full and prepend to local state
   const addVenue = async (venue: Omit<Venue, 'id' | 'date'>) => {
     try {
-      const isRetreat = venue.type === 'Retreat';
-      const tableName = isRetreat ? 'retreat_venues' : 'wellness_venues';
-      const dbData = isRetreat ? mapRetreatToDB(venue) : mapToDB(venue);
+      // Step 1 — core identity row
+      const { data: coreRow, error: coreErr } = await supabase
+        .from('venues')
+        .insert({ venue_type: venue.type === 'Retreat' ? 'retreat' : 'wellness' })
+        .select('id')
+        .single();
 
-      // Remove any undefined values to avoid Supabase errors, replace with null for DB
-      Object.keys(dbData).forEach(key => {
-        if ((dbData as any)[key] === undefined) {
-          (dbData as any)[key] = null;
-        }
-      });
-
-      console.log(`Inserting venue into ${tableName}:`, dbData);
-
-      const { data, error } = await supabase
-        .from(tableName)
-        .insert([dbData])
-        .select();
-
-      if (error) {
-        console.error('Supabase Insert Error:', error);
-        throw error;
+      if (coreErr || !coreRow) {
+        console.error('[VenueContext] venues insert error:', coreErr);
+        throw coreErr ?? new Error('Failed to create venue core record');
       }
 
-      if (data) {
-        console.log('Successfully inserted:', data[0]);
-        const mapped = isRetreat ? mapRetreatFromDB(data[0]) : mapFromDB(data[0]);
-        setVenues((prev) => [mapped, ...prev]);
-      }
+      const venueId = coreRow.id as string;
+
+      // Step 2 — satellite tables
+      await upsertSatelliteTables(venueId, venue);
+
+      // Step 3 — fetch complete row and add to state
+      const { data: fullRow, error: fetchErr } = await supabase
+        .from('v_venues_full')
+        .select('*')
+        .eq('id', venueId)
+        .single();
+
+      if (fetchErr || !fullRow) throw fetchErr ?? new Error('Could not re-fetch new venue');
+
+      setVenues((prev) => [mapFromView(fullRow), ...prev]);
     } catch (err: any) {
-      console.error('Full Error Object:', err);
-      // Re-throw with more context
-      const message = err.message || 'Check browser console for details';
-      alert(`Database Insert Failed: ${message}`);
+      const msg = err?.message || 'Unknown error — check browser console';
+      console.error('[VenueContext] addVenue failed:', err);
+      alert(`Failed to create venue: ${msg}`);
       throw err;
     }
   };
 
+  // ── Update venue ───────────────────────────────────────────────────────────
+  // Merges updates with existing data, upserts all satellite tables,
+  // then patches local state (no full re-fetch needed).
   const updateVenue = async (id: string, updates: Partial<Venue>) => {
     try {
-      // Find the venue to determine its type/table
-      const existing = venues.find(v => v.id === id);
-      if (!existing) throw new Error('Venue not found');
+      const existing = venues.find((v) => v.id === id);
+      if (!existing) throw new Error(`Venue ${id} not found in local state`);
 
-      const isRetreat = existing.type === 'Retreat';
-      const tableName = isRetreat ? 'retreat_venues' : 'wellness_venues';
-      const dbUpdates = isRetreat ? mapRetreatToDB(updates) : mapToDB(updates);
+      const merged: Venue = { ...existing, ...updates };
 
-      // Sanitization
-      Object.keys(dbUpdates).forEach(key => {
-        if ((dbUpdates as any)[key] === undefined) {
-          delete (dbUpdates as any)[key]; // Don't send undefined keys for updates
-        }
-      });
+      await upsertSatelliteTables(id, merged);
 
-      console.log(`Updating venue in ${tableName}:`, id, dbUpdates);
-
-      const { data, error } = await supabase
-        .from(tableName)
-        .update(dbUpdates)
-        .eq('id', id)
-        .select();
-
-      if (error) {
-        console.error('Supabase Update Error:', error);
-        throw error;
-      }
-
-      if (data) {
-        const mapped = isRetreat ? mapRetreatFromDB(data[0]) : mapFromDB(data[0]);
-        setVenues((prev) =>
-          prev.map((v) => (v.id === id ? mapped : v))
-        );
-      }
+      setVenues((prev) => prev.map((v) => (v.id === id ? merged : v)));
     } catch (err: any) {
-      console.error('Update operation failed:', err);
-      alert(`Database Update Failed: ${err.message}`);
+      console.error('[VenueContext] updateVenue failed:', err);
+      alert(`Failed to update venue: ${err?.message}`);
       throw err;
     }
   };
 
+  // ── Delete venue ───────────────────────────────────────────────────────────
+  // Deleting the `venues` row cascades to all satellite tables automatically.
   const deleteVenue = async (id: string) => {
     try {
-      const existing = venues.find(v => v.id === id);
-      if (!existing) throw new Error('Venue not found');
-
-      const tableName = existing.type === 'Retreat' ? 'retreat_venues' : 'wellness_venues';
-
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('venues').delete().eq('id', id);
       if (error) throw error;
       setVenues((prev) => prev.filter((v) => v.id !== id));
     } catch (err) {
-      console.error('Error deleting venue:', err);
+      console.error('[VenueContext] deleteVenue failed:', err);
       throw err;
     }
   };
@@ -717,7 +718,7 @@ export function VenueProvider({ children }: { children: ReactNode }) {
       updateVenue,
       deleteVenue,
       getVenue,
-      refreshVenues: fetchVenues
+      refreshVenues: fetchVenues,
     }}>
       {children}
     </VenueContext.Provider>
