@@ -858,4 +858,10 @@ CREATE POLICY "Public read retreat editorial" ON venue_retreat_editorial FOR SEL
 -- should be able to query it.  The public portal uses the individual tables.
 -- =============================================================================
 
+-- Admin portal (authenticated users) — full read of all columns including internal/owner
 GRANT SELECT ON v_venues_full TO authenticated;
+
+-- Public portal (anon users) — safe to grant because:
+--   venue_internal and venue_owner_info have no anon RLS policy → LEFT JOIN returns NULL
+--   venue_status anon policy filters to status='active' AND show_on_website=TRUE
+GRANT SELECT ON v_venues_full TO anon;
