@@ -65,9 +65,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signUp = async (email: string, password: string, fullName?: string) => {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ 
+            email, 
+            password,
+            options: {
+                data: {
+                    full_name: fullName?.trim() || null
+                }
+            }
+        });
+        
         if (error) return { error: error.message };
+
         // Insert into profiles table with role 'admin' for the admin portal
+        // The trigger public.handle_new_user() will already have inserted a 'user' record,
+        // so we upsert here to upgrade it to 'admin' and ensure the name is set.
         if (data.user) {
             await supabase.from('profiles').upsert({
                 id: data.user.id,

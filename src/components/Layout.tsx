@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutGrid,
@@ -17,12 +17,21 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useVenues } from '../context/VenueContext';
+
+interface NavSubItem {
+  to: string;
+  label: string;
+  badge?: string | number;
+  badgeStyle?: string;
+}
 
 interface NavItem {
   to: string;
   icon: LucideIcon;
   label: string;
-  badge?: string;
+  badge?: string | number;
+  subItems?: NavSubItem[];
 }
 
 interface NavSection {
@@ -39,9 +48,17 @@ const navSections: NavSection[] = [
   {
     title: 'Manage',
     items: [
-      { to: '/venues', icon: Home, label: 'Venues', badge: '47' },
+      {
+        to: '/venues',
+        icon: Home,
+        label: 'Venues',
+        subItems: [
+          { to: '/retreat-venues', label: 'Retreat Venues', badge: 0 },
+          { to: '/wellness-venues', label: 'Wellness Venues', badge: 0, badgeStyle: 'wellness' },
+        ]
+      },
       { to: '/enquiries', icon: MessageSquare, label: 'Enquiries', badge: '5' },
-      { to: '/bookings',  icon: CalendarCheck,  label: 'Bookings' },
+      { to: '/bookings', icon: CalendarCheck, label: 'Bookings' },
     ],
   },
   {
@@ -87,9 +104,17 @@ const navSections: NavSection[] = [
 
 export default function Layout() {
   const { user, signOut } = useAuth();
+  const { venues } = useVenues();
+  const { pathname, search } = useLocation();
+  const currentPath = pathname + search;
 
   const userEmail = user?.email ?? 'Admin';
   const userInitial = userEmail.charAt(0).toUpperCase();
+
+  // Dynamic counts
+  const retreatCount = venues.filter(v => v.type === 'Retreat').length;
+  const wellnessCount = venues.filter(v => v.type === 'Wellness').length;
+  const totalVenuesCount = venues.length;
 
   return (
     <div className="app-container">
@@ -105,20 +130,53 @@ export default function Layout() {
               {section.title && (
                 <div className="nav-section-title">{section.title}</div>
               )}
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) =>
-                    `nav-item${isActive ? ' active' : ''}`
-                  }
-                >
-                  <item.icon size={18} className="nav-icon" />
-                  {item.label}
-                  {item.badge && <span className="nav-badge">{item.badge}</span>}
-                </NavLink>
-              ))}
+              {section.items.map((item) => {
+                const isVenues = item.to === '/venues';
+                const isParentActive =
+                  (pathname.startsWith(item.to) && (item.to !== '/' || pathname === '/')) ||
+                  (isVenues && (pathname === '/retreat-venues' || pathname === '/wellness-venues'));
+                const badge = isVenues ? totalVenuesCount : item.badge;
+
+                return (
+                  <div key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === '/' || item.to === '/venues'}
+                      className={`nav-item${isParentActive ? ' active' : ''}`}
+                    >
+                      <item.icon size={18} className="nav-icon" />
+                      {item.label}
+                      {badge !== undefined && <span className="nav-badge">{badge}</span>}
+                    </NavLink>
+
+                    {item.subItems && (
+                      <div className="nav-subitems">
+                        {item.subItems.map((sub) => {
+                          const subBadge = sub.label.includes('Retreat') ? retreatCount :
+                            sub.label.includes('Wellness') ? wellnessCount : sub.badge;
+                          const isActive = currentPath === sub.to;
+
+                          return (
+                            <NavLink
+                              key={sub.to}
+                              to={sub.to}
+                              className={`nav-subitem${isActive ? ' active' : ''}`}
+                            >
+                              <span className="nav-subitem-dot"></span>
+                              {sub.label}
+                              {subBadge !== undefined && (
+                                <span className={`nav-badge ${sub.badgeStyle || ''}`} style={{ marginLeft: 'auto', fontSize: '10px', padding: '2px 6px' }}>
+                                  {subBadge}
+                                </span>
+                              )}
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </nav>

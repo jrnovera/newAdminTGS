@@ -3,17 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useVenues } from '../context/VenueContext';
 import type { Venue } from '../context/VenueContext';
-import VenueFormModal from '../components/VenueFormModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 export default function Venues() {
-  const { venues, loading, addVenue, updateVenue, deleteVenue } = useVenues();
+  const { venues, loading, deleteVenue } = useVenues();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
   const [deletingVenue, setDeletingVenue] = useState<Venue | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
@@ -77,27 +74,6 @@ export default function Venues() {
     { label: 'Inactive' },
   ];
 
-  const handleCreate = async (data: Omit<Venue, 'id' | 'date'>) => {
-    try {
-      await addVenue(data);
-      showToast(`"${data.name}" has been created successfully`);
-    } catch (err) {
-      showToast('Failed to create venue', 'error');
-    }
-  };
-
-  const handleUpdate = async (data: Omit<Venue, 'id' | 'date'>) => {
-    if (editingVenue) {
-      try {
-        await updateVenue(editingVenue.id, data);
-        showToast(`"${data.name}" has been updated successfully`);
-        setEditingVenue(null);
-      } catch (err) {
-        showToast('Failed to update venue', 'error');
-      }
-    }
-  };
-
   const handleDelete = async () => {
     if (deletingVenue) {
       const name = deletingVenue.name;
@@ -149,7 +125,7 @@ export default function Venues() {
         </div>
         <div className="header-actions">
           <button className="btn btn-secondary"><Upload size={16} /> Export</button>
-          <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+          <button className="btn btn-primary" onClick={() => navigate('/venues/new')}>
             <Plus size={16} /> Add Venue
           </button>
         </div>
@@ -246,7 +222,7 @@ export default function Venues() {
                           <button className="action-menu-item" onClick={() => { setOpenMenuId(null); navigate(`/venues/${v.id}`); }}>
                             <Eye size={14} /> View Details
                           </button>
-                          <button className="action-menu-item" onClick={() => { setOpenMenuId(null); setEditingVenue(v); }}>
+                          <button className="action-menu-item" onClick={() => { setOpenMenuId(null); navigate(`/venues/${v.id}`); }}>
                             <Edit3 size={14} /> Edit Venue
                           </button>
                           <div className="action-menu-divider"></div>
@@ -273,23 +249,6 @@ export default function Venues() {
           </div>
         )}
       </div>
-
-      {/* Create Venue Modal */}
-      <VenueFormModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSubmit={handleCreate}
-        mode="create"
-      />
-
-      {/* Edit Venue Modal */}
-      <VenueFormModal
-        isOpen={!!editingVenue}
-        onClose={() => setEditingVenue(null)}
-        onSubmit={handleUpdate}
-        initialData={editingVenue}
-        mode="edit"
-      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal

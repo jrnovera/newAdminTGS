@@ -5,7 +5,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Venues from './pages/Venues';
+import RetreatVenues from './pages/RetreatVenues';
+import WellnessVenues from './pages/WellnessVenues';
 import VenueDetail from './pages/VenueDetail';
+import WellnessVenueDetail from './pages/WellnessVenueDetail';
 import Enquiries from './pages/Enquiries';
 import Bookings from './pages/Bookings';
 import VenueOwners from './pages/VenueOwners';
@@ -76,6 +79,9 @@ function App() {
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/venues" element={<Venues />} />
+                <Route path="/retreat-venues" element={<RetreatVenues />} />
+                <Route path="/wellness-venues" element={<WellnessVenues />} />
+                <Route path="/wellness-venues/:id" element={<WellnessVenueDetail />} />
                 <Route path="/venues/:id" element={<VenueDetail />} />
                 <Route path="/enquiries" element={<Enquiries />} />
                 <Route path="/bookings" element={<Bookings />} />

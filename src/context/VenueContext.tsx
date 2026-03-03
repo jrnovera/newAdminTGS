@@ -60,6 +60,35 @@ export interface Practitioner {
   photo: string;
 }
 
+export interface RetreatFacility {
+  id: string;
+  name: string;
+  type: string;
+  setting: string;
+  viewType: string;
+  capacity: number;
+  sizeSqm: number;
+  description: string;
+  image?: string;
+  isFeatured: boolean;
+  isAvailable: boolean;
+  equipment: string[];
+  flooring?: string;
+  climateControl?: string;
+  lighting?: string;
+  acoustics?: string;
+  suitableFor?: string[];
+  theatreCapacity?: number;
+  boardroomCapacity?: number;
+  classroomCapacity?: number;
+  hasLawn?: boolean;
+  hasCoveredOutdoor?: boolean;
+  hasFirePit?: boolean;
+  hasWalkingTrails?: boolean;
+  hasLabyrinth?: boolean;
+  outdoorSeatingCapacity?: number;
+}
+
 export interface Venue {
   id: string;
   name: string;
@@ -185,6 +214,21 @@ export interface Venue {
   internalNotes?: string;
   shortDescription?: string;
   venuePolicies?: string;
+
+  // Retreat Facilities Tab
+  retreatFacilities?: RetreatFacility[];
+  retreatFacilitiesTabImage?: string;
+  retreatFacilitiesLabel?: string;
+  retreatFacilitiesTitle?: string;
+  retreatFacilitiesSubtitle?: string;
+  retreatFacilitiesIntro?: string;
+  retreatFacilitiesNotes?: string;
+  supportedRetreatTypes?: string[];
+
+  // New fields for modal
+  startingPrice?: number;
+  totalBookings?: number;
+  primaryVenueType?: string;
 }
 
 interface VenueContextType {
@@ -426,6 +470,21 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     services: v.services || [],
     packages: v.packages || [],
     bedConfiguration: { ...defaultBedConfig },
+
+    // Retreat Facilities
+    retreatFacilities: v.retreat_facilities || [],
+    retreatFacilitiesTabImage: v.retreat_facilities_tab_image || '',
+    retreatFacilitiesLabel: v.retreat_facilities_label || 'Retreat Spaces',
+    retreatFacilitiesTitle: v.retreat_facilities_title || '',
+    retreatFacilitiesSubtitle: v.retreat_facilities_subtitle || '',
+    retreatFacilitiesIntro: v.retreat_facilities_intro || '',
+    retreatFacilitiesNotes: v.retreat_facilities_notes || '',
+    supportedRetreatTypes: v.supported_retreat_types || [],
+
+    // New fields
+    startingPrice: v.starting_price || 0,
+    totalBookings: v.total_bookings || 0,
+    primaryVenueType: v.primary_venue_type || '',
   });
 
   const mapRetreatToDB = (v: any) => ({
@@ -500,6 +559,21 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     health_safety: v.healthSafety || '',
     cancellation_policy: v.cancellationPolicy || '',
     booking_policy: v.bookingPolicy || '',
+
+    // Retreat Facilities
+    retreat_facilities: v.retreatFacilities || [],
+    retreat_facilities_tab_image: v.retreatFacilitiesTabImage || '',
+    retreat_facilities_label: v.retreatFacilitiesLabel || 'Retreat Spaces',
+    retreat_facilities_title: v.retreatFacilitiesTitle || '',
+    retreat_facilities_subtitle: v.retreatFacilitiesSubtitle || '',
+    retreat_facilities_intro: v.retreatFacilitiesIntro || '',
+    retreat_facilities_notes: v.retreatFacilitiesNotes || '',
+    supported_retreat_types: v.supportedRetreatTypes || [],
+
+    // New fields
+    starting_price: v.startingPrice || 0,
+    total_bookings: v.totalBookings || 0,
+    primary_venue_type: v.primaryVenueType || '',
   });
 
   const fetchVenues = async () => {
