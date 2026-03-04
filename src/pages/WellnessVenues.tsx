@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useVenues } from '../context/VenueContext';
 import type { Venue } from '../context/VenueContext';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import CreateWellnessModal from '../components/CreateWellnessModal';
 
 export default function WellnessVenues() {
-    const { venues, loading, deleteVenue } = useVenues();
+    const { venues, loading, deleteVenue, addVenue } = useVenues();
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState(0);
@@ -17,6 +18,7 @@ export default function WellnessVenues() {
     const menuRef = useRef<HTMLDivElement>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     // Close action menu on outside click
     useEffect(() => {
@@ -150,7 +152,7 @@ export default function WellnessVenues() {
                 </div>
                 <div className="header-actions">
                     <button className="btn btn-secondary"><Upload size={16} /> Export</button>
-                    <button className="btn btn-primary" onClick={() => navigate('/venues/new')}>
+                    <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
                         <Plus size={16} /> Add Wellness
                     </button>
                 </div>
@@ -304,6 +306,16 @@ export default function WellnessVenues() {
                 onClose={() => setDeletingVenue(null)}
                 onConfirm={handleDelete}
                 venueName={deletingVenue?.name || ''}
+            />
+
+            {/* Create Wellness Modal */}
+            <CreateWellnessModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSubmit={async (data) => {
+                    await addVenue(data);
+                    showToast('Wellness venue created successfully');
+                }}
             />
         </>
     );
