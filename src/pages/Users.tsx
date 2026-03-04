@@ -1,23 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, Search, UserPlus } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-const users = [
-  { name: 'Kate Morrison', email: 'kate@theglobalsanctum.com', initials: 'KM', role: 'Admin', roleBadge: 'admin', status: 'Active', online: 'Online', permissions: ['Full Access'], lastActive: 'Now', location: 'Brisbane, AU' },
-  { name: 'Izhar', email: 'izhar@webflow.dev', initials: 'IZ', role: 'Developer', roleBadge: 'developer', status: 'Active', online: 'Online', permissions: ['Venues', 'Content', 'Settings'], lastActive: 'Now', location: 'Remote' },
-  { name: 'Maria Santos', email: 'maria@theglobalsanctum.com', initials: 'MS', role: 'Virtual Assistant', roleBadge: 'va', status: 'Active', online: 'Online', permissions: ['Venues', 'Enquiries', 'Bookings'], lastActive: 'Now', location: 'Manila, PH' },
-  { name: 'Tom Cronin', email: 'tom@advisor.com', initials: 'TC', role: 'Advisor', roleBadge: 'advisor', status: 'Active', online: 'Away', permissions: ['Analytics', 'Reports'], lastActive: '2h ago', location: 'Sydney, AU' },
-  { name: 'Emily Chen', email: 'emily@theglobalsanctum.com', initials: 'EC', role: 'Content Writer', roleBadge: 'content', status: 'Active', online: 'Offline', permissions: ['Journal', 'Wellness Edit'], lastActive: '5h ago', location: 'Melbourne, AU' },
-  { name: 'David Park', email: 'david@theglobalsanctum.com', initials: 'DP', role: 'Support', roleBadge: 'support', status: 'Active', online: 'Offline', permissions: ['Enquiries', 'Users'], lastActive: 'Yesterday', location: 'Auckland, NZ' },
-  { name: 'Sophie Laurent', email: 'sophie@freelance.fr', initials: 'SL', role: 'Content Writer', roleBadge: 'content', status: 'Invited', online: 'Offline', permissions: ['Journal'], lastActive: 'Pending', location: 'Nice, FR' },
-  { name: 'RJ Developer', email: 'rj@dev.com', initials: 'RJ', role: 'Developer', roleBadge: 'developer', status: 'Active', online: 'Offline', permissions: ['Full Access'], lastActive: '1d ago', location: 'Remote' },
-];
 
-const tabs = [
-  { label: 'All Users', count: 8 },
-  { label: 'Roles & Permissions', count: null },
-  { label: 'Activity Log', count: null },
-  { label: 'Pending Invites', count: 1 },
-];
 
 const roles = [
   { name: 'Administrator', icon: '👑', count: 1, desc: 'Full system access and control', color: 'admin', permissions: ['All Modules', 'User Management', 'Settings', 'Billing'] },
@@ -30,6 +15,101 @@ const roles = [
 
 export default function Users() {
   const [activeTab, setActiveTab] = useState(0);
+  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Edit Role State
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editRole, setEditRole] = useState<string>('');
+  const [savingRole, setSavingRole] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase.from('profiles').select('*');
+      if (error) throw error;
+
+      const mappedUsers = (data || []).map(p => {
+        const name = p.full_name || 'Unknown User';
+        const roleStr = p.role || 'User';
+        const roleBadge = roleStr.toLowerCase().includes('admin') ? 'admin'
+          : roleStr.toLowerCase().includes('developer') ? 'developer'
+            : 'support'; // fallback badge
+
+        const initials = name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+
+        return {
+          id: p.id,
+          name,
+          email: p.email,
+          initials: initials || p.email.charAt(0).toUpperCase(),
+          role: roleStr.charAt(0).toUpperCase() + roleStr.slice(1),
+          roleValue: roleStr.toLowerCase(),
+          roleBadge,
+          status: 'Active',
+          online: 'Offline',
+          permissions: ['Basic Access'],
+          lastActive: 'Recently',
+          location: 'Remote'
+        };
+      });
+
+      setDbUsers(mappedUsers);
+    } catch (err) {
+      console.error('Error fetching profiles:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditClick = (user: any) => {
+    setEditingUserId(user.id);
+    setEditRole(user.roleValue);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUserId(null);
+    setEditRole('');
+  };
+
+  const handleSaveRole = async (userId: string) => {
+    setSavingRole(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: editRole })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Optimistically update local state instead of doing a full refetch
+      setDbUsers(users => users.map(u => {
+        if (u.id === userId) {
+          const roleBadge = editRole.includes('admin') ? 'admin'
+            : editRole.includes('developer') ? 'developer'
+              : 'support';
+          return {
+            ...u,
+            role: editRole.charAt(0).toUpperCase() + editRole.slice(1),
+            roleValue: editRole,
+            roleBadge,
+          };
+        }
+        return u;
+      }));
+
+      setEditingUserId(null);
+      setEditRole('');
+    } catch (error) {
+      console.error('Error updating role:', error);
+      alert('Failed to update user role');
+    } finally {
+      setSavingRole(false);
+    }
+  };
 
   const avatarBg = (role: string) => {
     switch (role) {
@@ -69,7 +149,7 @@ export default function Users() {
       {/* Stats Row */}
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
         <div className="stat-card" style={{ textAlign: 'center' }}>
-          <div className="stat-value">8</div>
+          <div className="stat-value">{loading ? '-' : dbUsers.length}</div>
           <div className="stat-label">Total Team</div>
         </div>
         <div className="stat-card" style={{ textAlign: 'center' }}>
@@ -92,7 +172,12 @@ export default function Users() {
 
       {/* Tabs */}
       <div className="tabs-container">
-        {tabs.map((tab, i) => (
+        {[
+          { label: 'All Users', count: loading ? '-' : dbUsers.length },
+          { label: 'Roles & Permissions', count: null },
+          { label: 'Activity Log', count: null },
+          { label: 'Pending Invites', count: 1 },
+        ].map((tab, i) => (
           <div key={i} className={`tab${activeTab === i ? ' active' : ''}`} onClick={() => setActiveTab(i)}>
             {tab.label} {tab.count !== null && <span className="tab-count">{tab.count}</span>}
           </div>
@@ -137,7 +222,9 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u, i) => (
+                {loading ? (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: '24px' }}>Loading users...</td></tr>
+                ) : dbUsers.map((u, i) => (
                   <tr key={i}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -150,7 +237,25 @@ export default function Users() {
                         </div>
                       </div>
                     </td>
-                    <td><span className={`role-badge ${u.roleBadge}`}>{u.role}</span></td>
+                    <td>
+                      {editingUserId === u.id ? (
+                        <select
+                          className="form-select"
+                          value={editRole}
+                          onChange={(e) => setEditRole(e.target.value)}
+                          style={{ padding: '6px', fontSize: '13px', width: 'auto' }}
+                        >
+                          <option value="admin">Administrator</option>
+                          <option value="developer">Developer</option>
+                          <option value="virtual assistant">Virtual Assistant</option>
+                          <option value="advisor">Advisor</option>
+                          <option value="content writer">Content Writer</option>
+                          <option value="support">Support</option>
+                        </select>
+                      ) : (
+                        <span className={`role-badge ${u.roleBadge}`}>{u.role}</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`status-badge ${u.status === 'Active' ? 'active' : u.status === 'Invited' ? 'pending' : 'inactive'}`}>{u.status}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 12 }}>
@@ -160,7 +265,7 @@ export default function Users() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {u.permissions.map((p, pi) => (
+                        {u.permissions.map((p: string, pi: number) => (
                           <span key={pi} style={{
                             padding: '2px 6px', borderRadius: 4, fontSize: 10,
                             backgroundColor: p === 'Full Access' ? '#313131' : '#F7F5F1',
@@ -174,7 +279,31 @@ export default function Users() {
                       <div style={{ fontSize: 11, color: '#B8B8B8' }}>{u.location}</div>
                     </td>
                     <td>
-                      <button className="btn btn-secondary btn-small">Edit</button>
+                      {editingUserId === u.id ? (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            className="btn btn-primary btn-small"
+                            onClick={() => handleSaveRole(u.id)}
+                            disabled={savingRole}
+                          >
+                            {savingRole ? '...' : 'Save'}
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-small"
+                            onClick={handleCancelEdit}
+                            disabled={savingRole}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn-secondary btn-small"
+                          onClick={() => handleEditClick(u)}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -198,7 +327,7 @@ export default function Users() {
               <h3 style={{ fontSize: 20, marginBottom: 4 }}>{r.name}</h3>
               <p style={{ fontSize: 12, color: '#B8B8B8', marginBottom: 16 }}>{r.desc}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {r.permissions.map((p, pi) => (
+                {r.permissions.map((p: string, pi: number) => (
                   <span key={pi} style={{ padding: '4px 8px', backgroundColor: '#F7F5F1', borderRadius: 4, fontSize: 10 }}>{p}</span>
                 ))}
               </div>

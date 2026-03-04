@@ -193,7 +193,7 @@ a {
 }
 
 .user-menu {
-  padding: 20px 24px;
+  padding: 16px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
@@ -224,6 +224,80 @@ a {
   color: var(--accent);
 }
 
+/* ===== SIDEBAR TOGGLE ===== */
+.sidebar-header {
+  position: relative;
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+}
+
+/* ===== SIDEBAR COLLAPSED ===== */
+.sidebar {
+  transition: width 0.25s ease;
+}
+
+.sidebar.collapsed {
+  width: 68px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle-btn {
+  position: static;
+  transform: none;
+  margin: 0 auto;
+}
+
+.sidebar.collapsed .nav-section-title {
+  display: none;
+}
+
+.sidebar.collapsed .nav-item {
+  padding: 14px 0;
+  justify-content: center;
+  gap: 0;
+}
+
+.sidebar.collapsed .nav-item.active {
+  padding-left: 0;
+  border-left: 3px solid var(--white);
+}
+
+.sidebar.collapsed .nav-item .nav-icon {
+  opacity: 0.85;
+}
+
+.sidebar.collapsed .user-menu {
+  justify-content: center;
+  padding: 16px 12px;
+}
+
 /* ===== MAIN CONTENT ===== */
 .main-content {
   flex: 1;
@@ -231,6 +305,11 @@ a {
   padding: 40px 48px;
   background-color: var(--primary-bg);
   min-height: 100vh;
+  transition: margin-left 0.25s ease;
+}
+
+.sidebar-collapsed .main-content {
+  margin-left: 68px;
 }
 
 /* ===== PAGE HEADER ===== */
@@ -2644,7 +2723,7 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 140px;
+  max-width: 120px;
 }
 
 .user-logout-btn {

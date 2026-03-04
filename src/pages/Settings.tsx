@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Save, Globe, Bell, Shield, CreditCard, Palette, Mail } from 'lucide-react';
+import { Save, Globe, Bell, Shield, CreditCard, Palette, Mail, User, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const settingsSections = [
+  { id: 'profile', label: 'My Profile', icon: User },
   { id: 'general', label: 'General', icon: Globe },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Shield },
@@ -11,7 +13,11 @@ const settingsSections = [
 ];
 
 export default function Settings() {
-  const [activeSection, setActiveSection] = useState('general');
+  const { user, signOut } = useAuth();
+  const [activeSection, setActiveSection] = useState('profile');
+
+  const userEmail = user?.email ?? 'Admin';
+  const userInitial = userEmail.charAt(0).toUpperCase();
 
   return (
     <>
@@ -49,6 +55,34 @@ export default function Settings() {
 
         {/* Settings Content */}
         <div>
+          {activeSection === 'profile' && (
+            <div className="content-card" style={{ padding: 0 }}>
+              <div className="card-header">
+                <h3 className="card-title">My Profile</h3>
+              </div>
+              <div style={{ padding: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32 }}>
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#F7F5F1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 600, color: '#313131', border: '1px solid rgba(184, 184, 184, 0.2)' }}>
+                    {userInitial}
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: 24, marginBottom: 4 }}>{userEmail}</h2>
+                    <div style={{ color: '#B8B8B8', fontWeight: 500 }}>Administrator</div>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(184, 184, 184, 0.1)', paddingTop: 24 }}>
+                  <h4 style={{ fontSize: 16, marginBottom: 16 }}>Session Management</h4>
+                  <p style={{ color: '#B8B8B8', fontSize: 13, marginBottom: 16 }}>Sign out of your current session on this device.</p>
+                  <button className="btn btn-secondary" onClick={signOut} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#C45C5C', borderColor: 'rgba(196, 92, 92, 0.3)' }}>
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeSection === 'general' && (
             <div className="content-card" style={{ padding: 0 }}>
               <div className="card-header">

@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   LayoutGrid,
@@ -14,9 +15,11 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 import { useVenues } from '../context/VenueContext';
 
 interface NavSubItem {
@@ -103,13 +106,11 @@ const navSections: NavSection[] = [
 ];
 
 export default function Layout() {
-  const { user, signOut } = useAuth();
   const { venues } = useVenues();
   const { pathname, search } = useLocation();
   const currentPath = pathname + search;
-
-  const userEmail = user?.email ?? 'Admin';
-  const userInitial = userEmail.charAt(0).toUpperCase();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [venuesExpanded, setVenuesExpanded] = useState(false);
 
   // Dynamic counts
   const retreatCount = venues.filter(v => v.type === 'Retreat').length;
@@ -117,11 +118,22 @@ export default function Layout() {
   const totalVenuesCount = venues.length;
 
   return (
-    <div className="app-container">
-      <aside className="sidebar">
+    <div className={`app-container${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">The Global Sanctum</div>
-          <div className="sidebar-subtitle">Internal Portal</div>
+          {!sidebarCollapsed && (
+            <>
+              <div className="sidebar-logo">The Global Sanctum</div>
+              <div className="sidebar-subtitle">Internal Portal</div>
+            </>
+          )}
+          <button
+            className="sidebar-toggle-btn"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -132,10 +144,18 @@ export default function Layout() {
               )}
               {section.items.map((item) => {
                 const isVenues = item.to === '/venues';
+                const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
                 const isParentActive =
                   (pathname.startsWith(item.to) && (item.to !== '/' || pathname === '/')) ||
                   (isVenues && (pathname === '/retreat-venues' || pathname === '/wellness-venues'));
                 const badge = isVenues ? totalVenuesCount : item.badge;
+
+                const handleParentClick = (e: React.MouseEvent) => {
+                  if (hasSubItems) {
+                    e.preventDefault(); // Stop navigation, just toggle expand
+                    if (isVenues) setVenuesExpanded(!venuesExpanded);
+                  }
+                };
 
                 return (
                   <div key={item.to}>
@@ -143,13 +163,25 @@ export default function Layout() {
                       to={item.to}
                       end={item.to === '/' || item.to === '/venues'}
                       className={`nav-item${isParentActive ? ' active' : ''}`}
+                      title={sidebarCollapsed ? item.label : undefined}
+                      onClick={handleParentClick}
                     >
                       <item.icon size={18} className="nav-icon" />
-                      {item.label}
-                      {badge !== undefined && <span className="nav-badge">{badge}</span>}
+                      {!sidebarCollapsed && item.label}
+
+                      {!sidebarCollapsed && (
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {badge !== undefined && <span className="nav-badge">{badge}</span>}
+                          {hasSubItems && (
+                            <span style={{ color: '#B8B8B8', display: 'flex' }}>
+                              {isVenues && venuesExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </NavLink>
 
-                    {item.subItems && (
+                    {item.subItems && !sidebarCollapsed && (isVenues ? venuesExpanded : true) && (
                       <div className="nav-subitems">
                         {item.subItems.map((sub) => {
                           const subBadge = sub.label.includes('Retreat') ? retreatCount :
@@ -180,17 +212,6 @@ export default function Layout() {
             </div>
           ))}
         </nav>
-
-        <div className="user-menu">
-          <div className="user-avatar">{userInitial}</div>
-          <div className="user-menu-info">
-            <div className="user-name">{userEmail}</div>
-            <div className="user-role">Administrator</div>
-          </div>
-          <button className="user-logout-btn" onClick={signOut} title="Sign out">
-            <LogOut size={16} />
-          </button>
-        </div>
       </aside>
 
       <main className="main-content">
