@@ -16,7 +16,7 @@ export default function WellnessInternalTab({ venue, onUpdate }: Props) {
     const [firstContactDate, setFirstContactDate] = useState('2026-01-28');
 
     // Subscription & Financials
-    const [subscriptionTier, setSubscriptionTier] = useState(venue.subscriptionTier || 'Featured ($399/mo)');
+    const [subscriptionTier, setSubscriptionTier] = useState<'Essentials' | 'Standard' | 'Featured' | 'Premium'>(venue.subscription || 'Featured');
     const [founderDiscount, setFounderDiscount] = useState(venue.founderDiscount || 'None');
     const [billingCycle, setBillingCycle] = useState(venue.billingCycle || 'Annual (paid upfront)');
     const [subscriptionStartDate, setSubscriptionStartDate] = useState('2026-02-08');
@@ -218,7 +218,7 @@ export default function WellnessInternalTab({ venue, onUpdate }: Props) {
                     <div className="form-grid three-col">
                         <div className="form-group">
                             <label className="form-label">Subscription Tier</label>
-                            <select className="form-input form-select" value={subscriptionTier} onChange={e => setSubscriptionTier(e.target.value)}>
+                            <select className="form-input form-select" value={subscriptionTier} onChange={e => setSubscriptionTier(e.target.value as 'Essentials' | 'Standard' | 'Featured' | 'Premium')}>
                                 <option>Essentials ($79/mo)</option>
                                 <option>Professional ($199/mo)</option>
                                 <option>Featured ($399/mo)</option>

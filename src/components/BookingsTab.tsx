@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Download, RefreshCw, Check, ChevronLeft, ChevronRight, X, Users, Clock } from 'lucide-react';
+import { Calendar, Download, RefreshCw, Check, X, Users, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Venue } from '../context/VenueContext';
 
