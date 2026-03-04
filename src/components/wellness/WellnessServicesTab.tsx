@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Edit2, GripVertical, X, Upload } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -31,7 +31,7 @@ interface Category {
     show: boolean;
 }
 
-export default function WellnessServicesTab({ venue: _venue, onUpdate: _onUpdate }: Props) {
+export default function WellnessServicesTab({ venue, onUpdate }: Props) {
     // Summary Stats
     const [stats, _setStats] = useState({
         totalServices: 24,
@@ -61,27 +61,27 @@ export default function WellnessServicesTab({ venue: _venue, onUpdate: _onUpdate
     ]);
 
     // Tags
-    const [offeringTags, setOfferingTags] = useState(['Massage', 'Facials', 'Aromatherapy', 'Body Treatments', 'Reflexology', 'Infrared Sauna']);
+    const [offeringTags, setOfferingTags] = useState<string[]>(venue.offeringTags?.length ? venue.offeringTags : ['Massage', 'Facials', 'Aromatherapy', 'Body Treatments', 'Reflexology', 'Infrared Sauna']);
     const [massageTags, setMassageTags] = useState(['Swedish', 'Deep Tissue', 'Hot Stone', 'Aromatherapy', 'Pregnancy', 'Reflexology']);
     const [programTags, setProgramTags] = useState(['Stress Management', 'Detox Program', 'Anti-Aging']);
-    const [staffLanguages, setStaffLanguages] = useState(['English', 'Mandarin', 'Japanese']);
-    const [dietaryTags, setDietaryTags] = useState(['Vegan', 'Gluten-Free', 'Dairy-Free']);
+    const [staffLanguages, setStaffLanguages] = useState<string[]>(venue.languages?.length ? venue.languages : ['English', 'Mandarin', 'Japanese']);
+    const [dietaryTags, setDietaryTags] = useState<string[]>(venue.dietaryTags?.length ? venue.dietaryTags : ['Vegan', 'Gluten-Free', 'Dairy-Free']);
     const [mealPlanTags, setMealPlanTags] = useState(['Light Refreshments', 'Herbal Teas']);
     const [durationTags, setDurationTags] = useState(['30min', '45min', '60min', '90min', '2hr', 'Half Day']);
 
     // Descriptions
-    const [serviceDescription, setServiceDescription] = useState('Bodhi Day Spa offers a comprehensive menu of therapeutic treatments designed to restore balance and wellbeing. Our expert therapists combine traditional techniques with modern wellness practices, using premium organic Australian-made products. From signature massages and rejuvenating facials to indulgent body rituals, each experience is tailored to your individual needs. Our infrared sauna and relaxation lounge complement treatments for a complete wellness journey.');
-    const [practitionerSpecialties, setPractitionerSpecialties] = useState('Our team includes certified massage therapists specializing in remedial and relaxation techniques, qualified beauty therapists with advanced facial training, and experienced body treatment specialists. Senior therapists hold diplomas in remedial massage and aromatherapy. All staff maintain current first aid certification and ongoing professional development.');
-    const [membershipDetails, setMembershipDetails] = useState('Monthly membership options include: Essential ($150/month - 1x 60min massage), Premium ($280/month - 2x 60min treatments), and VIP ($450/month - 4x treatments + 10% retail discount). All memberships include priority booking and complimentary infrared sauna access.');
+    const [serviceDescription, setServiceDescription] = useState(venue.serviceDescription || 'Bodhi Day Spa offers a comprehensive menu of therapeutic treatments designed to restore balance and wellbeing. Our expert therapists combine traditional techniques with modern wellness practices, using premium organic Australian-made products. From signature massages and rejuvenating facials to indulgent body rituals, each experience is tailored to your individual needs. Our infrared sauna and relaxation lounge complement treatments for a complete wellness journey.');
+    const [practitionerSpecialties, setPractitionerSpecialties] = useState(venue.practitionerSpecialties || 'Our team includes certified massage therapists specializing in remedial and relaxation techniques, qualified beauty therapists with advanced facial training, and experienced body treatment specialists. Senior therapists hold diplomas in remedial massage and aromatherapy. All staff maintain current first aid certification and ongoing professional development.');
+    const [membershipDetails, setMembershipDetails] = useState(venue.membershipDetails || 'Monthly membership options include: Essential ($150/month - 1x 60min massage), Premium ($280/month - 2x 60min treatments), and VIP ($450/month - 4x treatments + 10% retail discount). All memberships include priority booking and complimentary infrared sauna access.');
 
     // Booking Config
     const [priceRange, setPriceRange] = useState('$85 - $350');
-    const [packagePricing, setPackagePricing] = useState(true);
-    const [membershipOptions, setMembershipOptions] = useState(true);
-    const [dropInWelcome, setDropInWelcome] = useState(false);
-    const [appointmentRequired, setAppointmentRequired] = useState(true);
-    const [onlineBookingAvailable, setOnlineBookingAvailable] = useState(true);
-    const [onsiteNutritionist, setOnsiteNutritionist] = useState(false);
+    const [packagePricing, setPackagePricing] = useState(venue.packagePricing ?? true);
+    const [membershipOptions, setMembershipOptions] = useState(venue.membershipOptions ?? true);
+    const [dropInWelcome, setDropInWelcome] = useState(venue.dropInWelcome ?? false);
+    const [appointmentRequired, setAppointmentRequired] = useState(venue.appointmentRequired ?? true);
+    const [onlineBookingAvailable, setOnlineBookingAvailable] = useState(venue.instantBooking ?? true);
+    const [onsiteNutritionist, setOnsiteNutritionist] = useState(venue.onsiteNutritionist ?? false);
 
     // Individual Services
     const [services, setServices] = useState<Service[]>([
@@ -150,6 +150,30 @@ export default function WellnessServicesTab({ venue: _venue, onUpdate: _onUpdate
             showOnWebsite: true
         }
     ]);
+
+    // Batch-save all service fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            serviceDescription,
+            practitionerSpecialties,
+            membershipDetails,
+            packagePricing,
+            membershipOptions,
+            dropInWelcome,
+            appointmentRequired,
+            instantBooking: onlineBookingAvailable,
+            onsiteNutritionist,
+            offeringTags,
+            dietaryTags,
+            languages: staffLanguages,
+            services: services.map(s => ({ name: s.name, price: s.price, duration: s.duration })),
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [serviceDescription, practitionerSpecialties, membershipDetails, packagePricing,
+        membershipOptions, dropInWelcome, appointmentRequired, onlineBookingAvailable,
+        onsiteNutritionist, offeringTags, dietaryTags, staffLanguages, services]);
 
     const toggleTag = (tags: string[], setTags: (t: string[]) => void, tag: string) => {
         if (tags.includes(tag)) {

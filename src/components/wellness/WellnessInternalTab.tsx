@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Shield, Check, Plus } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -7,30 +7,50 @@ interface Props {
     onUpdate: (updates: Partial<Venue>) => void;
 }
 
-export default function WellnessInternalTab(_props: Props) {
+export default function WellnessInternalTab({ venue, onUpdate }: Props) {
     // Pipeline & Sales
-    const [leadSource, setLeadSource] = useState('Outbound - Cold Email');
-    const [leadOwner, setLeadOwner] = useState('Kate');
+    const [leadSource, setLeadSource] = useState(venue.leadSource || 'Outbound - Cold Email');
+    const [leadOwner, setLeadOwner] = useState(venue.leadOwner || 'Kate');
     const [acquisitionDate, setAcquisitionDate] = useState('2026-01-28');
-    const [pipelineStage, setPipelineStage] = useState('Signed Up');
+    const [pipelineStage, setPipelineStage] = useState(venue.pipelineStage || 'Signed Up');
     const [firstContactDate, setFirstContactDate] = useState('2026-01-28');
 
     // Subscription & Financials
-    const [subscriptionTier, setSubscriptionTier] = useState('Featured ($399/mo)');
-    const [founderDiscount, setFounderDiscount] = useState('Super Founder (60% off)');
-    const [billingCycle, setBillingCycle] = useState('Annual (paid upfront)');
+    const [subscriptionTier, setSubscriptionTier] = useState(venue.subscriptionTier || 'Featured ($399/mo)');
+    const [founderDiscount, setFounderDiscount] = useState(venue.founderDiscount || 'None');
+    const [billingCycle, setBillingCycle] = useState(venue.billingCycle || 'Annual (paid upfront)');
     const [subscriptionStartDate, setSubscriptionStartDate] = useState('2026-02-08');
     const [nextBillingDate, setNextBillingDate] = useState('2027-02-08');
-    const [bookingCommission, setBookingCommission] = useState('5%');
-    const [experienceCommission, setExperienceCommission] = useState('15%');
-    const [stripeConnected, setStripeConnected] = useState(true);
+    const [bookingCommission, setBookingCommission] = useState(venue.bookingCommission || '5%');
+    const [experienceCommission, setExperienceCommission] = useState(venue.experienceCommission || '15%');
+    const [stripeConnected, setStripeConnected] = useState(venue.stripeConnected ?? false);
 
     // Tags
-    const [marketSegment, setMarketSegment] = useState('Premium');
-    const [venueTier, setVenueTier] = useState('Gold');
+    const [marketSegment, setMarketSegment] = useState(venue.marketSegment || 'Premium');
+    const [venueTier, setVenueTier] = useState(venue.venueTier || 'Gold');
 
     // Notes
     const [newNote, setNewNote] = useState('');
+
+    // Batch-save all internal/CRM fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            pipelineStage,
+            leadSource,
+            leadOwner,
+            founderDiscount,
+            billingCycle,
+            bookingCommission,
+            experienceCommission,
+            stripeConnected,
+            marketSegment,
+            venueTier,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pipelineStage, leadSource, leadOwner, founderDiscount, billingCycle,
+        bookingCommission, experienceCommission, stripeConnected, marketSegment, venueTier]);
 
     return (
         <div>

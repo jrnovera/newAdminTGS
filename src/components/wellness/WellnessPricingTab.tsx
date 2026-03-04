@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -7,7 +7,7 @@ interface Props {
     onUpdate: (updates: Partial<Venue>) => void;
 }
 
-export default function WellnessPricingTab(_props: Props) {
+export default function WellnessPricingTab({ venue, onUpdate }: Props) {
     // Packages Tab Form State
     const [showPackages, setShowPackages] = useState(true);
     const [packageSectionLabel, setPackageSectionLabel] = useState('Curated Packages');
@@ -39,41 +39,83 @@ export default function WellnessPricingTab(_props: Props) {
     ]);
 
     // Operational Data State
-    const [dayPassAvailable, setDayPassAvailable] = useState(true);
-    const [dayPassPrice, setDayPassPrice] = useState('$89');
-    const [dayPassDuration, setDayPassDuration] = useState('2 hours');
-    const [dayPassIncludes, setDayPassIncludes] = useState('Thermal circuit access, robes & slippers, herbal tea, locker');
+    const [dayPassAvailable, setDayPassAvailable] = useState(venue.dayPassAvailable ?? true);
+    const [dayPassPrice, setDayPassPrice] = useState(venue.dayPassPrice || '$89');
+    const [dayPassDuration, setDayPassDuration] = useState(venue.dayPassDuration || '2 hours');
+    const [dayPassIncludes, setDayPassIncludes] = useState(venue.dayPassIncludes || 'Thermal circuit access, robes & slippers, herbal tea, locker');
 
-    const [membershipsAvailable, setMembershipsAvailable] = useState(true);
-    const [membershipDetails, setMembershipDetails] = useState('Monthly membership options include: Essential ($150/month - 1x 60min massage), Premium ($280/month - 2x 60min treatments), and VIP ($450/month - 4x treatments + 10% retail discount). All memberships include priority booking and complimentary day pass access.');
+    const [membershipsAvailable, setMembershipsAvailable] = useState(venue.membershipsAvailable ?? true);
+    const [membershipDetails, setMembershipDetails] = useState(venue.membershipDetails || 'Monthly membership options include: Essential ($150/month - 1x 60min massage), Premium ($280/month - 2x 60min treatments), and VIP ($450/month - 4x treatments + 10% retail discount). All memberships include priority booking and complimentary day pass access.');
 
-    const [vouchersAvailable, setVouchersAvailable] = useState(true);
-    const [voucherValidity, setVoucherValidity] = useState('12 months');
+    const [vouchersAvailable, setVouchersAvailable] = useState(venue.vouchersAvailable ?? true);
+    const [voucherValidity, setVoucherValidity] = useState(venue.voucherValidity || '12 months');
 
-    const [advanceBooking, setAdvanceBooking] = useState('Recommended');
-    const [minNotice, setMinNotice] = useState('24 hours');
-    const [maxAdvance, setMaxAdvance] = useState('3 months');
-    const [groupBookings, setGroupBookings] = useState(true);
-    const [maxGroupSize, setMaxGroupSize] = useState('6');
-    const [couplesBookings, setCouplesBookings] = useState(true);
+    const [advanceBooking, setAdvanceBooking] = useState(venue.advanceBooking || 'Recommended');
+    const [minNotice, setMinNotice] = useState(venue.minNotice || '24 hours');
+    const [maxAdvance, setMaxAdvance] = useState(venue.maxAdvance || '3 months');
+    const [groupBookings, setGroupBookings] = useState(venue.groupBookings ?? true);
+    const [maxGroupSize, setMaxGroupSize] = useState(venue.maxGroupSize || '6');
+    const [couplesBookings, setCouplesBookings] = useState(venue.couplesBookings ?? true);
 
-    const [depositRequired, setDepositRequired] = useState(false);
-    const [depositAmount, setDepositAmount] = useState('N/A');
-    const [paymentDue, setPaymentDue] = useState('At time of service');
+    const [depositRequired, setDepositRequired] = useState(venue.depositRequired ?? false);
+    const [depositAmount, setDepositAmount] = useState(venue.depositAmount || 'N/A');
+    const [paymentDue, setPaymentDue] = useState(venue.paymentDue || 'At time of service');
 
-    const [freeCancellation, setFreeCancellation] = useState('24 hours notice');
-    const [lateFee, setLateFee] = useState('50% of service');
-    const [noShowFee, setNoShowFee] = useState('100% of service');
-    const [cancellationText, setCancellationText] = useState('Cancellations made more than 24 hours before your appointment are free of charge. Late cancellations (less than 24 hours) incur a 50% fee. No-shows are charged at 100%. We appreciate your understanding as this allows us to offer the space to other guests.');
+    const [freeCancellation, setFreeCancellation] = useState(venue.freeCancellationPeriod || '24 hours notice');
+    const [lateFee, setLateFee] = useState(venue.lateFee || '50% of service');
+    const [noShowFee, setNoShowFee] = useState(venue.noShowFee || '100% of service');
+    const [cancellationText, setCancellationText] = useState(venue.cancellationText || 'Cancellations made more than 24 hours before your appointment are free of charge. Late cancellations (less than 24 hours) incur a 50% fee. No-shows are charged at 100%. We appreciate your understanding as this allows us to offer the space to other guests.');
 
-    const [onlineBooking, setOnlineBooking] = useState(true);
-    const [bookingPlatform, setBookingPlatform] = useState('External (link out)');
-    const [bookingUrl, setBookingUrl] = useState('https://bodhidayspa.com.au/book');
-    const [calendarSync, setCalendarSync] = useState(false);
-    const [autoConfirm, setAutoConfirm] = useState(true);
-    const [reminders, setReminders] = useState('24hr before');
+    const [onlineBooking, setOnlineBooking] = useState(venue.instantBooking ?? true);
+    const [bookingPlatform, setBookingPlatform] = useState(venue.bookingPlatform || 'External (link out)');
+    const [bookingUrl, setBookingUrl] = useState(venue.bookingUrl || '');
+    const [calendarSync, setCalendarSync] = useState(venue.calendarSync ?? false);
+    const [autoConfirm, setAutoConfirm] = useState(venue.autoConfirm ?? true);
+    const [reminders, setReminders] = useState(venue.reminders || '24hr before');
 
-    const [pricingNotes, setPricingNotes] = useState('Happy hour pricing available Mon-Thu 10am-2pm (15% off all services). Corporate rates available for group bookings of 4+. Loyalty program: 10th treatment free.');
+    const [pricingNotes, setPricingNotes] = useState(venue.pricingNotes || 'Happy hour pricing available Mon-Thu 10am-2pm (15% off all services). Corporate rates available for group bookings of 4+. Loyalty program: 10th treatment free.');
+
+    // Batch-save all pricing/booking fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            dayPassAvailable,
+            dayPassPrice,
+            dayPassDuration,
+            dayPassIncludes,
+            membershipsAvailable,
+            membershipDetails,
+            vouchersAvailable,
+            voucherValidity,
+            advanceBooking,
+            minNotice,
+            maxAdvance,
+            groupBookings,
+            maxGroupSize,
+            couplesBookings,
+            depositRequired,
+            depositAmount,
+            paymentDue,
+            freeCancellationPeriod: freeCancellation,
+            lateFee,
+            noShowFee,
+            cancellationText,
+            instantBooking: onlineBooking,
+            bookingPlatform,
+            bookingUrl,
+            calendarSync,
+            autoConfirm,
+            reminders,
+            pricingNotes,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dayPassAvailable, dayPassPrice, dayPassDuration, dayPassIncludes,
+        membershipsAvailable, membershipDetails, vouchersAvailable, voucherValidity,
+        advanceBooking, minNotice, maxAdvance, groupBookings, maxGroupSize, couplesBookings,
+        depositRequired, depositAmount, paymentDue, freeCancellation, lateFee, noShowFee,
+        cancellationText, onlineBooking, bookingPlatform, bookingUrl, calendarSync,
+        autoConfirm, reminders, pricingNotes]);
 
     const togglePackageActive = (id: number) => {
         setPackages(packages.map(pkg => pkg.id === id ? { ...pkg, active: !pkg.active } : pkg));

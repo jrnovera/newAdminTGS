@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Edit3, Upload } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -105,6 +105,45 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
     const [minChildAge, setMinChildAge] = useState(venue.minimumChildAge || 0);
     const [petsAllowed, setPetsAllowed] = useState(venue.petsAllowed ?? false);
     const [smokingAllowed, setSmokingAllowed] = useState(venue.smokingAllowed ?? false);
+
+    // Batch-save all accommodation fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            hasAccommodation,
+            introParagraph1,
+            whatsIncluded: selectedInclusions,
+            capacity: maxDayGuests,
+            maxGuests,
+            minGuests,
+            totalBedrooms,
+            totalBathrooms,
+            sharedBathrooms,
+            privateEnsuites,
+            accommodationStyle,
+            bedConfigKing: beds.king,
+            bedConfigQueen: beds.queen,
+            bedConfigDouble: beds.double,
+            bedConfigSingle: beds.single,
+            bedConfigTwin: beds.twin,
+            bedConfigBunk: beds.bunk,
+            bedConfigSofa: beds.sofa,
+            bedConfigRollaway: beds.rollaway,
+            checkInTime,
+            checkOutTime,
+            earlyCheckInAvailable: earlyCheckIn,
+            lateCheckOutAvailable: lateCheckOut,
+            childrenAllowed,
+            minimumChildAge: minChildAge,
+            petsAllowed,
+            smokingAllowed,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasAccommodation, introParagraph1, selectedInclusions, maxDayGuests, maxGuests, minGuests,
+        totalBedrooms, totalBathrooms, sharedBathrooms, privateEnsuites, accommodationStyle,
+        beds, checkInTime, checkOutTime, earlyCheckIn, lateCheckOut, childrenAllowed,
+        minChildAge, petsAllowed, smokingAllowed]);
 
     const toggleInclusion = (label: string) => {
         setSelectedInclusions(prev =>

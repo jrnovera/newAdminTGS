@@ -4837,6 +4837,12 @@ a {
   background-color: rgba(212, 168, 83, 0.15);
 }
 
+.calendar-day.selected {
+  background-color: rgba(75, 124, 89, 0.2);
+  outline: 2px solid #4b7c59;
+  outline-offset: -2px;
+}
+
 .calendar-day-number {
   margin-bottom: 4px;
 }
@@ -6836,6 +6842,132 @@ a {
 
 .wvd-btn-icon:hover {
   background-color: #E8E5E0;
+}
+
+/* WVD Button Variants */
+.wvd-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background-color: var(--text);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wvd-btn-primary:hover {
+  opacity: 0.85;
+}
+
+.wvd-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wvd-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background-color: var(--secondary-bg);
+  color: var(--text);
+  border: 1px solid rgba(184, 184, 184, 0.3);
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wvd-btn-secondary:hover {
+  background-color: #E8E5E0;
+}
+
+.wvd-btn-small {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+/* WVD Modal */
+.wvd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(49, 49, 49, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.wvd-modal {
+  background: var(--white);
+  border-radius: 14px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(49, 49, 49, 0.2);
+  animation: modalIn 0.2s ease;
+  overflow: hidden;
+}
+
+.wvd-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(184, 184, 184, 0.2);
+  flex-shrink: 0;
+}
+
+.wvd-modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.wvd-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--secondary-bg);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.wvd-modal-close:hover {
+  background: #E8E5E0;
+}
+
+.wvd-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.wvd-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(184, 184, 184, 0.2);
+  background: var(--white);
+  flex-shrink: 0;
 }
 
 .wvd-tabs {
@@ -8929,6 +9061,12 @@ a {
 
 .wb-calendar-day.enquiry {
   background-color: rgba(212, 168, 83, 0.15);
+}
+
+.wb-calendar-day.selected {
+  background-color: rgba(75, 124, 89, 0.2);
+  outline: 2px solid #4b7c59;
+  outline-offset: -2px;
 }
 
 .wb-calendar-day-number {

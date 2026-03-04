@@ -83,18 +83,18 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
     const [form, setForm] = useState({
         name: venue.name || '',
         venueTypeCategory: venue.venueTypeCategory || 'Wellness',
-        wellnessVenueTypes: venue.modalities?.slice(0, 3) || ['Day Spa', 'Urban Sanctuary'],
-        wellnessCategories: venue.bestFor || ['Massage', 'Facials', 'Body Treatments', 'Thermal Circuit'],
+        wellnessVenueTypes: venue.wellnessVenueTypes?.length ? venue.wellnessVenueTypes : ['Day Spa', 'Urban Sanctuary'],
+        wellnessCategories: venue.wellnessCategories?.length ? venue.wellnessCategories : ['Massage', 'Facials', 'Body Treatments', 'Thermal Circuit'],
         description: venue.description || '',
         shortDescription: venue.shortDescription || venue.description?.substring(0, 120) || '',
 
         // Editorial
-        heroQuote: venue.quote || '',
+        quote: venue.quote || '',
         introText: venue.introText || venue.introParagraph1 || '',
 
         // Venue Details
-        treatmentRooms: 5,
-        couplesSuites: 1,
+        treatmentRooms: venue.totalTreatmentRooms ?? 5,
+        couplesSuites: venue.couplesRooms ?? 1,
         totalPractitioners: 8,
         floorArea: venue.propertySizeValue || 280,
         yearEstablished: venue.established || '2018',
@@ -130,19 +130,23 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
         onlineBooking: venue.instantBooking || true,
 
         // Hours extra
-        holidayNote: 'Closed public holidays. Extended hours available by appointment.',
-        afterHoursAvailable: true,
+        holidayNote: venue.holidayNote || 'Closed public holidays. Extended hours available by appointment.',
+        afterHoursAvailable: venue.afterHoursAvailable ?? true,
     });
 
-    const [hours, setHours] = useState<HoursState>({
-        Monday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
-        Tuesday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
-        Wednesday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
-        Thursday: { open: '9:00 AM', close: '9:00 PM', isOpen: true },
-        Friday: { open: '9:00 AM', close: '9:00 PM', isOpen: true },
-        Saturday: { open: '9:00 AM', close: '6:00 PM', isOpen: true },
-        Sunday: { open: '10:00 AM', close: '5:00 PM', isOpen: true },
-    });
+    const [hours, setHours] = useState<HoursState>(
+        (venue.operatingHours && Object.keys(venue.operatingHours).length > 0)
+            ? venue.operatingHours
+            : {
+                Monday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
+                Tuesday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
+                Wednesday: { open: '9:00 AM', close: '8:00 PM', isOpen: true },
+                Thursday: { open: '9:00 AM', close: '9:00 PM', isOpen: true },
+                Friday: { open: '9:00 AM', close: '9:00 PM', isOpen: true },
+                Saturday: { open: '9:00 AM', close: '6:00 PM', isOpen: true },
+                Sunday: { open: '10:00 AM', close: '5:00 PM', isOpen: true },
+            }
+    );
 
     const update = (field: string, value: any) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -150,10 +154,16 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
     };
 
     const updateHours = (day: string, field: 'open' | 'close' | 'isOpen', value: any) => {
-        setHours(prev => ({
-            ...prev,
-            [day]: { ...prev[day], [field]: value },
-        }));
+        const newHours = {
+            ...hours,
+            [day]: { ...hours[day], [field]: value },
+        };
+        setHours(newHours);
+        onUpdate({
+            operatingHours: newHours,
+            holidayNote: form.holidayNote,
+            afterHoursAvailable: form.afterHoursAvailable,
+        });
     };
 
     return (
@@ -211,7 +221,7 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                             <input
                                 type="text"
                                 className="form-input"
-                                value={form.heroQuote}
+                                value={form.quote}
                                 onChange={e => update('quote', e.target.value)}
                                 placeholder="A compelling one-line quote that captures the essence of this venue..."
                             />
@@ -245,11 +255,11 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                     <div className="form-grid three-col">
                         <div className="form-group">
                             <label className="form-label">Treatment Rooms</label>
-                            <input type="number" className="form-input" value={form.treatmentRooms} onChange={e => setForm(p => ({ ...p, treatmentRooms: parseInt(e.target.value) || 0 }))} />
+                            <input type="number" className="form-input" value={form.treatmentRooms} onChange={e => { const val = parseInt(e.target.value) || 0; setForm(p => ({ ...p, treatmentRooms: val })); onUpdate({ totalTreatmentRooms: val }); }} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Couples Suites</label>
-                            <input type="number" className="form-input" value={form.couplesSuites} onChange={e => setForm(p => ({ ...p, couplesSuites: parseInt(e.target.value) || 0 }))} />
+                            <input type="number" className="form-input" value={form.couplesSuites} onChange={e => { const val = parseInt(e.target.value) || 0; setForm(p => ({ ...p, couplesSuites: val })); onUpdate({ couplesRooms: val }); }} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Total Practitioners</label>
@@ -257,15 +267,15 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Floor Area (sqm)</label>
-                            <input type="number" className="form-input" value={form.floorArea} onChange={e => update('propertySizeValue', parseInt(e.target.value) || 0)} />
+                            <input type="number" className="form-input" value={form.floorArea} onChange={e => { const val = parseInt(e.target.value) || 0; setForm(p => ({ ...p, floorArea: val })); onUpdate({ propertySizeValue: val }); }} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Year Established</label>
-                            <input type="number" className="form-input" value={form.yearEstablished} onChange={e => update('established', e.target.value)} placeholder="e.g. 2018" />
+                            <input type="number" className="form-input" value={form.yearEstablished} onChange={e => { setForm(p => ({ ...p, yearEstablished: e.target.value })); onUpdate({ established: e.target.value }); }} placeholder="e.g. 2018" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Max Concurrent Clients</label>
-                            <input type="number" className="form-input" value={form.maxConcurrentClients} onChange={e => update('capacity', parseInt(e.target.value) || 0)} />
+                            <input type="number" className="form-input" value={form.maxConcurrentClients} onChange={e => { const val = parseInt(e.target.value) || 0; setForm(p => ({ ...p, maxConcurrentClients: val })); onUpdate({ maxGuests: val }); }} />
                         </div>
                     </div>
                 </div>
@@ -315,7 +325,7 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                     <div className="form-grid">
                         <div className="form-group full-width">
                             <label className="form-label">Signature Treatments</label>
-                            <TagInput tags={form.signatureTreatments} options={WELLNESS_CATEGORIES} onChange={vals => update('modalities', vals)} />
+                            <TagInput tags={form.signatureTreatments} options={WELLNESS_CATEGORIES} onChange={vals => { setForm(p => ({ ...p, signatureTreatments: vals })); onUpdate({ modalities: vals }); }} />
                             <p style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--accent)', marginTop: '6px' }}>
                                 These tags appear on the Overview tab and are used for search filtering.
                             </p>
@@ -383,11 +393,11 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Nearest Transport</label>
-                            <input type="text" className="form-input" value={form.nearestTransport} onChange={e => update('nearestAirport', e.target.value)} />
+                            <input type="text" className="form-input" value={form.nearestTransport} onChange={e => { setForm(p => ({ ...p, nearestTransport: e.target.value })); onUpdate({ nearestAirport: e.target.value }); }} />
                         </div>
                         <div className="form-group" style={{ gridColumn: 'span 3' }}>
                             <label className="form-label">Parking & Access</label>
-                            <TagInput tags={form.parkingAccess} options={TRANSPORT_OPTIONS} onChange={vals => update('transportAccess', vals)} />
+                            <TagInput tags={form.parkingAccess} options={TRANSPORT_OPTIONS} onChange={vals => { setForm(p => ({ ...p, parkingAccess: vals })); onUpdate({ transportAccess: vals }); }} />
                         </div>
                     </div>
                 </div>
@@ -433,12 +443,12 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                                 type="text"
                                 className="form-input"
                                 value={form.holidayNote}
-                                onChange={e => setForm(p => ({ ...p, holidayNote: e.target.value }))}
+                                onChange={e => { setForm(p => ({ ...p, holidayNote: e.target.value })); onUpdate({ holidayNote: e.target.value }); }}
                             />
                         </div>
                         <div className="form-group">
                             <label className="form-label">After Hours Available</label>
-                            <div className="toggle-container" onClick={() => setForm(p => ({ ...p, afterHoursAvailable: !p.afterHoursAvailable }))}>
+                            <div className="toggle-container" onClick={() => { const val = !form.afterHoursAvailable; setForm(p => ({ ...p, afterHoursAvailable: val })); onUpdate({ afterHoursAvailable: val }); }}>
                                 <div className={`toggle ${form.afterHoursAvailable ? 'active' : ''}`}>
                                     <div className="toggle-knob"></div>
                                 </div>

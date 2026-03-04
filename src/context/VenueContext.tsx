@@ -217,6 +217,111 @@ export interface Venue {
   startingPrice?: number;
   totalBookings?: number;
   primaryVenueType?: string;
+
+  // ── Wellness-specific basic info ──
+  wellnessVenueTypes?: string[];
+  wellnessCategories?: string[];
+  operatingHours?: Record<string, { open: string; close: string; isOpen: boolean }>;
+  holidayNote?: string;
+  afterHoursAvailable?: boolean;
+
+  // ── Wellness amenities ──
+  webAmenities?: string[];
+  kitchenAmenities?: string[];
+  livingAmenities?: string[];
+  techAmenities?: string[];
+  outdoorAmenities?: string[];
+  parkingAmenities?: string[];
+  wifiSpeed?: string;
+  poolType?: string;
+  parkingSpaces?: number;
+  aboutP1?: string;
+  aboutP2?: string;
+  showAbout?: boolean;
+  weProvide?: string;
+  pleaseBring?: string;
+  optionalItems?: string;
+  showBring?: boolean;
+
+  // ── Extended owner / business ──
+  firstName?: string;
+  lastName?: string;
+  ownerRole?: string;
+  phoneSecondary?: string;
+  businessName?: string;
+  taxId?: string;
+  businessType?: string;
+  gstRegistered?: boolean;
+  hostBio?: string;
+  showHostProfile?: boolean;
+  relationshipNotes?: string;
+
+  // ── Internal / CRM ──
+  pipelineStage?: string;
+  leadSource?: string;
+  leadOwner?: string;
+  founderDiscount?: string;
+  billingCycle?: string;
+  bookingCommission?: string;
+  experienceCommission?: string;
+  stripeConnected?: boolean;
+  marketSegment?: string;
+  venueTier?: string;
+
+  // ── Wellness pricing & booking config ──
+  dayPassAvailable?: boolean;
+  dayPassPrice?: string;
+  dayPassDuration?: string;
+  dayPassIncludes?: string;
+  membershipsAvailable?: boolean;
+  membershipDetails?: string;
+  vouchersAvailable?: boolean;
+  voucherValidity?: string;
+  depositRequired?: boolean;
+  depositAmount?: string;
+  paymentDue?: string;
+  freeCancellationPeriod?: string;
+  lateFee?: string;
+  noShowFee?: string;
+  cancellationText?: string;
+  bookingPlatform?: string;
+  bookingUrl?: string;
+  calendarSync?: boolean;
+  autoConfirm?: boolean;
+  reminders?: string;
+  pricingNotes?: string;
+  advanceBooking?: string;
+  minNotice?: string;
+  maxAdvance?: string;
+  groupBookings?: boolean;
+  maxGroupSize?: string;
+  couplesBookings?: boolean;
+  packagePricing?: boolean;
+  membershipOptions?: boolean;
+  dropInWelcome?: boolean;
+  appointmentRequired?: boolean;
+
+  // ── Wellness services config ──
+  serviceDescription?: string;
+  practitionerSpecialties?: string;
+  onsiteNutritionist?: boolean;
+  offeringTags?: string[];
+  dietaryTags?: string[];
+
+  // ── Wellness facilities config ──
+  facilityPhilosophy?: string;
+  facilityHighlights?: string;
+  totalTreatmentRooms?: number;
+  privateSuites?: number;
+  couplesRooms?: number;
+  groupSpaces?: number;
+  indoorPoolCount?: number;
+  outdoorPoolCount?: number;
+  thermalFeatures?: string;
+  towelsProvided?: boolean;
+  slippersProvided?: boolean;
+  facilityCertifications?: Record<string, any>;
+  bathingSections?: Record<string, any>;
 }
 
 interface VenueContextType {
@@ -396,6 +501,119 @@ const mapFromView = (v: any): Venue => ({
   retreatFacilitiesNotes: v.retreat_facilities_notes || '',
   supportedRetreatTypes: v.retreat_supported_types || [],
 
+  // ── Wellness basic info ──
+  wellnessVenueTypes: v.wellness_venue_types || [],
+  wellnessCategories: v.wellness_categories || [],
+  introText: v.intro_text || '',
+  holidayNote: v.holiday_note || '',
+  afterHoursAvailable: v.after_hours_available ?? false,
+  operatingHours: {
+    Monday:    { open: v.monday_open    || '9:00 AM',  close: v.monday_close    || '8:00 PM',  isOpen: v.monday_is_open    ?? true },
+    Tuesday:   { open: v.tuesday_open   || '9:00 AM',  close: v.tuesday_close   || '8:00 PM',  isOpen: v.tuesday_is_open   ?? true },
+    Wednesday: { open: v.wednesday_open || '9:00 AM',  close: v.wednesday_close || '8:00 PM',  isOpen: v.wednesday_is_open ?? true },
+    Thursday:  { open: v.thursday_open  || '9:00 AM',  close: v.thursday_close  || '9:00 PM',  isOpen: v.thursday_is_open  ?? true },
+    Friday:    { open: v.friday_open    || '9:00 AM',  close: v.friday_close    || '9:00 PM',  isOpen: v.friday_is_open    ?? true },
+    Saturday:  { open: v.saturday_open  || '9:00 AM',  close: v.saturday_close  || '6:00 PM',  isOpen: v.saturday_is_open  ?? true },
+    Sunday:    { open: v.sunday_open    || '10:00 AM', close: v.sunday_close    || '5:00 PM',  isOpen: v.sunday_is_open    ?? true },
+  },
+
+  // ── Wellness amenities ──
+  webAmenities: v.web_amenities || [],
+  kitchenAmenities: v.kitchen_facilities || [],
+  livingAmenities: v.living_facilities || [],
+  techAmenities: v.tech_facilities || [],
+  outdoorAmenities: v.outdoor_facilities || [],
+  parkingAmenities: v.parking_amenities || [],
+  poolType: v.pool_type || '',
+  parkingSpaces: v.parking_spaces || 0,
+  aboutP1: v.about_p1 || '',
+  aboutP2: v.about_p2 || '',
+  showAbout: v.show_about ?? true,
+  weProvide: v.we_provide || '',
+  pleaseBring: v.please_bring || '',
+  optionalItems: v.optional_items || '',
+  showBring: v.show_bring ?? true,
+
+  // ── Extended owner / business ──
+  firstName: v.first_name || '',
+  lastName: v.last_name || '',
+  ownerRole: v.owner_role || '',
+  phoneSecondary: v.phone_secondary || '',
+  businessName: v.business_name || '',
+  taxId: v.tax_id || '',
+  businessType: v.business_type || '',
+  gstRegistered: v.gst_registered ?? false,
+  hostBio: v.host_bio || '',
+  showHostProfile: v.show_host_profile ?? false,
+  relationshipNotes: v.relationship_notes || '',
+
+  // ── Internal / CRM ──
+  pipelineStage: v.pipeline_stage || '',
+  leadSource: v.lead_source || '',
+  leadOwner: v.lead_owner || '',
+  founderDiscount: v.founder_discount || '',
+  billingCycle: v.billing_cycle || '',
+  bookingCommission: v.booking_commission || '',
+  experienceCommission: v.experience_commission || '',
+  stripeConnected: v.stripe_connected ?? false,
+  marketSegment: v.market_segment || '',
+  venueTier: v.venue_tier || '',
+
+  // ── Wellness pricing & booking config ──
+  dayPassAvailable: v.day_pass_available ?? false,
+  dayPassPrice: v.day_pass_price || '',
+  dayPassDuration: v.day_pass_duration || '',
+  dayPassIncludes: v.day_pass_includes || '',
+  membershipsAvailable: v.memberships_available ?? false,
+  membershipDetails: v.membership_details || '',
+  vouchersAvailable: v.vouchers_available ?? false,
+  voucherValidity: v.voucher_validity || '',
+  depositRequired: v.deposit_required ?? false,
+  depositAmount: v.deposit_amount || '',
+  paymentDue: v.payment_due || '',
+  freeCancellationPeriod: v.free_cancellation_period || '',
+  lateFee: v.late_fee || '',
+  noShowFee: v.no_show_fee || '',
+  cancellationText: v.cancellation_text || '',
+  bookingPlatform: v.booking_platform || '',
+  bookingUrl: v.booking_url || '',
+  calendarSync: v.calendar_sync ?? false,
+  autoConfirm: v.auto_confirm ?? false,
+  reminders: v.reminders || '',
+  pricingNotes: v.pricing_notes || '',
+  advanceBooking: v.advance_booking || '',
+  minNotice: v.min_notice || '',
+  maxAdvance: v.max_advance || '',
+  groupBookings: v.group_bookings ?? false,
+  maxGroupSize: v.max_group_size || '',
+  couplesBookings: v.couples_bookings ?? true,
+  packagePricing: v.package_pricing ?? false,
+  membershipOptions: v.membership_options ?? false,
+  dropInWelcome: v.drop_in_welcome ?? true,
+  appointmentRequired: v.appointment_required ?? false,
+
+  // ── Wellness services config ──
+  serviceDescription: v.service_description || '',
+  practitionerSpecialties: v.practitioner_specialties || '',
+  onsiteNutritionist: v.onsite_nutritionist ?? false,
+  offeringTags: v.offering_tags || [],
+  dietaryTags: v.dietary_tags || [],
+
+  // ── Wellness facilities config ──
+  facilityPhilosophy: v.facility_philosophy || '',
+  facilityHighlights: v.facility_highlights || '',
+  totalTreatmentRooms: v.wc_total_treatment_rooms || 0,
+  privateSuites: v.private_suites || 0,
+  couplesRooms: v.couples_rooms || 0,
+  groupSpaces: v.group_spaces || 0,
+  indoorPoolCount: v.indoor_pool_count || 0,
+  outdoorPoolCount: v.outdoor_pool_count || 0,
+  thermalFeatures: v.thermal_features || '',
+  towelsProvided: v.towels_provided ?? true,
+  slippersProvided: v.slippers_provided ?? false,
+  facilityCertifications: v.facility_certifications || {},
+  bathingSections: v.bathing_sections || {},
+
   // Child-table data (not in view — loaded separately on the detail page)
   heroImage: '',
   galleryPhotos: [],
@@ -568,6 +786,162 @@ function buildSatellitePayloads(venueId: string, venue: Partial<Venue>) {
       notes: venue.retreatFacilitiesNotes ?? null,
       supported_retreat_types: venue.supportedRetreatTypes ?? [],
     },
+
+    // ── Extended basic info (wellness-specific) ──
+    wellness_basic: {
+      venue_id: venueId,
+      wellness_venue_types: venue.wellnessVenueTypes ?? [],
+      wellness_categories: venue.wellnessCategories ?? [],
+      treatment_rooms: venue.totalTreatmentRooms ?? 0,
+      couples_suites: venue.couplesRooms ?? 0,
+      total_practitioners: 0,
+    },
+
+    // ── Extended content (wellness intro_text) ──
+    wellness_content: {
+      venue_id: venueId,
+      intro_text: venue.introText ?? null,
+    },
+
+    // ── Extended amenities (wellness-specific) ──
+    wellness_amenities: {
+      venue_id: venueId,
+      web_amenities: venue.webAmenities ?? [],
+      kitchen_facilities: venue.kitchenAmenities ?? [],
+      living_facilities: venue.livingAmenities ?? [],
+      tech_facilities: venue.techAmenities ?? [],
+      outdoor_facilities: venue.outdoorAmenities ?? [],
+      parking_amenities: venue.parkingAmenities ?? [],
+      pool_type: venue.poolType ?? null,
+      parking_spaces: venue.parkingSpaces ?? 0,
+    },
+
+    // ── Extended owner/business info ──
+    wellness_owner: {
+      venue_id: venueId,
+      first_name: venue.firstName ?? null,
+      last_name: venue.lastName ?? null,
+      owner_role: venue.ownerRole ?? null,
+      phone_secondary: venue.phoneSecondary ?? null,
+      business_name: venue.businessName ?? null,
+      tax_id: venue.taxId ?? null,
+      business_type: venue.businessType ?? null,
+      gst_registered: venue.gstRegistered ?? false,
+      host_bio: venue.hostBio ?? null,
+      show_host_profile: venue.showHostProfile ?? false,
+      relationship_notes: venue.relationshipNotes ?? null,
+    },
+
+    // ── Extended internal / CRM ──
+    wellness_internal: {
+      venue_id: venueId,
+      pipeline_stage: venue.pipelineStage ?? null,
+      lead_source: venue.leadSource ?? null,
+      lead_owner: venue.leadOwner ?? null,
+      founder_discount: venue.founderDiscount ?? null,
+      billing_cycle: venue.billingCycle ?? null,
+      booking_commission: venue.bookingCommission ?? null,
+      experience_commission: venue.experienceCommission ?? null,
+      stripe_connected: venue.stripeConnected ?? false,
+      market_segment: venue.marketSegment ?? null,
+      venue_tier: venue.venueTier ?? null,
+    },
+
+    // ── Operating hours ──
+    operating_hours: (() => {
+      const h = venue.operatingHours;
+      return {
+        venue_id: venueId,
+        monday_open:      h?.Monday?.open    ?? '9:00 AM',
+        monday_close:     h?.Monday?.close   ?? '8:00 PM',
+        monday_is_open:   h?.Monday?.isOpen  ?? true,
+        tuesday_open:     h?.Tuesday?.open   ?? '9:00 AM',
+        tuesday_close:    h?.Tuesday?.close  ?? '8:00 PM',
+        tuesday_is_open:  h?.Tuesday?.isOpen ?? true,
+        wednesday_open:   h?.Wednesday?.open   ?? '9:00 AM',
+        wednesday_close:  h?.Wednesday?.close  ?? '8:00 PM',
+        wednesday_is_open:h?.Wednesday?.isOpen ?? true,
+        thursday_open:    h?.Thursday?.open   ?? '9:00 AM',
+        thursday_close:   h?.Thursday?.close  ?? '9:00 PM',
+        thursday_is_open: h?.Thursday?.isOpen ?? true,
+        friday_open:      h?.Friday?.open   ?? '9:00 AM',
+        friday_close:     h?.Friday?.close  ?? '9:00 PM',
+        friday_is_open:   h?.Friday?.isOpen ?? true,
+        saturday_open:    h?.Saturday?.open   ?? '9:00 AM',
+        saturday_close:   h?.Saturday?.close  ?? '6:00 PM',
+        saturday_is_open: h?.Saturday?.isOpen ?? true,
+        sunday_open:      h?.Sunday?.open   ?? '10:00 AM',
+        sunday_close:     h?.Sunday?.close  ?? '5:00 PM',
+        sunday_is_open:   h?.Sunday?.isOpen ?? true,
+        holiday_note:           venue.holidayNote ?? null,
+        after_hours_available:  venue.afterHoursAvailable ?? false,
+      };
+    })(),
+
+    // ── Wellness config (pricing, services, facilities, amenity editorial) ──
+    wellness_config: {
+      venue_id: venueId,
+      // Pricing
+      day_pass_available:       venue.dayPassAvailable ?? false,
+      day_pass_price:           venue.dayPassPrice ?? null,
+      day_pass_duration:        venue.dayPassDuration ?? null,
+      day_pass_includes:        venue.dayPassIncludes ?? null,
+      memberships_available:    venue.membershipsAvailable ?? false,
+      membership_details:       venue.membershipDetails ?? null,
+      vouchers_available:       venue.vouchersAvailable ?? false,
+      voucher_validity:         venue.voucherValidity ?? null,
+      deposit_required:         venue.depositRequired ?? false,
+      deposit_amount:           venue.depositAmount ?? null,
+      payment_due:              venue.paymentDue ?? null,
+      free_cancellation_period: venue.freeCancellationPeriod ?? null,
+      late_fee:                 venue.lateFee ?? null,
+      no_show_fee:              venue.noShowFee ?? null,
+      cancellation_text:        venue.cancellationText ?? null,
+      booking_platform:         venue.bookingPlatform ?? null,
+      booking_url:              venue.bookingUrl ?? null,
+      calendar_sync:            venue.calendarSync ?? false,
+      auto_confirm:             venue.autoConfirm ?? false,
+      reminders:                venue.reminders ?? null,
+      pricing_notes:            venue.pricingNotes ?? null,
+      advance_booking:          venue.advanceBooking ?? null,
+      min_notice:               venue.minNotice ?? null,
+      max_advance:              venue.maxAdvance ?? null,
+      group_bookings:           venue.groupBookings ?? false,
+      max_group_size:           venue.maxGroupSize ?? null,
+      couples_bookings:         venue.couplesBookings ?? true,
+      package_pricing:          venue.packagePricing ?? false,
+      membership_options:       venue.membershipOptions ?? false,
+      drop_in_welcome:          venue.dropInWelcome ?? true,
+      appointment_required:     venue.appointmentRequired ?? false,
+      // Services
+      service_description:      venue.serviceDescription ?? null,
+      practitioner_specialties: venue.practitionerSpecialties ?? null,
+      onsite_nutritionist:      venue.onsiteNutritionist ?? false,
+      offering_tags:            venue.offeringTags ?? [],
+      dietary_tags:             venue.dietaryTags ?? [],
+      // Facilities
+      facility_philosophy:      venue.facilityPhilosophy ?? null,
+      facility_highlights:      venue.facilityHighlights ?? null,
+      total_treatment_rooms:    venue.totalTreatmentRooms ?? 0,
+      private_suites:           venue.privateSuites ?? 0,
+      couples_rooms:            venue.couplesRooms ?? 0,
+      group_spaces:             venue.groupSpaces ?? 0,
+      indoor_pool_count:        venue.indoorPoolCount ?? 0,
+      outdoor_pool_count:       venue.outdoorPoolCount ?? 0,
+      thermal_features:         venue.thermalFeatures ?? null,
+      towels_provided:          venue.towelsProvided ?? true,
+      slippers_provided:        venue.slippersProvided ?? false,
+      facility_certifications:  venue.facilityCertifications ?? {},
+      bathing_sections:         venue.bathingSections ?? {},
+      // Amenities editorial
+      about_p1:                 venue.aboutP1 ?? null,
+      about_p2:                 venue.aboutP2 ?? null,
+      show_about:               venue.showAbout ?? true,
+      we_provide:               venue.weProvide ?? null,
+      please_bring:             venue.pleaseBring ?? null,
+      optional_items:           venue.optionalItems ?? null,
+      show_bring:               venue.showBring ?? true,
+    },
   };
 }
 
@@ -575,7 +949,8 @@ function buildSatellitePayloads(venueId: string, venue: Partial<Venue>) {
 async function upsertSatelliteTables(venueId: string, venue: Partial<Venue>) {
   const p = buildSatellitePayloads(venueId, venue);
 
-  const results = await Promise.allSettled([
+  // Base satellite upserts (both retreat and wellness)
+  const baseUpserts = Promise.allSettled([
     supabase.from('venue_basic_info').upsert(p.basic_info, { onConflict: 'venue_id' }),
     supabase.from('venue_content').upsert(p.content, { onConflict: 'venue_id' }),
     supabase.from('venue_experience').upsert(p.experience, { onConflict: 'venue_id' }),
@@ -588,13 +963,26 @@ async function upsertSatelliteTables(venueId: string, venue: Partial<Venue>) {
     supabase.from('venue_owner_info').upsert(p.owner_info, { onConflict: 'venue_id' }),
     supabase.from('venue_internal').upsert(p.internal, { onConflict: 'venue_id' }),
     supabase.from('venue_retreat_editorial').upsert(p.retreat_editorial, { onConflict: 'venue_id' }),
+    // Wellness extensions — these upsert wellness-specific columns on top of the base row
+    supabase.from('venue_basic_info').upsert(p.wellness_basic, { onConflict: 'venue_id' }),
+    supabase.from('venue_content').upsert(p.wellness_content, { onConflict: 'venue_id' }),
+    supabase.from('venue_amenities').upsert(p.wellness_amenities, { onConflict: 'venue_id' }),
+    supabase.from('venue_owner_info').upsert(p.wellness_owner, { onConflict: 'venue_id' }),
+    supabase.from('venue_internal').upsert(p.wellness_internal, { onConflict: 'venue_id' }),
+    supabase.from('venue_operating_hours').upsert(p.operating_hours, { onConflict: 'venue_id' }),
+    supabase.from('venue_wellness_config').upsert(p.wellness_config, { onConflict: 'venue_id' }),
   ]);
+
+  const results = await baseUpserts;
 
   results.forEach((r, i) => {
     const tableNames = [
       'venue_basic_info', 'venue_content', 'venue_experience', 'venue_property_details',
       'venue_location', 'venue_status', 'venue_accommodation', 'venue_amenities',
       'venue_policies', 'venue_owner_info', 'venue_internal', 'venue_retreat_editorial',
+      'venue_basic_info(wellness)', 'venue_content(wellness)', 'venue_amenities(wellness)',
+      'venue_owner_info(wellness)', 'venue_internal(wellness)',
+      'venue_operating_hours', 'venue_wellness_config',
     ];
     if (r.status === 'rejected') {
       console.error(`[VenueContext] upsert failed for ${tableNames[i]}:`, r.reason);

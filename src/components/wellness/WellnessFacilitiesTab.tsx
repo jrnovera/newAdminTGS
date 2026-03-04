@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check, Upload, Plus } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -16,7 +16,7 @@ interface FacilityItem {
     image?: string;
 }
 
-export default function WellnessFacilitiesTab({ venue: _venue, onUpdate: _onUpdate }: Props) {
+export default function WellnessFacilitiesTab({ venue, onUpdate }: Props) {
     // Featured Facilities State
     const [featuredFacilities, setFeaturedFacilities] = useState<FacilityItem[]>([
         {
@@ -50,15 +50,15 @@ export default function WellnessFacilitiesTab({ venue: _venue, onUpdate: _onUpda
     ]);
 
     // Operational Data States
-    const [facilitySpace, setFacilitySpace] = useState(280);
-    const [philosophy, setPhilosophy] = useState('Urban sanctuary combining modern wellness with traditional techniques');
-    const [highlights, setHighlights] = useState('Five private treatment rooms including one couples suite, infrared sauna, relaxation lounge with herbal tea service, and premium changing facilities with lockers and showers.');
+    const [facilitySpace, setFacilitySpace] = useState(venue.propertySizeValue ? Number(String(venue.propertySizeValue)) || 280 : 280);
+    const [philosophy, setPhilosophy] = useState(venue.facilityPhilosophy || 'Urban sanctuary combining modern wellness with traditional techniques');
+    const [highlights, setHighlights] = useState(venue.facilityHighlights || 'Five private treatment rooms including one couples suite, infrared sauna, relaxation lounge with herbal tea service, and premium changing facilities with lockers and showers.');
 
     // Treatment Rooms
-    const [totalTreatmentRooms, setTotalTreatmentRooms] = useState(5);
-    const [privateSuites, setPrivateSuites] = useState(4);
-    const [couplesRooms, setCouplesRooms] = useState(1);
-    const [groupSpaces, setGroupSpaces] = useState(0);
+    const [totalTreatmentRooms, setTotalTreatmentRooms] = useState(venue.totalTreatmentRooms ?? 5);
+    const [privateSuites, setPrivateSuites] = useState(venue.privateSuites ?? 4);
+    const [couplesRooms, setCouplesRooms] = useState(venue.couplesRooms ?? 1);
+    const [groupSpaces, setGroupSpaces] = useState(venue.groupSpaces ?? 0);
     const [roomSizes, setRoomSizes] = useState('12-18 sqm per room');
     const [tablesAvailable, setTablesAvailable] = useState(true);
     const [specializedEquip, setSpecializedEquip] = useState('Electric height-adjustable massage tables, hot stone warmers, aromatherapy diffusers, facial steamers, LED light therapy devices, microcurrent facial equipment.');
@@ -79,17 +79,21 @@ export default function WellnessFacilitiesTab({ venue: _venue, onUpdate: _onUpda
         'Outdoor Thermal Pools', 'Mineral Spring Pools', 'Natural Hot Spring Pools', 'Geothermal Pools'
     ];
     const [selectedThermal, setSelectedThermal] = useState(['Infrared Sauna', 'Steam Room']);
-    const [indoorPoolCount, setIndoorPoolCount] = useState(0);
-    const [outdoorPoolCount, setOutdoorPoolCount] = useState(0);
-    const [thermalFeatures, setThermalFeatures] = useState('Full-spectrum infrared sauna (2-person capacity) with chromotherapy lighting. Eucalyptus-infused steam room. Complimentary for all treatment bookings over 60 minutes.');
+    const [indoorPoolCount, setIndoorPoolCount] = useState(venue.indoorPoolCount ?? 0);
+    const [outdoorPoolCount, setOutdoorPoolCount] = useState(venue.outdoorPoolCount ?? 0);
+    const [thermalFeatures, setThermalFeatures] = useState(venue.thermalFeatures || 'Full-spectrum infrared sauna (2-person capacity) with chromotherapy lighting. Eucalyptus-infused steam room. Complimentary for all treatment bookings over 60 minutes.');
 
     // Traditional Bathing (Collapsible)
-    const [bathingSections, setBathingSections] = useState({
-        japanese: { active: false, title: 'Japanese Facilities (Onsen / Sento)' },
-        korean: { active: false, title: 'Korean Facilities (Jjimjilbang)' },
-        turkish: { active: false, title: 'Turkish / Moroccan Facilities (Hammam)' },
-        russian: { active: false, title: 'Russian Facilities (Banya)' }
-    });
+    const [bathingSections, setBathingSections] = useState<Record<string, any>>(
+        (venue.bathingSections && Object.keys(venue.bathingSections).length > 0)
+            ? venue.bathingSections as Record<string, any>
+            : {
+                japanese: { active: false, title: 'Japanese Facilities (Onsen / Sento)' },
+                korean: { active: false, title: 'Korean Facilities (Jjimjilbang)' },
+                turkish: { active: false, title: 'Turkish / Moroccan Facilities (Hammam)' },
+                russian: { active: false, title: 'Russian Facilities (Banya)' }
+            }
+    );
 
     // Medical Spa
     const [medSpaSuites, setMedSpaSuites] = useState(false);
@@ -98,16 +102,17 @@ export default function WellnessFacilitiesTab({ venue: _venue, onUpdate: _onUpda
     // Changing & Locker
     const [changingDetails, setChangingDetails] = useState('Separate male and female changing areas with 20 secure lockers each. Private changing cubicles available. Vanity stations with hairdryers, straighteners, and complimentary amenities.');
     const [showerDetails, setShowerDetails] = useState('4 private shower suites with rain showers and premium body products. Heated floors throughout wet areas.');
-    const [towelsProvided, setTowelsProvided] = useState(true);
-    const [slippersProvided, setSlippersProvided] = useState(true);
+    const [towelsProvided, setTowelsProvided] = useState(venue.towelsProvided ?? true);
+    const [slippersProvided, setSlippersProvided] = useState(venue.slippersProvided ?? true);
     const [changingAmenities, setChangingAmenities] = useState('Complimentary toiletries including shampoo, conditioner, body wash, moisturizer, and deodorant. Hair styling tools available. Secure valuables storage.');
 
     // Certifications
-    const [medCerts, setMedCerts] = useState('N/A - Day spa (non-medical)');
-    const [tradCerts, setTradCerts] = useState('All massage therapists hold Diploma of Remedial Massage (HLT52015) or equivalent. Senior therapists certified in aromatherapy and reflexology.');
-    const [waterTesting, setWaterTesting] = useState('N/A - No pool facilities. Steam room maintained to NSW Health guidelines.');
-    const [safetyStandards, setSafetyStandards] = useState('Fully compliant with NSW Work Health and Safety regulations. Regular equipment maintenance and hygiene audits. All staff hold current First Aid certification.');
-    const [sustainability, setSustainability] = useState('Organic and cruelty-free products. Biodegradable consumables. Energy-efficient LED lighting. Recycling program. Local Australian-made product partnerships.');
+    const fc = (venue.facilityCertifications || {}) as Record<string, any>;
+    const [medCerts, setMedCerts] = useState(fc.medCerts || 'N/A - Day spa (non-medical)');
+    const [tradCerts, setTradCerts] = useState(fc.tradCerts || 'All massage therapists hold Diploma of Remedial Massage (HLT52015) or equivalent. Senior therapists certified in aromatherapy and reflexology.');
+    const [waterTesting, setWaterTesting] = useState(fc.waterTesting || 'N/A - No pool facilities. Steam room maintained to NSW Health guidelines.');
+    const [safetyStandards, setSafetyStandards] = useState(fc.safetyStandards || 'Fully compliant with NSW Work Health and Safety regulations. Regular equipment maintenance and hygiene audits. All staff hold current First Aid certification.');
+    const [sustainability, setSustainability] = useState(fc.sustainability || 'Organic and cruelty-free products. Biodegradable consumables. Energy-efficient LED lighting. Recycling program. Local Australian-made product partnerships.');
 
     // Accessibility
     const ACCESS_OPTIONS = [
@@ -119,6 +124,31 @@ export default function WellnessFacilitiesTab({ venue: _venue, onUpdate: _onUpda
     // Other
     const [otherAvailable, setOtherAvailable] = useState(false);
     const [otherTypes, setOtherTypes] = useState('');
+
+    // Batch-save all facility fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            facilityPhilosophy: philosophy,
+            facilityHighlights: highlights,
+            totalTreatmentRooms,
+            privateSuites,
+            couplesRooms,
+            groupSpaces,
+            indoorPoolCount,
+            outdoorPoolCount,
+            thermalFeatures,
+            towelsProvided,
+            slippersProvided,
+            bathingSections,
+            facilityCertifications: { medCerts, tradCerts, waterTesting, safetyStandards, sustainability },
+            propertySizeValue: facilitySpace,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [philosophy, highlights, totalTreatmentRooms, privateSuites, couplesRooms, groupSpaces,
+        indoorPoolCount, outdoorPoolCount, thermalFeatures, towelsProvided, slippersProvided,
+        bathingSections, medCerts, tradCerts, waterTesting, safetyStandards, sustainability, facilitySpace]);
 
     const toggleOption = (list: string[], setList: (val: string[]) => void, option: string) => {
         if (list.includes(option)) {

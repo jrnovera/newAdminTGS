@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check, Upload } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -75,12 +75,12 @@ const SAFETY_SECURITY = [
 
 const FACILITY_OPTIONS = ['Thermal Suite', 'Float Pods', 'Relaxation Lounge', 'Treatment Rooms'];
 
-export default function WellnessAmenitiesTab({ venue, onUpdate: _onUpdate }: Props) {
+export default function WellnessAmenitiesTab({ venue, onUpdate }: Props) {
     // About section
     const [aboutLabel, setAboutLabel] = useState(`About ${venue.name || 'Venue'}`);
-    const [showAbout, setShowAbout] = useState(true);
-    const [aboutP1, setAboutP1] = useState(venue.description || '');
-    const [aboutP2, setAboutP2] = useState('');
+    const [showAbout, setShowAbout] = useState(venue.showAbout ?? true);
+    const [aboutP1, setAboutP1] = useState(venue.aboutP1 || venue.description || '');
+    const [aboutP2, setAboutP2] = useState(venue.aboutP2 || '');
 
     // Featured Facilities
     const [facilitiesLabel, setFacilitiesLabel] = useState('Facilities');
@@ -94,21 +94,17 @@ export default function WellnessAmenitiesTab({ venue, onUpdate: _onUpdate }: Pro
 
     // Website Amenities
     const [amenitiesLabel, setAmenitiesLabel] = useState('Amenities');
-    const [selectedWebAmenities, setSelectedWebAmenities] = useState<string[]>(
-        WEBSITE_AMENITIES.slice(0, 12).map(a => a.label)
-    );
+    const [selectedWebAmenities, setSelectedWebAmenities] = useState<string[]>(venue.webAmenities?.length ? venue.webAmenities : WEBSITE_AMENITIES.slice(0, 12).map(a => a.label));
 
     // What to Bring
     const [bringLabel, setBringLabel] = useState('What to Bring');
-    const [showBring, setShowBring] = useState(true);
-    const [weProvide, setWeProvide] = useState('Robes, slippers, towels, lockers, toiletries, hair dryers');
-    const [pleaseBring, setPleaseBring] = useState('Swimwear for thermal facilities, personal items, a calm mindset');
-    const [optionalItems, setOptionalItems] = useState('Your own products if you have specific preferences');
+    const [showBring, setShowBring] = useState(venue.showBring ?? true);
+    const [weProvide, setWeProvide] = useState(venue.weProvide || 'Robes, slippers, towels, lockers, toiletries, hair dryers');
+    const [pleaseBring, setPleaseBring] = useState(venue.pleaseBring || 'Swimwear for thermal facilities, personal items, a calm mindset');
+    const [optionalItems, setOptionalItems] = useState(venue.optionalItems || 'Your own products if you have specific preferences');
 
     // Operational amenity states
-    const [kitchenAmenities, setKitchenAmenities] = useState<string[]>(
-        KITCHEN_DINING.filter((_, i) => i < 11 || i === 14)
-    );
+    const [kitchenAmenities, setKitchenAmenities] = useState<string[]>(venue.kitchenAmenities?.length ? venue.kitchenAmenities : KITCHEN_DINING.filter((_, i) => i < 11 || i === 14));
     const [diningIndoor, setDiningIndoor] = useState(14);
     const [diningOutdoor, setDiningOutdoor] = useState(20);
 
@@ -126,12 +122,10 @@ export default function WellnessAmenitiesTab({ venue, onUpdate: _onUpdate }: Pro
         ['Swimming Pool', 'Heated Pool', 'Garden / Grounds', 'Outdoor Seating', 'Covered Verandah / Patio', 'Fire Pit', 'Farm Animals', 'Orchard / Produce Garden', 'Walking Trails']
     );
     const [propertySize, setPropertySize] = useState('45 acres');
-    const [poolType, setPoolType] = useState('Heated Outdoor');
+    const [poolType, setPoolType] = useState(venue.poolType || 'Heated Outdoor');
 
-    const [parkingAmenities, setParkingAmenities] = useState<string[]>(
-        ['Free Parking', 'On-site Parking', 'Bus / Coach Access', 'Airport Transfers Available']
-    );
-    const [parkingSpaces, setParkingSpaces] = useState(15);
+    const [parkingAmenities, setParkingAmenities] = useState<string[]>(venue.parkingAmenities?.length ? venue.parkingAmenities : ['Free Parking', 'On-site Parking', 'Bus / Coach Access', 'Airport Transfers Available']);
+    const [parkingSpaces, setParkingSpaces] = useState(venue.parkingSpaces ?? 15);
     const [distanceToTown, setDistanceToTown] = useState('5 min to Berry village');
 
     const [laundryAmenities, setLaundryAmenities] = useState<string[]>(
@@ -147,6 +141,34 @@ export default function WellnessAmenitiesTab({ venue, onUpdate: _onUpdate }: Pro
     );
 
     const [additionalNotes, setAdditionalNotes] = useState('');
+
+    // Batch-save all amenity fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            webAmenities: selectedWebAmenities,
+            kitchenAmenities,
+            livingAmenities,
+            techAmenities,
+            outdoorAmenities,
+            parkingAmenities,
+            poolType,
+            parkingSpaces,
+            aboutP1,
+            aboutP2,
+            showAbout,
+            weProvide,
+            pleaseBring,
+            optionalItems,
+            showBring,
+            facilities: facilities.map(f => f.name),
+            amenities: selectedWebAmenities,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedWebAmenities, kitchenAmenities, livingAmenities, techAmenities, outdoorAmenities,
+        parkingAmenities, poolType, parkingSpaces, aboutP1, aboutP2, showAbout,
+        weProvide, pleaseBring, optionalItems, showBring, facilities]);
 
     const toggleAmenity = (
         _list: string[],

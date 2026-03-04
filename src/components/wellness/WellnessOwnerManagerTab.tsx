@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MapPin, Calendar, Check, Edit2, Plus, Upload, User, UserPlus, FileText, Download, Eye, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 
@@ -7,30 +7,30 @@ interface Props {
     onUpdate: (updates: Partial<Venue>) => void;
 }
 
-export default function WellnessOwnerManagerTab({ venue: _venue, onUpdate: _onUpdate }: Props) {
+export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
     // Contact Details State
-    const [firstName, setFirstName] = useState('Maya');
-    const [lastName, setLastName] = useState('Chen');
-    const [role, setRole] = useState('Owner');
-    const [email, setEmail] = useState('maya@bodhidayspa.com.au');
-    const [phonePrimary, setPhonePrimary] = useState('+61 402 876 543');
-    const [phoneSecondary, setPhoneSecondary] = useState('+61 2 9361 5678');
-    const [mailingAddress, setMailingAddress] = useState('45 Crown Street, Surry Hills NSW 2010, Australia');
+    const [firstName, setFirstName] = useState(venue.firstName || venue.owner?.split(' ')[0] || '');
+    const [lastName, setLastName] = useState(venue.lastName || venue.owner?.split(' ').slice(1).join(' ') || '');
+    const [role, setRole] = useState(venue.ownerRole || 'Owner');
+    const [email, setEmail] = useState(venue.email || '');
+    const [phonePrimary, setPhonePrimary] = useState(venue.phone || '');
+    const [phoneSecondary, setPhoneSecondary] = useState(venue.phoneSecondary || '');
+    const [mailingAddress, setMailingAddress] = useState(venue.ownerAddress || '');
     const [timezone, setTimezone] = useState('Australia/Sydney (AEDT)');
     const [preferredLanguage, setPreferredLanguage] = useState('English');
 
     // Business Details State
-    const [businessName, setBusinessName] = useState('Bodhi Day Spa Pty Ltd');
-    const [taxId, setTaxId] = useState('98 765 432 109');
-    const [businessType, setBusinessType] = useState('Company (Pty Ltd)');
-    const [registeredAddress, setRegisteredAddress] = useState('45 Crown Street, Surry Hills NSW 2010, Australia');
-    const [gstRegistered, setGstRegistered] = useState(true);
+    const [businessName, setBusinessName] = useState(venue.businessName || '');
+    const [taxId, setTaxId] = useState(venue.taxId || '');
+    const [businessType, setBusinessType] = useState(venue.businessType || 'Company (Pty Ltd)');
+    const [registeredAddress, setRegisteredAddress] = useState(venue.ownerAddress || '');
+    const [gstRegistered, setGstRegistered] = useState(venue.gstRegistered ?? false);
 
     // Host Public Profile State
-    const [hostDisplayNames, setHostDisplayNames] = useState('Maya Chen');
-    const [hostQuote, setHostQuote] = useState('True wellness begins when you create space for both body and mind to let go completely.');
-    const [hostBio, setHostBio] = useState('Maya Chen founded Bodhi Day Spa in 2019 after 15 years as a remedial massage therapist and wellness consultant. With certifications in aromatherapy, reflexology, and traditional Chinese medicine, Maya has built a sanctuary that blends Eastern healing traditions with modern therapeutic techniques. Her team of carefully selected practitioners share her commitment to personalised care and exceptional service.');
-    const [showHostProfile, setShowHostProfile] = useState(true);
+    const [hostDisplayNames, setHostDisplayNames] = useState(venue.owner || '');
+    const [hostQuote, setHostQuote] = useState(venue.quote || '');
+    const [hostBio, setHostBio] = useState(venue.hostBio || '');
+    const [showHostProfile, setShowHostProfile] = useState(venue.showHostProfile ?? true);
 
     // Communication Preferences State
     const [preferredContact, setPreferredContact] = useState('Email');
@@ -41,7 +41,32 @@ export default function WellnessOwnerManagerTab({ venue: _venue, onUpdate: _onUp
     const [platformUpdates, setPlatformUpdates] = useState(true);
 
     // Relationship Notes State
-    const [relationshipNotes, setRelationshipNotes] = useState('Maya is a fantastic venue partner — very responsive, detail-oriented, and clearly passionate about quality wellness experiences. She has strong connections in the Sydney spa and wellness community and mentioned knowing 3-4 other day spa owners who might be interested in TGS. Follows up quickly on all communications.\n\nKey interests: Wellness tourism exposure, international visitors, featuring in editorial content, maintaining premium brand positioning.\n\nPotential referral source — follow up after first few bookings to discuss referral program.');
+    const [relationshipNotes, setRelationshipNotes] = useState(venue.relationshipNotes || '');
+
+    // Batch-save all owner/business fields whenever any state changes
+    const isMount = useRef(true);
+    useEffect(() => {
+        if (isMount.current) { isMount.current = false; return; }
+        onUpdate({
+            owner: `${firstName} ${lastName}`.trim(),
+            firstName,
+            lastName,
+            ownerRole: role,
+            email,
+            phone: phonePrimary,
+            phoneSecondary,
+            ownerAddress: mailingAddress,
+            businessName,
+            taxId,
+            businessType,
+            gstRegistered,
+            hostBio,
+            showHostProfile,
+            relationshipNotes,
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [firstName, lastName, role, email, phonePrimary, phoneSecondary, mailingAddress,
+        businessName, taxId, businessType, gstRegistered, hostBio, showHostProfile, relationshipNotes]);
 
     return (
         <div className="wvd-content">
