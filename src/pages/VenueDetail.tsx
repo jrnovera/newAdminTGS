@@ -14,6 +14,7 @@ import InternalTab from '../components/InternalTab';
 import WellnessFacilitiesTab from '../components/WellnessFacilitiesTab';
 import WellnessServicesTab from '../components/WellnessServicesTab';
 import AmenitiesTab from '../components/AmenitiesTab';
+import ReviewsTab from '../components/ReviewsTab';
 import type { Venue } from '../context/VenueContext';
 
 const TABS = [
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'internal', label: 'Internal' },
   { id: 'owner', label: 'Owner/Manager' },
   { id: 'bookings', label: 'Bookings' },
+  { id: 'reviews', label: 'Reviews' },
 ];
 
 export default function VenueDetail() {
@@ -208,6 +210,9 @@ export default function VenueDetail() {
       )}
       {activeTab === 'bookings' && (
         <BookingsTab venue={venue} onUpdate={handleTabUpdate} />
+      )}
+      {activeTab === 'reviews' && (
+        <ReviewsTab venue={venue} onUpdate={handleTabUpdate} />
       )}
 
       {/* Delete Modal */}

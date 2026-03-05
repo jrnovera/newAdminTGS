@@ -16,6 +16,7 @@ import WellnessMediaTab from '../components/wellness/WellnessMediaTab';
 import WellnessBookingsTab from '../components/wellness/WellnessBookingsTab';
 import WellnessPricingTab from '../components/wellness/WellnessPricingTab';
 import WellnessOverviewTab from '../components/wellness/WellnessOverviewTab';
+import ReviewsTab from '../components/ReviewsTab';
 import type { Venue } from '../context/VenueContext';
 
 const WELLNESS_TABS = [
@@ -29,6 +30,7 @@ const WELLNESS_TABS = [
     { id: 'internal', label: 'Internal' },
     { id: 'owner', label: 'Owner/Manager' },
     { id: 'bookings', label: 'Bookings' },
+    { id: 'reviews', label: 'Reviews' },
 ];
 
 export default function WellnessVenueDetail() {
@@ -193,6 +195,9 @@ export default function WellnessVenueDetail() {
             )}
             {activeTab === 'bookings' && (
                 <BookingsTab venue={venue} onUpdate={handleTabUpdate} />
+            )}
+            {activeTab === 'reviews' && (
+                <ReviewsTab venue={venue} onUpdate={handleTabUpdate} />
             )}
 
             {/* Delete Modal */}
