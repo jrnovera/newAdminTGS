@@ -6,7 +6,7 @@ import { uploadFile, deleteFile } from '../../lib/storage';
 
 interface Props {
     venue: Venue;
-    onUpdate: (updates: Partial<Venue>) => void;
+    onUpdate?: (updates: Partial<Venue>) => void;
 }
 
 const VENUE_TYPE = 'wellness';
@@ -28,7 +28,7 @@ interface VenueDocument {
     created_at: string;
 }
 
-export default function WellnessOwnerManagerTab({ venue }: Props) {
+export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
     // Contact Details
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -85,7 +85,7 @@ export default function WellnessOwnerManagerTab({ venue }: Props) {
 
     useEffect(() => {
         loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [venue.id]);
 
     async function loadData() {

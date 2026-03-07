@@ -301,6 +301,8 @@ a {
 /* ===== MAIN CONTENT ===== */
 .main-content {
   flex: 1;
+  min-width: 0;
+  /* Prevents flexbox child from overflowing */
   margin-left: var(--sidebar-width);
   padding: 40px 48px;
   background-color: var(--primary-bg);
@@ -310,6 +312,17 @@ a {
 
 .sidebar-collapsed .main-content {
   margin-left: 68px;
+}
+
+/* When a venue detail page is shown, remove double padding from main-content */
+.main-content:has(.venue-detail-page) {
+  padding: 0;
+}
+
+.venue-detail-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 /* ===== PAGE HEADER ===== */
@@ -6726,7 +6739,7 @@ a {
 }
 
 .wvd-header {
-  padding: 32px 48px;
+  padding: 24px 32px;
   background-color: var(--white);
   border-bottom: 1px solid rgba(184, 184, 184, 0.2);
   display: flex;
@@ -6828,6 +6841,7 @@ a {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .wvd-btn-icon {
@@ -6838,6 +6852,7 @@ a {
   cursor: pointer;
   transition: all 0.2s;
   color: var(--text);
+  flex-shrink: 0;
 }
 
 .wvd-btn-icon:hover {
@@ -6977,12 +6992,20 @@ a {
   background-color: var(--white);
   border-bottom: 1px solid rgba(184, 184, 184, 0.2);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.wvd-tabs::-webkit-scrollbar {
+  display: none;
+  /* Chrome/Safari */
 }
 
 .wvd-tab {
-  padding: 16px 20px;
+  padding: 14px 12px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--accent);
   cursor: pointer;
@@ -6992,6 +7015,7 @@ a {
   margin-bottom: -1px;
   transition: all 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .wvd-tab:hover {
@@ -7273,9 +7297,50 @@ a {
   transform: translateX(16px);
 }
 
+@media (max-width: 1400px) {
+  .main-content {
+    padding: 32px;
+  }
+}
+
 @media (max-width: 1200px) {
   .wvd-form-grid.wvd-three-col {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wvd-content {
+    padding: 32px 32px;
+  }
+
+  .wvd-header {
+    padding: 24px 32px;
+  }
+
+  .wvd-tabs {
+    padding: 0 32px;
+  }
+
+  .wvd-tab {
+    padding: 12px 8px;
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 24px;
+    margin-left: 68px;
+    /* Force collapse behavior if not already */
+  }
+
+  .wvd-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .wvd-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
   }
 }
 
@@ -7294,18 +7359,34 @@ a {
 
   .wvd-header {
     padding: 24px;
-    flex-direction: column;
     gap: 16px;
   }
 
   .wvd-tabs {
     padding: 0 24px;
   }
+
+  .wvd-tab {
+    padding: 12px 8px;
+    font-size: 10px;
+  }
 }
 
 /* ===== WELLNESS ACCOMMODATION TAB ===== */
 .wa-four-col {
   grid-template-columns: repeat(4, 1fr) !important;
+}
+
+@media (max-width: 1400px) {
+  .wa-four-col {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .wa-four-col {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }
 
 .wa-image-upload {
@@ -7559,22 +7640,32 @@ a {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .wa-four-col {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .wa-inclusions-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .wa-inclusions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wa-summary-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 1000px) {
-  .wa-summary-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .wa-room-grid {
     grid-template-columns: 1fr;
   }
 
+  .wa-summary-stats {
+    grid-template-columns: 1fr;
+  }
+
   .wa-inclusions-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -7661,6 +7752,20 @@ a {
 @media (max-width: 1400px) {
   .wam-amenity-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .wam-facility-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .wvd-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wvd-form-grid.wvd-three-col {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -10014,11 +10119,18 @@ a {
     gap: 6px;
   }
 }
+
 /* Spinner animation */
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
+
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -10035,10 +10147,12 @@ a {
   background: transparent;
   pointer-events: none;
 }
-.floating-save-bar > * {
+
+.floating-save-bar>* {
   pointer-events: all;
 }
-.floating-save-bar > button,
-.floating-save-bar > span + button {
+
+.floating-save-bar>button,
+.floating-save-bar>span+button {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }

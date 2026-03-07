@@ -5,6 +5,7 @@ import type { Venue } from '../../context/VenueContext';
 
 interface Props {
     venue: Venue;
+    onUpdate?: (updates: Partial<Venue>) => void;
 }
 
 interface WellnessPackage {
@@ -101,7 +102,7 @@ const DEFAULT_DATA: PricingData = {
 
 let nextPkgId = 100;
 
-export default function WellnessPricingTab({ venue }: Props) {
+export default function WellnessPricingTab({ venue, onUpdate }: Props) {
     const [data, setData] = useState<PricingData>(DEFAULT_DATA);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

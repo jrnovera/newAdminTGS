@@ -11,8 +11,9 @@ interface ReviewsTabProps {
 interface Review {
     id: string;
     venue_id: string;
+    venue_type: string;
     user_name: string;
-    user_image: string | null;
+    user_image_url: string | null;
     rating: number;
     review_text: string;
     created_at: string;
@@ -20,7 +21,7 @@ interface Review {
 
 const emptyForm = {
     user_name: '',
-    user_image: '',
+    user_image_url: '',
     rating: 5,
     review_text: '',
 };
@@ -63,7 +64,7 @@ function formatDate(dateStr: string): string {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function ReviewsTab({ venue }: ReviewsTabProps) {
+export default function ReviewsTab({ venue, onUpdate }: ReviewsTabProps) {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -102,7 +103,7 @@ export default function ReviewsTab({ venue }: ReviewsTabProps) {
         setEditingReview(review);
         setForm({
             user_name: review.user_name,
-            user_image: review.user_image || '',
+            user_image_url: review.user_image_url || '',
             rating: review.rating,
             review_text: review.review_text,
         });
@@ -113,30 +114,40 @@ export default function ReviewsTab({ venue }: ReviewsTabProps) {
         if (!form.user_name || !form.review_text) return;
         setSaving(true);
 
-        if (editingReview) {
-            // Update
-            await supabase.from('venue_reviews').update({
-                user_name: form.user_name,
-                user_image: form.user_image || null,
-                rating: form.rating,
-                review_text: form.review_text,
-            }).eq('id', editingReview.id);
-        } else {
-            // Create
-            await supabase.from('venue_reviews').insert({
-                venue_id: venue.id,
-                user_name: form.user_name,
-                user_image: form.user_image || null,
-                rating: form.rating,
-                review_text: form.review_text,
-            });
-        }
+        try {
+            if (editingReview) {
+                // Update
+                const { error } = await supabase.from('venue_reviews').update({
+                    venue_type: venue.type.toLowerCase(),
+                    user_name: form.user_name,
+                    user_image_url: form.user_image_url || null,
+                    rating: form.rating,
+                    review_text: form.review_text,
+                }).eq('id', editingReview.id);
+                if (error) throw error;
+            } else {
+                // Create
+                const { error } = await supabase.from('venue_reviews').insert({
+                    venue_id: venue.id,
+                    venue_type: venue.type.toLowerCase(),
+                    user_name: form.user_name,
+                    user_image_url: form.user_image_url || null,
+                    rating: form.rating,
+                    review_text: form.review_text,
+                });
+                if (error) throw error;
+            }
 
-        await fetchReviews();
-        setShowModal(false);
-        setForm(emptyForm);
-        setEditingReview(null);
-        setSaving(false);
+            await fetchReviews();
+            setShowModal(false);
+            setForm(emptyForm);
+            setEditingReview(null);
+        } catch (err: any) {
+            console.error('Failed to save review:', err);
+            alert(`Failed to save review: ${err.message || 'Unknown error'}`);
+        } finally {
+            setSaving(false);
+        }
     }
 
     // ─── Delete ─────────────────────────────────────────────────────────
@@ -237,8 +248,8 @@ export default function ReviewsTab({ venue }: ReviewsTabProps) {
                             <div key={review.id} className="review-card">
                                 <div className="review-card-left">
                                     <div className="review-avatar">
-                                        {review.user_image ? (
-                                            <img src={review.user_image} alt={review.user_name} />
+                                        {review.user_image_url ? (
+                                            <img src={review.user_image_url} alt={review.user_name} />
                                         ) : (
                                             <User size={22} strokeWidth={1.5} />
                                         )}
@@ -312,13 +323,13 @@ export default function ReviewsTab({ venue }: ReviewsTabProps) {
                                         type="text"
                                         className="wvd-form-input"
                                         placeholder="https://example.com/avatar.jpg"
-                                        value={form.user_image}
-                                        onChange={e => setForm(p => ({ ...p, user_image: e.target.value }))}
+                                        value={form.user_image_url}
+                                        onChange={e => setForm(p => ({ ...p, user_image_url: e.target.value }))}
                                     />
-                                    {form.user_image && (
+                                    {form.user_image_url && (
                                         <div style={{ marginTop: 8 }}>
                                             <img
-                                                src={form.user_image}
+                                                src={form.user_image_url}
                                                 alt="Preview"
                                                 style={{
                                                     width: 48, height: 48, borderRadius: '50%',

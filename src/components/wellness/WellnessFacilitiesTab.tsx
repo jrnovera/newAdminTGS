@@ -177,7 +177,7 @@ function blankFacility(order: number): FacilityItem {
     };
 }
 
-export default function WellnessFacilitiesTab({ venue }: Props) {
+export default function WellnessFacilitiesTab({ venue, onUpdate }: Props) {
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [items, setItems] = useState<FacilityItem[]>([]);
     const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
@@ -493,7 +493,7 @@ export default function WellnessFacilitiesTab({ venue }: Props) {
                                         {/* Image */}
                                         <div className="wvd-form-group wvd-full-width">
                                             <label className="wvd-form-label">Facility Image</label>
-                                            <input ref={el => itemImageRefs.current[idx] = el} type="file" accept="image/*"
+                                            <input ref={el => { itemImageRefs.current[idx] = el; }} type="file" accept="image/*"
                                                 style={{ display: 'none' }}
                                                 onChange={e => { if (e.target.files?.[0]) handleItemImageUpload(idx, e.target.files[0]); }} />
                                             {item.facility_image ? (
@@ -769,7 +769,7 @@ export default function WellnessFacilitiesTab({ venue }: Props) {
                     <h3 className="wvd-form-section-title">Supporting Facilities</h3>
                 </div>
                 <div className="wvd-form-section-body">
-                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                    <div className="wa-inclusions-grid">
                         {SUPPORTING_OPTIONS.map(opt => (
                             <div key={opt} className="wa-inclusion-item"
                                 onClick={() => toggleArrayItem('supporting_facilities', opt)}>
@@ -803,7 +803,7 @@ export default function WellnessFacilitiesTab({ venue }: Props) {
                     <h3 className="wvd-form-section-title">Thermal & Sauna Facilities</h3>
                 </div>
                 <div className="wvd-form-section-body">
-                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                    <div className="wa-inclusions-grid">
                         {THERMAL_OPTIONS.map(opt => (
                             <div key={opt} className="wa-inclusion-item"
                                 onClick={() => toggleArrayItem('thermal_types', opt)}>
@@ -1027,7 +1027,7 @@ export default function WellnessFacilitiesTab({ venue }: Props) {
                     <h3 className="wvd-form-section-title">Accessibility</h3>
                 </div>
                 <div className="wvd-form-section-body">
-                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                    <div className="wa-inclusions-grid">
                         {ACCESS_OPTIONS.map(opt => (
                             <div key={opt} className="wa-inclusion-item"
                                 onClick={() => toggleArrayItem('accessibility_features', opt)}>

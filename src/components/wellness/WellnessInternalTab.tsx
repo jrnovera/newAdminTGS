@@ -5,7 +5,7 @@ import type { Venue } from '../../context/VenueContext';
 
 interface Props {
     venue: Venue;
-    onUpdate: (updates: Partial<Venue>) => void;
+    onUpdate?: (updates: Partial<Venue>) => void;
 }
 
 interface InternalNote {
@@ -45,7 +45,7 @@ function computeDaysToClose(firstContact: string, acquisitionDate: string): stri
     return `${diff} day${diff !== 1 ? 's' : ''}`;
 }
 
-export default function WellnessInternalTab({ venue }: Props) {
+export default function WellnessInternalTab({ venue, onUpdate }: Props) {
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [recordId, setRecordId] = useState<string | null>(null);

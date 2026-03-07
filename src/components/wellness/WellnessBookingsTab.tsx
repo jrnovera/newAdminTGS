@@ -43,8 +43,8 @@ const TIME_SLOTS = [
     '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM',
 ];
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function toDateKey(year: number, month: number, day: number): string {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -55,44 +55,44 @@ function formatDateKey(dateStr: string): string {
     return `${d.toLocaleString('en', { month: 'short' })} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-export default function WellnessBookingsTab({ venue }: Props) {
+export default function WellnessBookingsTab({ venue, onUpdate }: Props) {
     const today = new Date();
-    const [viewYear, setViewYear]   = useState(today.getFullYear());
+    const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
 
     // Multi-select dates
     const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
 
     // Data from Supabase
-    const [blocks, setBlocks]     = useState<DateBlock[]>([]);
+    const [blocks, setBlocks] = useState<DateBlock[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading]   = useState(true);
+    const [loading, setLoading] = useState(true);
 
     // Filter tab
     const [activeBookingTab, setActiveBookingTab] = useState('All');
 
     // Block modal
     const [showBlockModal, setShowBlockModal] = useState(false);
-    const [blockReason, setBlockReason]       = useState('');
-    const [blockSaving, setBlockSaving]       = useState(false);
+    const [blockReason, setBlockReason] = useState('');
+    const [blockSaving, setBlockSaving] = useState(false);
 
     // Booking modal
     const [showBookingModal, setShowBookingModal] = useState(false);
-    const [modalLoading, setModalLoading]         = useState(false);
-    const [bookingDate, setBookingDate]           = useState('');
+    const [modalLoading, setModalLoading] = useState(false);
+    const [bookingDate, setBookingDate] = useState('');
     const [availablePackages, setAvailablePackages] = useState<PkgOption[]>([]);
-    const [selectedPkgIdx, setSelectedPkgIdx]     = useState<number | null>(null);
+    const [selectedPkgIdx, setSelectedPkgIdx] = useState<number | null>(null);
     const [customServiceName, setCustomServiceName] = useState('');
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<Set<string>>(new Set());
-    const [dateBookings, setDateBookings]           = useState<Booking[]>([]);
+    const [dateBookings, setDateBookings] = useState<Booking[]>([]);
     const [bookingForm, setBookingForm] = useState({
-        guest_name:  '',
+        guest_name: '',
         guest_email: '',
         guest_phone: '',
-        guests:      1,
-        amount:      '',
-        notes:       '',
-        status:      'confirmed' as Booking['status'],
+        guests: 1,
+        amount: '',
+        notes: '',
+        status: 'confirmed' as Booking['status'],
     });
     const [bookingSaving, setBookingSaving] = useState(false);
 
@@ -117,14 +117,14 @@ export default function WellnessBookingsTab({ venue }: Props) {
     // Calendar helpers
     // -------------------------------------------------------------------------
     const blockedSet = new Set(blocks.map(b => b.block_date));
-    const bookedSet  = new Set(
+    const bookedSet = new Set(
         bookings.filter(b => b.status === 'confirmed' || b.status === 'pending').map(b => b.check_in_date)
     );
     const pendingSet = new Set(bookings.filter(b => b.status === 'pending').map(b => b.check_in_date));
 
-    const daysInMonth    = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
-    const daysInPrev     = new Date(viewYear, viewMonth, 0).getDate();
+    const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
 
     function prevMonth() {
         if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -246,55 +246,55 @@ export default function WellnessBookingsTab({ venue }: Props) {
     }
 
     function getSlotStyle(slot: string): CSSProperties {
-        const info     = getSlotInfo(slot);
-        const isSel    = selectedTimeSlots.has(slot);
+        const info = getSlotInfo(slot);
+        const isSel = selectedTimeSlots.has(slot);
 
         if (info.status === 'blocked') {
             return {
-                background:    'rgba(220,53,53,0.10)',
-                border:        '2px solid rgba(220,53,53,0.30)',
-                color:         '#dc3535',
-                cursor:        'not-allowed',
-                opacity:       0.65,
-                borderRadius:  8,
-                padding:       '10px 6px',
-                textAlign:     'center',
-                fontSize:      13,
-                fontWeight:    500,
-                position:      'relative',
-                userSelect:    'none',
+                background: 'rgba(220,53,53,0.10)',
+                border: '2px solid rgba(220,53,53,0.30)',
+                color: '#dc3535',
+                cursor: 'not-allowed',
+                opacity: 0.65,
+                borderRadius: 8,
+                padding: '10px 6px',
+                textAlign: 'center',
+                fontSize: 13,
+                fontWeight: 500,
+                position: 'relative',
+                userSelect: 'none',
             };
         }
         if (info.status === 'partial') {
             return {
-                background:    isSel ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.08)',
-                border:        `2px solid ${isSel ? '#f59e0b' : 'rgba(245,158,11,0.40)'}`,
-                color:         '#f59e0b',
-                cursor:        'pointer',
-                borderRadius:  8,
-                padding:       '10px 6px',
-                textAlign:     'center',
-                fontSize:      13,
-                fontWeight:    500,
-                position:      'relative',
-                transition:    'all 0.15s',
-                userSelect:    'none',
+                background: isSel ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.08)',
+                border: `2px solid ${isSel ? '#f59e0b' : 'rgba(245,158,11,0.40)'}`,
+                color: '#f59e0b',
+                cursor: 'pointer',
+                borderRadius: 8,
+                padding: '10px 6px',
+                textAlign: 'center',
+                fontSize: 13,
+                fontWeight: 500,
+                position: 'relative',
+                transition: 'all 0.15s',
+                userSelect: 'none',
             };
         }
         // available
         return {
-            background:    isSel ? 'var(--primary-btn, #2f855a)' : 'var(--secondary-bg)',
-            border:        `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
-            color:         isSel ? '#fff' : 'var(--text-primary, #e0e0e0)',
-            cursor:        'pointer',
-            borderRadius:  8,
-            padding:       '10px 6px',
-            textAlign:     'center',
-            fontSize:      13,
-            fontWeight:    500,
-            position:      'relative',
-            transition:    'all 0.15s',
-            userSelect:    'none',
+            background: isSel ? 'var(--primary-btn, #2f855a)' : 'var(--secondary-bg)',
+            border: `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
+            color: isSel ? '#fff' : 'var(--text-primary, #e0e0e0)',
+            cursor: 'pointer',
+            borderRadius: 8,
+            padding: '10px 6px',
+            textAlign: 'center',
+            fontSize: 13,
+            fontWeight: 500,
+            position: 'relative',
+            transition: 'all 0.15s',
+            userSelect: 'none',
         };
     }
 
@@ -336,21 +336,21 @@ export default function WellnessBookingsTab({ venue }: Props) {
 
         const selectedPkg = selectedPkgIdx !== null ? availablePackages[selectedPkgIdx] : null;
         const serviceName = selectedPkg?.name || customServiceName.trim() || null;
-        const amountVal   = bookingForm.amount ? parseFloat(bookingForm.amount) : null;
+        const amountVal = bookingForm.amount ? parseFloat(bookingForm.amount) : null;
 
         const rows = Array.from(selectedTimeSlots).sort().map(slot => ({
-            venue_id:      venue.id,
-            guest_name:    bookingForm.guest_name,
-            guest_email:   bookingForm.guest_email || null,
-            guest_phone:   bookingForm.guest_phone || null,
-            service_name:  serviceName,
+            venue_id: venue.id,
+            guest_name: bookingForm.guest_name,
+            guest_email: bookingForm.guest_email || null,
+            guest_phone: bookingForm.guest_phone || null,
+            service_name: serviceName,
             check_in_date: bookingDate,
-            time_slot:     slot,
-            guests:        bookingForm.guests,
-            amount:        amountVal,
-            notes:         bookingForm.notes || null,
-            status:        bookingForm.status,
-            source:        'admin',
+            time_slot: slot,
+            guests: bookingForm.guests,
+            amount: amountVal,
+            notes: bookingForm.notes || null,
+            status: bookingForm.status,
+            source: 'admin',
         }));
 
         const { error } = await supabase.from('venue_bookings').insert(rows);
@@ -379,36 +379,36 @@ export default function WellnessBookingsTab({ venue }: Props) {
     // -------------------------------------------------------------------------
     // Stats
     // -------------------------------------------------------------------------
-    const totalBookings     = bookings.length;
+    const totalBookings = bookings.length;
     const completedBookings = bookings.filter(b => b.status === 'completed').length;
-    const upcomingBookings  = bookings.filter(b => b.status === 'confirmed').length;
-    const pendingBookings   = bookings.filter(b => b.status === 'pending').length;
-    const totalRevenue      = bookings
+    const upcomingBookings = bookings.filter(b => b.status === 'confirmed').length;
+    const pendingBookings = bookings.filter(b => b.status === 'pending').length;
+    const totalRevenue = bookings
         .filter(b => b.status === 'confirmed' || b.status === 'completed')
         .reduce((sum, b) => sum + (b.amount || 0), 0);
 
     const filteredBookings = bookings.filter(b => {
-        if (activeBookingTab === 'All')       return true;
-        if (activeBookingTab === 'Upcoming')  return b.status === 'confirmed';
-        if (activeBookingTab === 'Pending')   return b.status === 'pending';
+        if (activeBookingTab === 'All') return true;
+        if (activeBookingTab === 'Upcoming') return b.status === 'confirmed';
+        if (activeBookingTab === 'Pending') return b.status === 'pending';
         if (activeBookingTab === 'Completed') return b.status === 'completed';
         if (activeBookingTab === 'Cancelled') return b.status === 'cancelled';
         return true;
     });
 
     const tabCounts: Record<string, number> = {
-        All:       totalBookings,
-        Upcoming:  upcomingBookings,
-        Pending:   pendingBookings,
+        All: totalBookings,
+        Upcoming: upcomingBookings,
+        Pending: pendingBookings,
         Completed: completedBookings,
         Cancelled: bookings.filter(b => b.status === 'cancelled').length,
     };
 
     // Calendar grid
-    const totalCells  = 42;
+    const totalCells = 42;
     const cellsBefore = firstDayOfWeek;
-    const cellsAfter  = totalCells - cellsBefore - daysInMonth;
-    const todayKey    = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    const cellsAfter = totalCells - cellsBefore - daysInMonth;
+    const todayKey = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
     // -------------------------------------------------------------------------
     // Render
@@ -580,10 +580,10 @@ export default function WellnessBookingsTab({ venue }: Props) {
 
                     <div className="wb-booking-list">
                         {filteredBookings.map(b => {
-                            const d   = new Date(b.check_in_date + 'T00:00:00');
+                            const d = new Date(b.check_in_date + 'T00:00:00');
                             const mon = d.toLocaleString('en', { month: 'short' });
                             const day = d.getDate();
-                            const yr  = d.getFullYear();
+                            const yr = d.getFullYear();
                             const stripClass = b.status === 'pending' ? 'warning' : b.status === 'completed' ? 'muted' : '';
                             return (
                                 <div key={b.id} className={`wb-booking-card ${b.status === 'completed' ? 'opacity-70' : ''}`}>
@@ -767,13 +767,13 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                                             type="button"
                                                             onClick={() => handleSelectPackage(idx)}
                                                             style={{
-                                                                background:   isSel ? 'rgba(var(--primary-rgb, 47,133,90), 0.15)' : 'var(--secondary-bg)',
-                                                                border:       `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
+                                                                background: isSel ? 'rgba(var(--primary-rgb, 47,133,90), 0.15)' : 'var(--secondary-bg)',
+                                                                border: `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
                                                                 borderRadius: 8,
-                                                                padding:      '10px 12px',
-                                                                textAlign:    'left',
-                                                                cursor:       'pointer',
-                                                                transition:   'all 0.15s',
+                                                                padding: '10px 12px',
+                                                                textAlign: 'left',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.15s',
                                                             }}
                                                         >
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
@@ -835,7 +835,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
 
                                     {/* ---- Section 2: Time Slot ---- */}
                                     <div style={{ marginBottom: 24 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
                                             <h4 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>
                                                 Select Time Slot(s) <span style={{ color: '#dc3535' }}>*</span>
                                             </h4>

@@ -30,7 +30,7 @@ interface DocumentRecord {
 
 interface Props {
     venue: Venue;
-    onUpdate: (updates: Partial<Venue>) => void;
+    onUpdate?: (updates: Partial<Venue>) => void;
 }
 
 const GALLERY_CATEGORIES = ['All Photos', 'Exterior', 'Treatment Rooms', 'Relaxation Areas', 'Reception', 'Pool & Spa', 'Wellness Spaces', 'Grounds'];
@@ -43,7 +43,7 @@ function formatBytes(bytes: number): string {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-export default function WellnessMediaTab({ venue }: Props) {
+export default function WellnessMediaTab({ venue, onUpdate }: Props) {
     const [activeCategory, setActiveCategory] = useState('All Photos');
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);

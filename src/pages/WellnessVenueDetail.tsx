@@ -81,7 +81,7 @@ export default function WellnessVenueDetail() {
     };
 
     return (
-        <>
+        <div className="venue-detail-page">
             {/* Breadcrumb */}
             <nav className="wvd-breadcrumb">
                 <Link to="/">Dashboard</Link>
@@ -200,6 +200,6 @@ export default function WellnessVenueDetail() {
                 onConfirm={handleDelete}
                 venueName={venue.name}
             />
-        </>
+        </div>
     );
 }

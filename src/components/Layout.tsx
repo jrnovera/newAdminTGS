@@ -150,10 +150,9 @@ export default function Layout() {
                   (isVenues && (pathname === '/retreat-venues' || pathname === '/wellness-venues'));
                 const badge = isVenues ? totalVenuesCount : item.badge;
 
-                const handleParentClick = (e: React.MouseEvent) => {
-                  if (hasSubItems) {
-                    e.preventDefault(); // Stop navigation, just toggle expand
-                    if (isVenues) setVenuesExpanded(!venuesExpanded);
+                const handleParentClick = () => {
+                  if (hasSubItems && isVenues) {
+                    setVenuesExpanded(!venuesExpanded);
                   }
                 };
 
@@ -214,7 +213,7 @@ export default function Layout() {
         </nav>
       </aside>
 
-      <main className="main-content">
+      <main className="main-content" onClick={() => { if (!sidebarCollapsed) setSidebarCollapsed(true); }}>
         <Outlet />
       </main>
     </div>
