@@ -276,11 +276,12 @@ export default function WellnessAmenitiesTab({ venue, onUpdate }: Props) {
     async function handleSave() {
         setSaving(true);
         const amenitiesArr = Array.from(selected);
+        const { facilities_list: _ignored, ...rest } = data;
         const { error } = await supabase.from('venue_amenities').upsert({
+            ...rest,
             venue_id: venue.id,
             venue_type: 'wellness',
             facilities_list: amenitiesArr,
-            ...data,
         }, { onConflict: 'venue_id,venue_type' });
 
         if (error) {
