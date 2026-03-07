@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Image, X } from 'lucide-react';
 import type { Venue } from '../context/VenueContext';
+import { uploadFile } from '../lib/storage';
 
 interface OverviewTabProps {
     venue: Venue;
@@ -22,8 +23,50 @@ const SUBSCRIPTIONS = ['Essentials', 'Standard', 'Featured', 'Premium'];
 
 export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
     // Basic Info
-    const [heroImage] = useState(venue.heroImage || '');
-    const [experienceFeatureImage] = useState(venue.experienceFeatureImage || '');
+    const [heroImage, setHeroImage] = useState(venue.heroImage || '');
+    const [experienceFeatureImage, setExperienceFeatureImage] = useState(venue.experienceFeatureImage || '');
+    const [galleryPhotos, setGalleryPhotos] = useState<string[]>(venue.galleryPhotos || []);
+    const [heroUploading, setHeroUploading] = useState(false);
+    const [expUploading, setExpUploading] = useState(false);
+    const [galleryUploading, setGalleryUploading] = useState(false);
+    const heroInputRef = useRef<HTMLInputElement>(null);
+    const expInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
+
+    const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setHeroUploading(true);
+        try {
+            const url = await uploadFile(file);
+            setHeroImage(url);
+        } catch (err) { console.error('Hero image upload failed:', err); }
+        finally { setHeroUploading(false); if (heroInputRef.current) heroInputRef.current.value = ''; }
+    };
+
+    const handleExpUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setExpUploading(true);
+        try {
+            const url = await uploadFile(file);
+            setExperienceFeatureImage(url);
+        } catch (err) { console.error('Experience image upload failed:', err); }
+        finally { setExpUploading(false); if (expInputRef.current) expInputRef.current.value = ''; }
+    };
+
+    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        setGalleryUploading(true);
+        try {
+            const urls = await Promise.all(files.map(f => uploadFile(f)));
+            setGalleryPhotos(prev => [...prev, ...urls]);
+        } catch (err) { console.error('Gallery upload failed:', err); }
+        finally { setGalleryUploading(false); if (galleryInputRef.current) galleryInputRef.current.value = ''; }
+    };
+
+    const removeGalleryPhoto = (i: number) => setGalleryPhotos(prev => prev.filter((_, idx) => idx !== i));
     const [name, setName] = useState(venue.name || '');
     const [type, setType] = useState<any>(venue.type || 'Retreat');
     const [retreatVenueType, setRetreatVenueType] = useState<string[]>(venue.retreatVenueType || []);
@@ -82,17 +125,19 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
 
     useEffect(() => {
         onUpdate({
-            heroImage, experienceFeatureImage, name, type, retreatVenueType, hireType, description, shortDescription,
-            quote, introText, introParagraph1: introText, // Fallback for existing UI
+            heroImage, experienceFeatureImage, galleryPhotos,
+            name, type, retreatVenueType, hireType, description, shortDescription,
+            quote, introText, introParagraph1: introText,
             propertySizeValue, propertySizeUnit, established, architectureStyle,
             experienceTitle, experienceSubtitle, experienceDescription,
             modalities, idealRetreatTypes,
             streetAddress, suburb, postcode, stateProvince, country, climate, locationType, gpsCoordinates, nearestAirport, transportAccess,
-            location: computedLocation, // Auto-computed location map
+            location: computedLocation,
             status, propertyStatus, subscription, sanctumVetted, featuredListing, instantBooking
         });
     }, [
-        heroImage, experienceFeatureImage, name, type, retreatVenueType, hireType, description, shortDescription,
+        heroImage, experienceFeatureImage, galleryPhotos,
+        name, type, retreatVenueType, hireType, description, shortDescription,
         quote, introText, propertySizeValue, propertySizeUnit, established, architectureStyle,
         experienceTitle, experienceSubtitle, experienceDescription, modalities, idealRetreatTypes,
         streetAddress, suburb, postcode, stateProvince, country, climate, locationType, gpsCoordinates, nearestAirport, transportAccess,
@@ -158,32 +203,38 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
                             <label className="rf-form-label">Overview Hero Image</label>
                             <div
                                 className="rf-image-upload-area"
-                                style={{ height: 160, backgroundImage: heroImage ? `url(${heroImage})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', borderColor: 'rgba(184, 184, 184, 0.4)' }}
+                                onClick={() => !heroUploading && heroInputRef.current?.click()}
+                                style={{ height: 160, backgroundImage: heroImage ? `url(${heroImage})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', borderColor: 'rgba(184, 184, 184, 0.4)', cursor: heroUploading ? 'wait' : 'pointer' }}
                             >
-                                {!heroImage && (
+                                {!heroImage && !heroUploading && (
                                     <>
                                         <Image size={32} strokeWidth={1.5} color="#B8B8B8" style={{ marginBottom: 8 }} />
                                         <span style={{ fontSize: 12, color: '#B8B8B8' }}>Click to upload hero image</span>
                                         <span style={{ fontSize: 11, color: '#B8B8B8' }}>Recommended: 1920 x 800px</span>
                                     </>
                                 )}
+                                {heroUploading && <span style={{ fontSize: 12, color: '#B8B8B8' }}>Uploading…</span>}
                             </div>
+                            <input ref={heroInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleHeroUpload} />
                             <p style={{ fontSize: 11, fontStyle: 'italic', color: '#B8B8B8', marginTop: 6 }}>Large hero banner at the top of the Overview tab with the venue quote overlay.</p>
                         </div>
                         <div className="rf-form-group">
                             <label className="rf-form-label">Experience Feature Image</label>
                             <div
                                 className="rf-image-upload-area"
-                                style={{ height: 160, backgroundImage: experienceFeatureImage ? `url(${experienceFeatureImage})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', borderColor: 'rgba(184, 184, 184, 0.4)' }}
+                                onClick={() => !expUploading && expInputRef.current?.click()}
+                                style={{ height: 160, backgroundImage: experienceFeatureImage ? `url(${experienceFeatureImage})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', borderColor: 'rgba(184, 184, 184, 0.4)', cursor: expUploading ? 'wait' : 'pointer' }}
                             >
-                                {!experienceFeatureImage && (
+                                {!experienceFeatureImage && !expUploading && (
                                     <>
                                         <Image size={32} strokeWidth={1.5} color="#B8B8B8" style={{ marginBottom: 8 }} />
                                         <span style={{ fontSize: 12, color: '#B8B8B8' }}>Click to upload feature image</span>
                                         <span style={{ fontSize: 11, color: '#B8B8B8' }}>Recommended: 800 x 600px</span>
                                     </>
                                 )}
+                                {expUploading && <span style={{ fontSize: 12, color: '#B8B8B8' }}>Uploading…</span>}
                             </div>
+                            <input ref={expInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleExpUpload} />
                             <p style={{ fontSize: 11, fontStyle: 'italic', color: '#B8B8B8', marginTop: 6 }}>Image displayed alongside "The Experience" content block.</p>
                         </div>
                     </div>
@@ -509,18 +560,33 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
                 </div>
                 <div className="rf-section-body">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-                        {(venue.galleryPhotos?.slice(0, 3) || []).map((url, i) => (
-                            <div key={i} style={{ aspectRatio: '4/3', backgroundColor: '#F7F5F1', borderRadius: 8, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                        {galleryPhotos.map((url, i) => (
+                            <div key={i} style={{ aspectRatio: '4/3', backgroundColor: '#F7F5F1', borderRadius: 8, backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => removeGalleryPhoto(i)}
+                                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                >
+                                    <X size={12} color="#fff" />
+                                </button>
+                            </div>
                         ))}
-                        {Array.from({ length: Math.max(0, 3 - (venue.galleryPhotos?.length || 0)) }).map((_, i) => (
+                        {galleryPhotos.length < 3 && Array.from({ length: 3 - galleryPhotos.length }).map((_, i) => (
                             <div key={`empty-${i}`} style={{ aspectRatio: '4/3', backgroundColor: '#F7F5F1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Image size={32} color="#B8B8B8" strokeWidth={1} />
                             </div>
                         ))}
-                        <div style={{ aspectRatio: '4/3', border: '2px dashed #B8B8B8', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                            <X style={{ transform: 'rotate(45deg)' }} size={24} color="#B8B8B8" />
+                        <div
+                            onClick={() => !galleryUploading && galleryInputRef.current?.click()}
+                            style={{ aspectRatio: '4/3', border: '2px dashed #B8B8B8', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: galleryUploading ? 'wait' : 'pointer' }}
+                        >
+                            {galleryUploading
+                                ? <span style={{ fontSize: 12, color: '#B8B8B8' }}>…</span>
+                                : <X style={{ transform: 'rotate(45deg)' }} size={24} color="#B8B8B8" />
+                            }
                         </div>
                     </div>
+                    <input ref={galleryInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleGalleryUpload} />
                 </div>
             </section>
         </div>

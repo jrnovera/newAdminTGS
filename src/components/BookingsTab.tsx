@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { Calendar, Download, RefreshCw, Check, X, Users, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Venue } from '../context/VenueContext';
@@ -30,6 +31,11 @@ interface Booking {
     source: string;
 }
 
+const TIME_SLOTS = [
+    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM',
+];
+
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -42,7 +48,7 @@ function formatDateKey(dateStr: string): string {
     return `${d.toLocaleString('en', { month: 'short' })} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-// Get all dates between check_in and check_out (inclusive) for range blocking
+// Expand check_in → check_out range into individual date keys (for calendar shading)
 function dateRange(startStr: string, endStr: string | null): string[] {
     if (!endStr) return [startStr];
     const dates: string[] = [];
@@ -68,21 +74,26 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
 
     const [activeSubTab, setActiveSubTab] = useState('All');
 
+    // Block modal
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [blockReason, setBlockReason]       = useState('');
     const [blockSaving, setBlockSaving]       = useState(false);
 
+    // Booking modal
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [modalLoading, setModalLoading]         = useState(false);
+    const [bookingDate, setBookingDate]           = useState('');
+    const [selectedTimeSlots, setSelectedTimeSlots] = useState<Set<string>>(new Set());
+    const [dateBookings, setDateBookings]         = useState<Booking[]>([]);
     const [bookingForm, setBookingForm] = useState({
-        guest_name: '',
-        guest_email: '',
-        guest_phone: '',
-        service_name: '',
+        guest_name:     '',
+        guest_email:    '',
+        guest_phone:    '',
         check_out_date: '',
-        guests: 1,
-        amount: '',
-        notes: '',
-        status: 'confirmed' as Booking['status'],
+        guests:         1,
+        amount:         '',
+        notes:          '',
+        status:         'confirmed' as Booking['status'],
     });
     const [bookingSaving, setBookingSaving] = useState(false);
 
@@ -108,8 +119,7 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
     // -------------------------------------------------------------------------
     const blockedSet = new Set(blocks.map(b => b.block_date));
 
-    // For retreat venues, bookings span multiple nights — expand all dates in range
-    const bookedDates = new Set<string>();
+    const bookedDates  = new Set<string>();
     const pendingDates = new Set<string>();
     bookings.forEach(b => {
         const dates = dateRange(b.check_in_date, b.check_out_date);
@@ -158,10 +168,10 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
         return '';
     }
 
-    const totalCells = 42;
+    const totalCells  = 42;
     const cellsBefore = firstDayOfWeek;
     const cellsAfter  = totalCells - cellsBefore - daysInMonth;
-    const todayKey = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayKey    = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
     // -------------------------------------------------------------------------
     // Block Dates
@@ -192,33 +202,131 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
     }
 
     // -------------------------------------------------------------------------
-    // Add Booking
+    // Open Booking Modal — fetch existing bookings for that date
+    // -------------------------------------------------------------------------
+    async function openBookingModal() {
+        const date = Array.from(selectedDates).sort()[0];
+        setBookingDate(date);
+        setSelectedTimeSlots(new Set());
+        setDateBookings([]);
+        setBookingForm({ guest_name: '', guest_email: '', guest_phone: '', check_out_date: '', guests: 1, amount: '', notes: '', status: 'confirmed' });
+        setModalLoading(true);
+        setShowBookingModal(true);
+
+        const { data } = await supabase
+            .from('venue_bookings')
+            .select('*')
+            .eq('venue_id', venue.id)
+            .eq('check_in_date', date)
+            .in('status', ['confirmed', 'pending']);
+
+        setDateBookings(data || []);
+        setModalLoading(false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Time slot helpers
+    // -------------------------------------------------------------------------
+    function getSlotInfo(slot: string): { status: 'available' | 'partial' | 'blocked'; count: number } {
+        const atSlot = dateBookings.filter(b => b.time_slot === slot);
+        const hasGlobalBlock = atSlot.some(b => b.service_name === null);
+        if (hasGlobalBlock) return { status: 'blocked', count: atSlot.length };
+        if (atSlot.length > 0) return { status: 'partial', count: atSlot.length };
+        return { status: 'available', count: 0 };
+    }
+
+    function getSlotStyle(slot: string): CSSProperties {
+        const info  = getSlotInfo(slot);
+        const isSel = selectedTimeSlots.has(slot);
+
+        if (info.status === 'blocked') {
+            return {
+                background:   'rgba(220,53,53,0.10)',
+                border:       '2px solid rgba(220,53,53,0.30)',
+                color:        '#dc3535',
+                cursor:       'not-allowed',
+                opacity:      0.65,
+                borderRadius: 8,
+                padding:      '10px 6px',
+                textAlign:    'center',
+                fontSize:     13,
+                fontWeight:   500,
+                position:     'relative',
+                userSelect:   'none',
+            };
+        }
+        if (info.status === 'partial') {
+            return {
+                background:   isSel ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.08)',
+                border:       `2px solid ${isSel ? '#f59e0b' : 'rgba(245,158,11,0.40)'}`,
+                color:        '#f59e0b',
+                cursor:       'pointer',
+                borderRadius: 8,
+                padding:      '10px 6px',
+                textAlign:    'center',
+                fontSize:     13,
+                fontWeight:   500,
+                position:     'relative',
+                transition:   'all 0.15s',
+                userSelect:   'none',
+            };
+        }
+        return {
+            background:   isSel ? 'var(--primary-btn, #2f855a)' : 'var(--secondary-bg)',
+            border:       `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
+            color:        isSel ? '#fff' : 'var(--text-primary, #e0e0e0)',
+            cursor:       'pointer',
+            borderRadius: 8,
+            padding:      '10px 6px',
+            textAlign:    'center',
+            fontSize:     13,
+            fontWeight:   500,
+            position:     'relative',
+            transition:   'all 0.15s',
+            userSelect:   'none',
+        };
+    }
+
+    function handleSelectTimeSlot(slot: string) {
+        if (getSlotInfo(slot).status === 'blocked') return;
+        setSelectedTimeSlots(prev => {
+            const next = new Set(prev);
+            if (next.has(slot)) next.delete(slot);
+            else next.add(slot);
+            return next;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Add Booking — one row per selected time slot
     // -------------------------------------------------------------------------
     async function handleAddBooking() {
-        if (selectedDates.size === 0 || !bookingForm.guest_name) return;
+        if (!bookingDate || !bookingForm.guest_name || selectedTimeSlots.size === 0) return;
         setBookingSaving(true);
-        const sortedDates = Array.from(selectedDates).sort();
-        const checkIn = sortedDates[0];
 
-        const { error } = await supabase.from('venue_bookings').insert({
+        const amountVal = bookingForm.amount ? parseFloat(bookingForm.amount) : null;
+
+        const rows = Array.from(selectedTimeSlots).sort().map(slot => ({
             venue_id:       venue.id,
             guest_name:     bookingForm.guest_name,
             guest_email:    bookingForm.guest_email || null,
             guest_phone:    bookingForm.guest_phone || null,
-            service_name:   bookingForm.service_name || null,
-            check_in_date:  checkIn,
+            service_name:   null,
+            check_in_date:  bookingDate,
             check_out_date: bookingForm.check_out_date || null,
+            time_slot:      slot,
             guests:         bookingForm.guests,
-            amount:         bookingForm.amount ? parseFloat(bookingForm.amount) : null,
+            amount:         amountVal,
             notes:          bookingForm.notes || null,
             status:         bookingForm.status,
             source:         'admin',
-        });
+        }));
+
+        const { error } = await supabase.from('venue_bookings').insert(rows);
 
         if (!error) {
             await fetchData();
             setShowBookingModal(false);
-            setBookingForm({ guest_name:'', guest_email:'', guest_phone:'', service_name:'', check_out_date:'', guests:1, amount:'', notes:'', status:'confirmed' });
             setSelectedDates(new Set());
         }
         setBookingSaving(false);
@@ -246,16 +354,16 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
         .reduce((sum, b) => sum + (b.amount || 0), 0);
 
     const tabCounts: Record<string, number> = {
-        All: totalBookings,
-        Upcoming: confirmedBookings,
+        All:       totalBookings,
+        Upcoming:  confirmedBookings,
         Enquiries: pendingBookings,
         Completed: completedBookings,
         Cancelled: bookings.filter(b => b.status === 'cancelled').length,
     };
 
     const filteredBookings = bookings.filter(b => {
-        if (activeSubTab === 'All') return true;
-        if (activeSubTab === 'Upcoming') return b.status === 'confirmed';
+        if (activeSubTab === 'All')       return true;
+        if (activeSubTab === 'Upcoming')  return b.status === 'confirmed';
         if (activeSubTab === 'Enquiries') return b.status === 'pending';
         if (activeSubTab === 'Completed') return b.status === 'completed';
         if (activeSubTab === 'Cancelled') return b.status === 'cancelled';
@@ -316,7 +424,7 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
                                 <button className="btn btn-secondary btn-small" onClick={() => setShowBlockModal(true)}>
                                     <span style={{ marginRight: 6 }}>⊘</span> Block Dates
                                 </button>
-                                <button className="btn btn-primary btn-small" onClick={() => setShowBookingModal(true)}>
+                                <button className="btn btn-primary btn-small" onClick={openBookingModal}>
                                     <span style={{ marginRight: 6 }}>+</span> Add Booking
                                 </button>
                             </>
@@ -331,14 +439,11 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
                         {WEEKDAYS.map(d => <div key={d} className="calendar-weekday">{d}</div>)}
                     </div>
                     <div className="calendar-days">
-                        {/* Prev month padding */}
                         {Array.from({ length: cellsBefore }).map((_, i) => (
                             <div key={`prev-${i}`} className="calendar-day other-month">
                                 <span className="calendar-day-number">{daysInPrev - cellsBefore + i + 1}</span>
                             </div>
                         ))}
-
-                        {/* Current month */}
                         {Array.from({ length: daysInMonth }).map((_, i) => {
                             const day = i + 1;
                             const key = toDateKey(viewYear, viewMonth, day);
@@ -356,8 +461,6 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
                                 </div>
                             );
                         })}
-
-                        {/* Next month padding */}
                         {Array.from({ length: cellsAfter }).map((_, i) => (
                             <div key={`next-${i}`} className="calendar-day other-month">
                                 <span className="calendar-day-number">{i + 1}</span>
@@ -437,10 +540,10 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
 
                     <div className="booking-list">
                         {filteredBookings.map(b => {
-                            const d = new Date(b.check_in_date + 'T00:00:00');
-                            const mon = d.toLocaleString('en', { month: 'short' });
-                            const day = d.getDate();
-                            const yr  = d.getFullYear();
+                            const d       = new Date(b.check_in_date + 'T00:00:00');
+                            const mon     = d.toLocaleString('en', { month: 'short' });
+                            const day     = d.getDate();
+                            const yr      = d.getFullYear();
                             const stripBg = b.status === 'pending' ? 'var(--warning)' : b.status === 'completed' ? 'var(--accent)' : '';
                             return (
                                 <div key={b.id} className="booking-card" style={b.status === 'completed' ? { opacity: 0.7 } : {}}>
@@ -451,10 +554,12 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
                                     </div>
                                     <div className="booking-content">
                                         <div className="booking-info">
-                                            <div className="booking-title">{b.service_name || 'Retreat Booking'}</div>
-                                            <div className="booking-subtitle">{b.guest_name}</div>
+                                            <div className="booking-title">Retreat Booking</div>
+                                            <div className="booking-subtitle">
+                                                {b.guest_name}{b.time_slot ? ` • ${b.time_slot}` : ''}
+                                            </div>
                                             <div className="booking-details">
-                                                {(b.check_out_date) && (
+                                                {b.check_out_date && (
                                                     <span className="booking-detail">
                                                         <Calendar className="icon icon-small" />
                                                         {formatDateKey(b.check_in_date)} – {formatDateKey(b.check_out_date)}
@@ -619,72 +724,145 @@ export default function BookingsTab({ venue }: BookingsTabProps) {
             {/* --------------------------------------------------------------- */}
             {showBookingModal && (
                 <div className="wvd-modal-overlay" onClick={() => setShowBookingModal(false)}>
-                    <div className="wvd-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
-                        <div className="wvd-modal-header">
-                            <h3 className="wvd-modal-title">Add Booking</h3>
+                    <div
+                        className="wvd-modal"
+                        onClick={e => e.stopPropagation()}
+                        style={{ maxWidth: 620, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                    >
+                        {/* Header */}
+                        <div className="wvd-modal-header" style={{ flexShrink: 0 }}>
+                            <div>
+                                <h3 className="wvd-modal-title">Add Booking</h3>
+                                <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 2 }}>
+                                    {bookingDate ? formatDateKey(bookingDate) : '—'}
+                                </p>
+                            </div>
                             <button className="wvd-modal-close" onClick={() => setShowBookingModal(false)}><X size={20} /></button>
                         </div>
-                        <div className="wvd-modal-body">
-                            <p style={{ fontSize: 13, color: 'var(--accent)', marginBottom: 16 }}>
-                                Check-in: <strong>{Array.from(selectedDates).sort()[0] ? formatDateKey(Array.from(selectedDates).sort()[0]) : '—'}</strong>
-                            </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label className="wvd-form-label">Guest / Group Name *</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.guest_name}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_name: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Email</label>
-                                    <input type="email" className="wvd-form-input" value={bookingForm.guest_email}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_email: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Phone</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.guest_phone}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_phone: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label className="wvd-form-label">Retreat / Event Name</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.service_name}
-                                        placeholder="e.g. Women's Wellness Retreat"
-                                        onChange={e => setBookingForm(p => ({ ...p, service_name: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Check-out Date</label>
-                                    <input type="date" className="wvd-form-input" value={bookingForm.check_out_date}
-                                        onChange={e => setBookingForm(p => ({ ...p, check_out_date: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Guests</label>
-                                    <input type="number" className="wvd-form-input" min={1} value={bookingForm.guests}
-                                        onChange={e => setBookingForm(p => ({ ...p, guests: parseInt(e.target.value) || 1 }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Amount (AUD)</label>
-                                    <input type="number" className="wvd-form-input" value={bookingForm.amount}
-                                        placeholder="0.00"
-                                        onChange={e => setBookingForm(p => ({ ...p, amount: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Status</label>
-                                    <select className="wvd-form-select" value={bookingForm.status}
-                                        onChange={e => setBookingForm(p => ({ ...p, status: e.target.value as Booking['status'] }))}>
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                </div>
-                                <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label className="wvd-form-label">Notes</label>
-                                    <textarea className="wvd-form-textarea" rows={2} value={bookingForm.notes}
-                                        onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))} />
-                                </div>
-                            </div>
+
+                        {/* Body — scrollable */}
+                        <div className="wvd-modal-body" style={{ overflowY: 'auto', flex: 1 }}>
+
+                            {modalLoading ? (
+                                <p style={{ fontSize: 13, color: 'var(--accent)', padding: '20px 0', textAlign: 'center' }}>
+                                    Loading availability…
+                                </p>
+                            ) : (
+                                <>
+                                    {/* ---- Section 1: Time Slots ---- */}
+                                    <div style={{ marginBottom: 24 }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>
+                                                Select Time Slot(s) <span style={{ color: '#dc3535' }}>*</span>
+                                            </h4>
+                                            {selectedTimeSlots.size > 0 && (
+                                                <span style={{ fontSize: 12, color: 'var(--primary-btn, #2f855a)', fontWeight: 500 }}>
+                                                    {selectedTimeSlots.size} slot{selectedTimeSlots.size > 1 ? 's' : ''} selected
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                                            {TIME_SLOTS.map(slot => {
+                                                const info = getSlotInfo(slot);
+                                                return (
+                                                    <div
+                                                        key={slot}
+                                                        style={getSlotStyle(slot)}
+                                                        onClick={() => handleSelectTimeSlot(slot)}
+                                                    >
+                                                        <div>{slot}</div>
+                                                        {info.count > 0 && (
+                                                            <div style={{ fontSize: 10, marginTop: 3, opacity: 0.85 }}>
+                                                                {info.status === 'blocked' ? 'Unavailable' : `${info.count} booked`}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Legend */}
+                                        <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+                                            {[
+                                                { color: 'var(--primary-btn, #2f855a)', label: 'Available' },
+                                                { color: '#f59e0b', label: 'Partially booked' },
+                                                { color: '#dc3535', label: 'Unavailable' },
+                                            ].map(item => (
+                                                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--accent)' }}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, display: 'inline-block', flexShrink: 0 }} />
+                                                    {item.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* ---- Section 2: Guest Details ---- */}
+                                    <div>
+                                        <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px' }}>Guest Details</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="wvd-form-label">Guest / Group Name <span style={{ color: '#dc3535' }}>*</span></label>
+                                                <input type="text" className="wvd-form-input" value={bookingForm.guest_name}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_name: e.target.value }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Email</label>
+                                                <input type="email" className="wvd-form-input" value={bookingForm.guest_email}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_email: e.target.value }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Phone</label>
+                                                <input type="text" className="wvd-form-input" value={bookingForm.guest_phone}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_phone: e.target.value }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Check-out Date</label>
+                                                <input type="date" className="wvd-form-input" value={bookingForm.check_out_date}
+                                                    onChange={e => setBookingForm(p => ({ ...p, check_out_date: e.target.value }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Guests</label>
+                                                <input type="number" className="wvd-form-input" min={1} value={bookingForm.guests}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guests: parseInt(e.target.value) || 1 }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Amount (AUD)</label>
+                                                <input type="number" className="wvd-form-input" value={bookingForm.amount}
+                                                    placeholder="0.00"
+                                                    onChange={e => setBookingForm(p => ({ ...p, amount: e.target.value }))} />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Status</label>
+                                                <select className="wvd-form-select" value={bookingForm.status}
+                                                    onChange={e => setBookingForm(p => ({ ...p, status: e.target.value as Booking['status'] }))}>
+                                                    <option value="confirmed">Confirmed</option>
+                                                    <option value="pending">Pending</option>
+                                                </select>
+                                            </div>
+                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="wvd-form-label">Notes</label>
+                                                <textarea className="wvd-form-textarea" rows={2} value={bookingForm.notes}
+                                                    onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <div className="wvd-modal-footer">
+
+                        {/* Footer */}
+                        <div className="wvd-modal-footer" style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: 11, color: 'var(--accent)', flex: 1 }}>
+                                {selectedTimeSlots.size === 0 && <span style={{ color: '#dc3535' }}>Please select at least one time slot</span>}
+                                {selectedTimeSlots.size > 0 && !bookingForm.guest_name && <span style={{ color: '#dc3535' }}>Please enter guest name</span>}
+                            </div>
                             <button className="wvd-btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
-                            <button className="wvd-btn-primary" onClick={handleAddBooking}
-                                disabled={bookingSaving || !bookingForm.guest_name}>
+                            <button
+                                className="wvd-btn-primary"
+                                onClick={handleAddBooking}
+                                disabled={bookingSaving || !bookingForm.guest_name || selectedTimeSlots.size === 0 || modalLoading}
+                            >
                                 {bookingSaving ? 'Saving…' : 'Add Booking'}
                             </button>
                         </div>

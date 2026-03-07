@@ -11,18 +11,17 @@ import PricingTab from '../components/PricingTab';
 import BookingsTab from '../components/BookingsTab';
 import OwnerManagerTab from '../components/OwnerManagerTab';
 import InternalTab from '../components/InternalTab';
-import WellnessFacilitiesTab from '../components/WellnessFacilitiesTab';
-import WellnessServicesTab from '../components/WellnessServicesTab';
 import AmenitiesTab from '../components/AmenitiesTab';
 import ReviewsTab from '../components/ReviewsTab';
 import type { Venue } from '../context/VenueContext';
+
+// Tabs with their own save button — global "Save Changes" is hidden on these
+const SELF_SAVE_TABS = new Set(['retreat-facilities', 'pricing', 'media', 'internal', 'owner']);
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'accommodation', label: 'Accommodation' },
   { id: 'amenities', label: 'Amenities' },
-  { id: 'wellness-services', label: 'Wellness Services' },
-  { id: 'wellness-facilities', label: 'Wellness Facilities' },
   { id: 'retreat-facilities', label: 'Retreat Facilities' },
   { id: 'pricing', label: 'Pricing & Booking' },
   { id: 'media', label: 'Media' },
@@ -156,9 +155,11 @@ export default function VenueDetail() {
           <button className="btn btn-secondary" onClick={() => setShowDelete(true)}>
             <Trash2 size={16} /> Delete
           </button>
-          <button className="btn btn-primary" onClick={handleSaveChanges}>
-            <Save size={16} /> Save Changes
-          </button>
+          {!SELF_SAVE_TABS.has(activeTab) && (
+            <button className="btn btn-primary" onClick={handleSaveChanges}>
+              <Save size={16} /> Save Changes
+            </button>
+          )}
         </div>
       </header>
 
@@ -189,12 +190,6 @@ export default function VenueDetail() {
       )}
       {activeTab === 'amenities' && (
         <AmenitiesTab venue={venue} onUpdate={handleTabUpdate} />
-      )}
-      {activeTab === 'wellness-services' && (
-        <WellnessServicesTab venue={venue} onUpdate={handleTabUpdate} />
-      )}
-      {activeTab === 'wellness-facilities' && (
-        <WellnessFacilitiesTab venue={venue} onUpdate={handleTabUpdate} />
       )}
       {activeTab === 'pricing' && (
         <PricingTab venue={venue} onUpdate={handleTabUpdate} />

@@ -7316,6 +7316,12 @@ a {
   background-color: var(--secondary-bg);
   cursor: pointer;
   transition: border-color 0.2s;
+  position: relative;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .wa-image-upload:hover {
@@ -10015,4 +10021,24 @@ a {
 }
 .spin {
   animation: spin 1s linear infinite;
+}
+
+/* Floating save bar – used in Facilities / Spaces tabs */
+.floating-save-bar {
+  position: sticky;
+  top: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  background: transparent;
+  pointer-events: none;
+}
+.floating-save-bar > * {
+  pointer-events: all;
+}
+.floating-save-bar > button,
+.floating-save-bar > span + button {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }

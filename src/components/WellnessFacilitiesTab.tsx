@@ -1,821 +1,1063 @@
-import { Info, Image as ImageIcon, Plus } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Info, Check, Loader, UploadCloud, X, Plus, Trash2 } from 'lucide-react';
 import type { Venue } from '../context/VenueContext';
+import { supabase } from '../lib/supabase';
+import { uploadFile } from '../lib/storage';
 
 interface WellnessFacilitiesTabProps {
     venue: Venue;
     onUpdate?: (updates: Partial<Venue>) => void;
 }
 
-export default function WellnessFacilitiesTab({ venue: _venue }: WellnessFacilitiesTabProps) {
+interface Config {
+    facilities_hero_image: string;
+    section_label: string;
+    section_title: string;
+    section_subtitle: string;
+    intro_paragraph: string;
+    facility_space_sqm: number;
+    facility_philosophy: string;
+    facility_highlights: string;
+    total_treatment_rooms: number;
+    private_suites: number;
+    couples_rooms: number;
+    group_spaces: number;
+    room_sizes: string;
+    tables_available: boolean;
+    specialized_equipment: string;
+    room_features: string;
+    supporting_facilities: string[];
+    steam_room_count: number;
+    support_details: string;
+    thermal_types: string[];
+    indoor_pool_count: number;
+    outdoor_pool_count: number;
+    thermal_features: string;
+    bathing_sections: Record<string, any>;
+    med_spa_suites: boolean;
+    med_suite_count: number;
+    changing_details: string;
+    shower_details: string;
+    towels_provided: boolean;
+    slippers_provided: boolean;
+    changing_amenities: string;
+    med_certs: string;
+    trad_certs: string;
+    water_testing: string;
+    safety_standards: string;
+    sustainability: string;
+    accessibility_features: string[];
+    other_facilities_available: boolean;
+    other_facility_types: string;
+}
+
+interface FacilityItem {
+    id?: string;
+    facility_name: string;
+    facility_image: string;
+    show_on_website: boolean;
+    is_available: boolean;
+    website_display_title: string;
+    website_description: string;
+    facility_type: string;
+    setting: string;
+    capacity: number;
+    temperature_range: string;
+    is_private: boolean;
+    operating_hours: string;
+    pool_type: string;
+    is_heated: boolean;
+    pool_size: string;
+    pool_depth: string;
+    lap_swimming: boolean;
+    plunge_type: string;
+    hot_tub_type: string;
+    features: string[];
+    sort_order: number;
+}
+
+const DEFAULT_CONFIG: Config = {
+    facilities_hero_image: '',
+    section_label: 'Water & Healing',
+    section_title: '',
+    section_subtitle: '',
+    intro_paragraph: '',
+    facility_space_sqm: 0,
+    facility_philosophy: '',
+    facility_highlights: '',
+    total_treatment_rooms: 0,
+    private_suites: 0,
+    couples_rooms: 0,
+    group_spaces: 0,
+    room_sizes: '',
+    tables_available: true,
+    specialized_equipment: '',
+    room_features: '',
+    supporting_facilities: [],
+    steam_room_count: 0,
+    support_details: '',
+    thermal_types: [],
+    indoor_pool_count: 0,
+    outdoor_pool_count: 0,
+    thermal_features: '',
+    bathing_sections: {
+        japanese: { active: false, title: 'Japanese Facilities (Onsen / Sento)', details: '' },
+        korean: { active: false, title: 'Korean Facilities (Jjimjilbang)', details: '' },
+        turkish: { active: false, title: 'Turkish / Moroccan Facilities (Hammam)', details: '' },
+        russian: { active: false, title: 'Russian Facilities (Banya)', details: '' },
+    },
+    med_spa_suites: false,
+    med_suite_count: 0,
+    changing_details: '',
+    shower_details: '',
+    towels_provided: true,
+    slippers_provided: true,
+    changing_amenities: '',
+    med_certs: '',
+    trad_certs: '',
+    water_testing: '',
+    safety_standards: '',
+    sustainability: '',
+    accessibility_features: [],
+    other_facilities_available: false,
+    other_facility_types: '',
+};
+
+const SUPPORTING_OPTIONS = [
+    'Relaxation Lounges', 'Meditation Rooms', 'Steam Rooms', 'Cold Plunge Pools',
+    'Ice / Snow Rooms', 'Herbal Prep Rooms', 'Consultation Rooms', 'Integration / Rest Spaces',
+];
+
+const THERMAL_OPTIONS = [
+    'Infrared Sauna', 'Traditional Dry Sauna', 'Steam Room', 'Indoor Thermal Pools',
+    'Outdoor Thermal Pools', 'Mineral Spring Pools', 'Natural Hot Spring Pools', 'Geothermal Pools',
+];
+
+const ACCESS_OPTIONS = [
+    'Wheelchair Accessible', 'Mobility Assistance', 'Accessible Pools',
+    'Support Rails', 'Ground Level Access', 'Lift Available',
+];
+
+const FACILITY_TYPES = ['Sauna', 'Pool', 'Cold Plunge', 'Hot Tub / Spa', 'Treatment Room', 'Steam Room', 'Red Light Therapy', 'Float Pod', 'Relaxation Lounge', 'Other'];
+const SETTINGS = ['Indoor', 'Outdoor', 'Semi-Outdoor'];
+
+function blankFacility(order: number): FacilityItem {
+    return {
+        facility_name: '',
+        facility_image: '',
+        show_on_website: true,
+        is_available: true,
+        website_display_title: '',
+        website_description: '',
+        facility_type: '',
+        setting: 'Indoor',
+        capacity: 0,
+        temperature_range: '',
+        is_private: false,
+        operating_hours: '',
+        pool_type: '',
+        is_heated: false,
+        pool_size: '',
+        pool_depth: '',
+        lap_swimming: false,
+        plunge_type: '',
+        hot_tub_type: '',
+        features: [],
+        sort_order: order,
+    };
+}
+
+export default function WellnessFacilitiesTab({ venue }: WellnessFacilitiesTabProps) {
+    const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
+    const [items, setItems] = useState<FacilityItem[]>([]);
+    const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
+    const [saving, setSaving] = useState(false);
+    const [saveMsg, setSaveMsg] = useState('');
+    const [heroUploading, setHeroUploading] = useState(false);
+    const [itemImageUploading, setItemImageUploading] = useState<Record<number, boolean>>({});
+    const heroRef = useRef<HTMLInputElement>(null);
+    const itemImageRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+    async function fetchData() {
+        const [cfgRes, itemsRes] = await Promise.all([
+            supabase.from('venue_wellness_facilities').select('*').eq('venue_id', venue.id).eq('venue_type', 'retreat').maybeSingle(),
+            supabase.from('wellness_facility_items').select('*').eq('venue_id', venue.id).eq('venue_type', 'retreat').order('sort_order'),
+        ]);
+        if (cfgRes.data) {
+            const d = cfgRes.data;
+            setConfig({
+                facilities_hero_image: d.facilities_hero_image || '',
+                section_label: d.section_label || 'Water & Healing',
+                section_title: d.section_title || '',
+                section_subtitle: d.section_subtitle || '',
+                intro_paragraph: d.intro_paragraph || '',
+                facility_space_sqm: d.facility_space_sqm ?? 0,
+                facility_philosophy: d.facility_philosophy || '',
+                facility_highlights: d.facility_highlights || '',
+                total_treatment_rooms: d.total_treatment_rooms ?? 0,
+                private_suites: d.private_suites ?? 0,
+                couples_rooms: d.couples_rooms ?? 0,
+                group_spaces: d.group_spaces ?? 0,
+                room_sizes: d.room_sizes || '',
+                tables_available: d.tables_available ?? true,
+                specialized_equipment: d.specialized_equipment || '',
+                room_features: d.room_features || '',
+                supporting_facilities: d.supporting_facilities || [],
+                steam_room_count: d.steam_room_count ?? 0,
+                support_details: d.support_details || '',
+                thermal_types: d.thermal_types || [],
+                indoor_pool_count: d.indoor_pool_count ?? 0,
+                outdoor_pool_count: d.outdoor_pool_count ?? 0,
+                thermal_features: d.thermal_features || '',
+                bathing_sections: d.bathing_sections || DEFAULT_CONFIG.bathing_sections,
+                med_spa_suites: d.med_spa_suites ?? false,
+                med_suite_count: d.med_suite_count ?? 0,
+                changing_details: d.changing_details || '',
+                shower_details: d.shower_details || '',
+                towels_provided: d.towels_provided ?? true,
+                slippers_provided: d.slippers_provided ?? true,
+                changing_amenities: d.changing_amenities || '',
+                med_certs: d.med_certs || '',
+                trad_certs: d.trad_certs || '',
+                water_testing: d.water_testing || '',
+                safety_standards: d.safety_standards || '',
+                sustainability: d.sustainability || '',
+                accessibility_features: d.accessibility_features || [],
+                other_facilities_available: d.other_facilities_available ?? false,
+                other_facility_types: d.other_facility_types || '',
+            });
+        }
+        if (itemsRes.data) {
+            setItems(itemsRes.data.map((f: any) => ({
+                id: f.id,
+                facility_name: f.facility_name || '',
+                facility_image: f.facility_image || '',
+                show_on_website: f.show_on_website ?? true,
+                is_available: f.is_available ?? true,
+                website_display_title: f.website_display_title || '',
+                website_description: f.website_description || '',
+                facility_type: f.facility_type || '',
+                setting: f.setting || 'Indoor',
+                capacity: f.capacity ?? 0,
+                temperature_range: f.temperature_range || '',
+                is_private: f.is_private ?? false,
+                operating_hours: f.operating_hours || '',
+                pool_type: f.pool_type || '',
+                is_heated: f.is_heated ?? false,
+                pool_size: f.pool_size || '',
+                pool_depth: f.pool_depth || '',
+                lap_swimming: f.lap_swimming ?? false,
+                plunge_type: f.plunge_type || '',
+                hot_tub_type: f.hot_tub_type || '',
+                features: f.features || [],
+                sort_order: f.sort_order ?? 0,
+            })));
+        }
+    }
+
+    useEffect(() => { fetchData(); }, [venue.id]);
+
+    function setConfigField<K extends keyof Config>(key: K, value: Config[K]) {
+        setConfig(c => ({ ...c, [key]: value }));
+    }
+
+    function toggleArrayItem(field: 'supporting_facilities' | 'thermal_types' | 'accessibility_features', item: string) {
+        setConfig(c => {
+            const arr = c[field] as string[];
+            return { ...c, [field]: arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item] };
+        });
+    }
+
+    function updateItem(idx: number, field: keyof FacilityItem, value: any) {
+        setItems(prev => prev.map((f, i) => i === idx ? { ...f, [field]: value } : f));
+    }
+
+    function addItem() {
+        const idx = items.length;
+        setItems(prev => [...prev, blankFacility(idx)]);
+        setExpandedItems(p => ({ ...p, [idx]: true }));
+    }
+
+    function deleteItem(idx: number) {
+        setItems(prev => prev.filter((_, i) => i !== idx));
+    }
+
+    function addFeature(itemIdx: number, value: string) {
+        if (!value.trim()) return;
+        setItems(prev => prev.map((f, i) => i === itemIdx ? { ...f, features: [...f.features, value.trim()] } : f));
+    }
+
+    function removeFeature(itemIdx: number, featIdx: number) {
+        setItems(prev => prev.map((f, i) => i === itemIdx ? { ...f, features: f.features.filter((_, j) => j !== featIdx) } : f));
+    }
+
+    async function handleHeroUpload(file: File) {
+        setHeroUploading(true);
+        try {
+            const url = await uploadFile(file, 'photo');
+            setConfigField('facilities_hero_image', url);
+        } finally { setHeroUploading(false); }
+    }
+
+    async function handleItemImageUpload(idx: number, file: File) {
+        setItemImageUploading(p => ({ ...p, [idx]: true }));
+        try {
+            const url = await uploadFile(file, 'photo');
+            updateItem(idx, 'facility_image', url);
+        } finally { setItemImageUploading(p => ({ ...p, [idx]: false })); }
+    }
+
+    async function handleSave() {
+        setSaving(true);
+        setSaveMsg('');
+        try {
+            const { error: cfgErr } = await supabase.from('venue_wellness_facilities').upsert({
+                venue_id: venue.id,
+                venue_type: 'retreat',
+                ...config,
+            }, { onConflict: 'venue_id,venue_type' });
+            if (cfgErr) throw cfgErr;
+
+            const { error: delErr } = await supabase.from('wellness_facility_items').delete().eq('venue_id', venue.id).eq('venue_type', 'retreat');
+            if (delErr) throw delErr;
+            if (items.length > 0) {
+                const rows = items.map((f, i) => ({
+                    venue_id: venue.id,
+                    venue_type: 'retreat',
+                    facility_name: f.facility_name,
+                    facility_image: f.facility_image,
+                    show_on_website: f.show_on_website,
+                    is_available: f.is_available,
+                    website_display_title: f.website_display_title,
+                    website_description: f.website_description,
+                    facility_type: f.facility_type,
+                    setting: f.setting,
+                    capacity: f.capacity,
+                    temperature_range: f.temperature_range,
+                    is_private: f.is_private,
+                    operating_hours: f.operating_hours,
+                    pool_type: f.pool_type,
+                    is_heated: f.is_heated,
+                    pool_size: f.pool_size,
+                    pool_depth: f.pool_depth,
+                    lap_swimming: f.lap_swimming,
+                    plunge_type: f.plunge_type,
+                    hot_tub_type: f.hot_tub_type,
+                    features: f.features,
+                    sort_order: i,
+                }));
+                const { error: itemsErr } = await supabase.from('wellness_facility_items').insert(rows);
+                if (itemsErr) throw itemsErr;
+            }
+            setSaveMsg('Saved successfully!');
+            await fetchData();
+        } catch (err: any) {
+            setSaveMsg('Error: ' + (err.message || 'Failed to save'));
+        } finally {
+            setSaving(false);
+            setTimeout(() => setSaveMsg(''), 8000);
+        }
+    }
+
     return (
-        <div>
+        <div style={{ position: 'relative', paddingBottom: 80 }}>
+            {/* Floating Save Button */}
+            <div className="floating-save-bar">
+                {saveMsg && (
+                    <span style={{ color: saveMsg.startsWith('Error') ? 'var(--danger)' : 'var(--success)', fontSize: 13, marginRight: 12 }}>
+                        {saveMsg}
+                    </span>
+                )}
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                    {saving && <Loader size={15} className="spin" />}
+                    {saving ? 'Saving...' : 'Save Facilities'}
+                </button>
+            </div>
+
             {/* Info Banner */}
             <div className="info-banner">
                 <Info className="info-banner-icon" />
                 <div className="info-banner-text">
-                    <strong>Wellness Facilities</strong> are physical spaces and equipment dedicated to wellness — saunas, pools, treatment rooms, etc. This is different from <strong>Wellness Services</strong> (treatments and classes provided by practitioners).
+                    <strong>Wellness Facilities</strong> are physical spaces dedicated to wellness at this retreat — saunas, pools, treatment rooms, etc. This is separate from the Retreat Spaces tab.
                 </div>
             </div>
 
-            {/* Tab Images */}
+            {/* Tab Header */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
-                        <h3 className="form-section-title">Tab Images</h3>
-                        <p className="form-section-subtitle">Hero image displayed in the "Water & Healing" section on your public listing (Amenities tab)</p>
+                        <h3 className="form-section-title">Tab Header</h3>
+                        <p className="form-section-subtitle">Hero image and intro content for the Wellness Facilities tab on your public listing</p>
                     </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Wellness Facilities Hero Image</label>
-                            <div
-                                className="image-upload-area"
-                                style={{
-                                    border: '2px dashed rgba(184, 184, 184, 0.4)',
-                                    borderRadius: 12,
-                                    padding: 40,
-                                    textAlign: 'center',
-                                    backgroundColor: 'var(--secondary-bg)',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <ImageIcon width={48} height={48} color="#B8B8B8" strokeWidth={1.5} style={{ marginBottom: 16 }} />
-                                <p style={{ color: 'var(--text)', fontWeight: 500, marginBottom: 4 }}>Click to upload or drag and drop</p>
-                                <p style={{ color: 'var(--accent)', fontSize: 12 }}>Recommended: 1920×600px, JPG or PNG</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Tab Content */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Tab Content</h3>
-                        <p className="form-section-subtitle">Intro text displayed in the "Water & Healing" section on your public listing</p>
-                    </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Section Label</label>
-                            <input type="text" className="form-input" defaultValue="Water & Healing" placeholder="e.g. Water & Healing, Thermal Facilities" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Section Title</label>
-                            <input type="text" className="form-input" defaultValue="Restore Through Stillness and Contrast" placeholder="e.g. Rest, Restore, Renew" />
-                        </div>
-                        <div className="form-group full-width">
-                            <label className="form-label">Section Subtitle</label>
-                            <input type="text" className="form-input" defaultValue="Complete contrast therapy circuit included with every stay" placeholder="Brief subtitle..." />
-                        </div>
-                        <div className="form-group full-width">
-                            <label className="form-label">Intro Paragraph</label>
-                            <textarea className="form-input form-textarea" rows={3} placeholder="A paragraph introducing your wellness facilities..." defaultValue="The property features a complete thermal wellness circuit designed for contrast therapy. Move from the heat of the infrared sauna to the cold plunge, then warm up in the outdoor spa. All facilities are included in your stay—no additional fees."></textarea>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Wellness Facilities Summary */}
-            <div className="summary-stats">
-                <div className="summary-stat">
-                    <div className="summary-stat-value">1</div>
-                    <div className="summary-stat-label">Sauna</div>
-                </div>
-                <div className="summary-stat">
-                    <div className="summary-stat-value">1</div>
-                    <div className="summary-stat-label">Pool</div>
-                </div>
-                <div className="summary-stat">
-                    <div className="summary-stat-value">2</div>
-                    <div className="summary-stat-label">Plunge Pools</div>
-                </div>
-                <div className="summary-stat">
-                    <div className="summary-stat-value">2</div>
-                    <div className="summary-stat-label">Treatment Rooms</div>
-                </div>
-                <div className="summary-stat">
-                    <div className="summary-stat-value">1</div>
-                    <div className="summary-stat-label">Red Light</div>
-                </div>
-            </div>
-
-            {/* Individual Facility Cards */}
-            <div className="facility-cards">
-
-                {/* Sauna */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <path d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.93-7.07l-1.41 1.41m-9.32 9.32l-1.41 1.41m0-12.14l1.41 1.41m9.32 9.32l1.41 1.41" />
-                                    <circle cx="12" cy="12" r="5" />
-                                </svg>
-                            </div>
-                            Sauna
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        {/* Facility Image & Description for Website */}
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - Display in listing</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Infrared Sauna" placeholder="e.g. Finnish Sauna, Barrel Sauna" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="Outdoor infrared sauna for 6 people. The perfect way to warm up before a cold plunge or wind down after an evening session."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Sauna Type</div>
-                                <select className="form-input form-select" defaultValue="Infrared">
-                                    <option>Traditional Finnish</option>
-                                    <option>Infrared</option>
-                                    <option>Steam Sauna</option>
-                                    <option>Barrel Sauna</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Setting</div>
-                                <select className="form-input form-select" defaultValue="Outdoor">
-                                    <option>Indoor</option>
-                                    <option>Outdoor</option>
-                                    <option>Pool House</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Capacity</div>
-                                <input type="number" className="form-input" defaultValue="6" />
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Temperature Range</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span className="temp-badge hot">60-80°C</span>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Private / Shared</div>
-                                <select className="form-input form-select" defaultValue="Shared (all guests)">
-                                    <option>Shared (all guests)</option>
-                                    <option>Private (bookable)</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Operating Hours</div>
-                                <input type="text" className="form-input" defaultValue="6am - 10pm" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Swimming Pool */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <path d="M2 12h20M2 12c2 2 4 3 6 3s4-1 6-3c2 2 4 3 6 3" />
-                                    <path d="M2 17h20M2 17c2 2 4 3 6 3s4-1 6-3c2 2 4 3 6 3" />
-                                </svg>
-                            </div>
-                            Swimming Pool
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - Display in listing</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Solar Heated Pool" placeholder="e.g. Infinity Pool, Lap Pool" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="12-meter heated pool overlooking the valley. Solar heated year-round to a comfortable 28°C. Perfect for morning laps or afternoon relaxation."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Pool Type</div>
-                                <select className="form-input form-select" defaultValue="Outdoor">
-                                    <option>Indoor</option>
-                                    <option>Outdoor</option>
-                                    <option>Indoor/Outdoor</option>
-                                    <option>Natural / Dam</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Heated</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - Solar heated</span>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Temperature</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span className="temp-badge neutral">28°C year-round</span>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Pool Size</div>
-                                <input type="text" className="form-input" defaultValue="12m x 5m" />
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Depth</div>
-                                <input type="text" className="form-input" defaultValue="1.2m - 1.8m" />
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Lap Swimming</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Cold Plunge */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <path d="M12 2v8m0 0l-3-3m3 3l3-3" />
-                                    <path d="M20 16.58A5 5 0 0018 7h-1.26A8 8 0 104 15.25" />
-                                </svg>
-                            </div>
-                            Cold Plunge Pool
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - Display in listing</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Cold Plunge" placeholder="e.g. Ice Bath, Cold Pool" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="Dedicated cold immersion pool maintained at 8-12°C. Located adjacent to the sauna for easy contrast therapy circuits."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Plunge Type</div>
-                                <select className="form-input form-select" defaultValue="Dedicated Cold Plunge">
-                                    <option>Dedicated Cold Plunge</option>
-                                    <option>Ice Bath</option>
-                                    <option>Cold Shower</option>
-                                    <option>Natural Cold Water</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Temperature</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span className="temp-badge cold">8-12°C</span>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Capacity</div>
-                                <input type="number" className="form-input" defaultValue="2" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Features</div>
-                                <div className="facility-features">
-                                    <span className="facility-feature">Chiller System</span>
-                                    <span className="facility-feature">Temperature Display</span>
-                                    <span className="facility-feature">Adjacent to Sauna</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Hot Plunge / Spa */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <path d="M12 6c0-2-1-3-3-3s-3 1-3 3c0 1 .5 2 1 3" />
-                                    <path d="M18 6c0-2-1-3-3-3s-3 1-3 3c0 1 .5 2 1 3" />
-                                    <ellipse cx="12" cy="17" rx="8" ry="5" />
-                                </svg>
-                            </div>
-                            Hot Plunge / Spa
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - Display in listing</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Outdoor Hot Spa" placeholder="e.g. Japanese Onsen, Hot Tub" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="6-person outdoor spa with hydrotherapy jets, nestled in the garden with views of the surrounding farmland. The perfect finale to your contrast therapy circuit."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Type</div>
-                                <select className="form-input form-select" defaultValue="Hot Tub / Spa">
-                                    <option>Hot Tub / Spa</option>
-                                    <option>Japanese Ofuro</option>
-                                    <option>Outdoor Bath</option>
-                                    <option>Magnesium Pool</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Temperature</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span className="temp-badge hot">38-40°C</span>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Capacity</div>
-                                <input type="number" className="form-input" defaultValue="6" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Features</div>
-                                <div className="facility-features">
-                                    <span className="facility-feature">Hydrotherapy Jets</span>
-                                    <span className="facility-feature">Outdoor Setting</span>
-                                    <span className="facility-feature">Garden Views</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Treatment Rooms */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                                    <line x1="3" y1="12" x2="21" y2="12" />
-                                </svg>
-                            </div>
-                            Treatment Rooms
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">No - Internal use only</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Treatment Rooms" placeholder="e.g. Spa Suites, Healing Rooms" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="Two dedicated treatment rooms equipped with heated massage tables, ambient lighting, and professional-grade equipment for visiting practitioners."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Number of Rooms</div>
-                                <input type="number" className="form-input" defaultValue="2" />
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Room Type</div>
-                                <select className="form-input form-select" defaultValue="Dedicated Treatment Room">
-                                    <option>Dedicated Treatment Room</option>
-                                    <option>Multipurpose Space</option>
-                                    <option>Outdoor Treatment Area</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Couples Treatment</div>
-                                <div className="toggle-container">
-                                    <div className="toggle active">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">Yes - 1 room</span>
-                                </div>
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Equipment Provided</div>
-                                <div className="facility-features">
-                                    <span className="facility-feature">Massage Tables (2)</span>
-                                    <span className="facility-feature">Heated Tables</span>
-                                    <span className="facility-feature">Towels & Linens</span>
-                                    <span className="facility-feature">Oils & Lotions</span>
-                                    <span className="facility-feature">Ambient Sound System</span>
-                                    <span className="facility-feature">Dimmable Lighting</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Red Light Therapy */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <rect x="4" y="2" width="16" height="20" rx="2" />
-                                    <line x1="8" y1="6" x2="16" y2="6" />
-                                    <line x1="8" y1="10" x2="16" y2="10" />
-                                    <line x1="8" y1="14" x2="16" y2="14" />
-                                    <line x1="8" y1="18" x2="16" y2="18" />
-                                </svg>
-                            </div>
-                            Red Light Therapy
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status available">Available</span>
-                            <div className="toggle active">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body">
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Facility Image (for website)</div>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
-                                    <div style={{ width: 200, height: 140, borderRadius: 8, background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed rgba(184, 184, 184, 0.4)' }}>
-                                        <ImageIcon width={40} height={40} color="#B8B8B8" strokeWidth={1.5} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <button className="btn btn-secondary btn-small" style={{ marginBottom: 8 }}>Upload Image</button>
-                                        <p style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 800×600px, JPG or PNG</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Show on Website</div>
-                                <div className="toggle-container">
-                                    <div className="toggle">
-                                        <div className="toggle-knob"></div>
-                                    </div>
-                                    <span className="toggle-label">No - Internal use only</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid" style={{ marginBottom: 20 }}>
-                            <div className="facility-field span-2">
-                                <div className="facility-field-label">Website Display Title</div>
-                                <input type="text" className="form-input" defaultValue="Red Light Therapy" placeholder="e.g. Photobiomodulation, Light Therapy" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Website Description</div>
-                                <textarea className="form-input form-textarea" rows={2} placeholder="Description for public listing..." defaultValue="Joovv Elite full-body red light panel available in the treatment room. 10-20 minute sessions recommended before or after massage."></textarea>
-                            </div>
-                        </div>
-
-                        <div className="facility-grid">
-                            <div className="facility-field">
-                                <div className="facility-field-label">Device Type</div>
-                                <select className="form-input form-select" defaultValue="Full Body Panel">
-                                    <option>Handheld Panel</option>
-                                    <option>Full Body Panel</option>
-                                    <option>Red Light Bed</option>
-                                    <option>Red Light Sauna</option>
-                                </select>
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Brand / Model</div>
-                                <input type="text" className="form-input" defaultValue="Joovv Elite" />
-                            </div>
-                            <div className="facility-field">
-                                <div className="facility-field-label">Session Duration</div>
-                                <input type="text" className="form-input" defaultValue="10-20 mins" />
-                            </div>
-                            <div className="facility-field span-3">
-                                <div className="facility-field-label">Wavelengths</div>
-                                <div className="facility-features">
-                                    <span className="facility-feature">Red (660nm)</span>
-                                    <span className="facility-feature">Near-Infrared (850nm)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Steam Room (Not Available) */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon" style={{ opacity: 0.5 }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                    <path d="M9 9h.01M15 9h.01" />
-                                    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z" />
-                                </svg>
-                            </div>
-                            <span style={{ opacity: 0.5 }}>Steam Room</span>
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status unavailable">Not Available</span>
-                            <div className="toggle">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body" style={{ opacity: 0.5 }}>
-                        <p style={{ fontSize: 13, color: 'var(--accent)' }}>This facility is not available at this venue. Toggle on to add details.</p>
-                    </div>
-                </div>
-
-                {/* Float Tank (Not Available) */}
-                <div className="facility-card">
-                    <div className="facility-card-header">
-                        <div className="facility-card-title">
-                            <div className="facility-icon" style={{ opacity: 0.5 }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#313131" strokeWidth="1.5">
-                                    <ellipse cx="12" cy="12" rx="10" ry="6" />
-                                    <path d="M12 6v12" />
-                                </svg>
-                            </div>
-                            <span style={{ opacity: 0.5 }}>Float Tank / Sensory Deprivation</span>
-                        </div>
-                        <div className="facility-card-toggle">
-                            <span className="facility-status unavailable">Not Available</span>
-                            <div className="toggle">
-                                <div className="toggle-knob"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="facility-card-body" style={{ opacity: 0.5 }}>
-                        <p style={{ fontSize: 13, color: 'var(--accent)' }}>This facility is not available at this venue. Toggle on to add details.</p>
-                    </div>
-                </div>
-
-                {/* Add Facility Button */}
-                <button className="add-facility-btn">
-                    <Plus className="icon" />
-                    Add Another Facility
-                </button>
-
-            </div>
-
-            {/* Additional Wellness Facilities Checklist */}
-            <section className="form-section" style={{ marginTop: 24 }}>
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Other Wellness Facilities</h3>
-                        <p className="form-section-subtitle">Quick checklist for additional facilities</p>
-                    </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-grid four-col">
-                        <div className="form-group">
-                            <label className="form-label">Gym / Fitness Room</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Yoga Studio</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Meditation Room</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Salt Room / Halotherapy</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Cryotherapy Chamber</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Hyperbaric Chamber</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Oxygen Bar</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Contrast Therapy Setup</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Facility Notes */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <h3 className="form-section-title">Additional Facility Notes</h3>
                 </div>
                 <div className="form-section-body">
                     <div className="form-group">
-                        <label className="form-label">Notes for Guests & Retreat Hosts</label>
-                        <textarea className="form-input form-textarea" rows={4} placeholder="Any additional information about wellness facilities..." defaultValue="The property features a complete contrast therapy circuit: infrared sauna → cold plunge → hot spa. Recommended protocol is 3 rounds of 15 min sauna / 2 min cold plunge / 5 min hot spa. Red light therapy panel is located in the treatment room and can be used before or after massage. All facilities are included in venue hire - no additional fees. Towels and robes provided poolside."></textarea>
+                        <label className="form-label">Hero Image</label>
+                        <input ref={heroRef} type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => { if (e.target.files?.[0]) handleHeroUpload(e.target.files[0]); }} />
+                        {config.facilities_hero_image ? (
+                            <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', maxWidth: 420 }}>
+                                <img src={config.facilities_hero_image} alt="hero"
+                                    style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                                <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
+                                    <button onClick={() => heroRef.current?.click()} className="btn-secondary" style={{ padding: '4px 10px', fontSize: 12 }}>Replace</button>
+                                    <button onClick={() => setConfigField('facilities_hero_image', '')} className="btn-danger-sm"><X size={14} /></button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div onClick={() => heroRef.current?.click()}
+                                style={{ border: '2px dashed rgba(184,184,184,0.4)', borderRadius: 8, padding: 32, textAlign: 'center', cursor: 'pointer', background: 'var(--secondary-bg)', maxWidth: 420 }}>
+                                {heroUploading ? <Loader size={28} className="spin" /> : <UploadCloud size={28} color="#B8B8B8" />}
+                                <p style={{ color: 'var(--text)', fontSize: 13, marginTop: 8 }}>Click to upload hero image</p>
+                                <p style={{ color: 'var(--accent)', fontSize: 11, marginTop: 4 }}>Recommended: 1920×600px</p>
+                            </div>
+                        )}
+                    </div>
+                    <div className="form-grid" style={{ marginTop: 20 }}>
+                        <div className="form-group">
+                            <label className="form-label">Section Label</label>
+                            <input type="text" className="form-input" value={config.section_label}
+                                onChange={e => setConfigField('section_label', e.target.value)}
+                                placeholder="e.g. Water & Healing" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Section Title</label>
+                            <input type="text" className="form-input" value={config.section_title}
+                                onChange={e => setConfigField('section_title', e.target.value)}
+                                placeholder="e.g. Restore Through Stillness" />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Section Subtitle</label>
+                            <input type="text" className="form-input" value={config.section_subtitle}
+                                onChange={e => setConfigField('section_subtitle', e.target.value)}
+                                placeholder="Brief subtitle..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Intro Paragraph</label>
+                            <textarea className="form-input form-textarea" rows={3}
+                                value={config.intro_paragraph}
+                                onChange={e => setConfigField('intro_paragraph', e.target.value)}
+                                placeholder="Introduce your wellness facilities..." />
+                        </div>
                     </div>
                 </div>
             </section>
 
+            {/* Featured Facilities for Website */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <div>
+                        <h3 className="form-section-title">Featured Facilities for Website</h3>
+                        <p className="form-section-subtitle">These appear as cards on your public listing. Enable "Show on Website" to feature them.</p>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 500 }}>
+                        {items.filter(f => f.show_on_website).length} shown
+                    </span>
+                </div>
+                <div className="form-section-body">
+                    {items.map((item, idx) => (
+                        <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 8, marginBottom: 12, overflow: 'hidden' }}>
+                            {/* Item Header */}
+                            <div style={{ padding: '12px 16px', background: 'var(--secondary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                                onClick={() => setExpandedItems(p => ({ ...p, [idx]: !p[idx] }))}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    {item.facility_image && (
+                                        <img src={item.facility_image} alt="" style={{ width: 48, height: 34, objectFit: 'cover', borderRadius: 4 }} />
+                                    )}
+                                    <div>
+                                        <span style={{ fontWeight: 600, fontSize: 14 }}>{item.facility_name || 'New Facility'}</span>
+                                        {item.facility_type && <span style={{ fontSize: 12, color: 'var(--accent)', marginLeft: 8 }}>{item.facility_type}</span>}
+                                        {item.setting && <span style={{ fontSize: 12, color: 'var(--accent)', marginLeft: 8 }}>· {item.setting}</span>}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => e.stopPropagation()}>
+                                    <div className="toggle-container">
+                                        <div className={`toggle ${item.show_on_website ? 'active' : ''}`}
+                                            onClick={() => updateItem(idx, 'show_on_website', !item.show_on_website)}>
+                                            <div className="toggle-knob"></div>
+                                        </div>
+                                        <span className="toggle-label" style={{ fontSize: 12 }}>Show on Website</span>
+                                    </div>
+                                    <button onClick={() => deleteItem(idx)} className="btn-danger-sm" title="Delete">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Item Body */}
+                            {expandedItems[idx] && (
+                                <div style={{ padding: 16 }}>
+                                    <div className="form-grid">
+                                        {/* Image */}
+                                        <div className="form-group full-width">
+                                            <label className="form-label">Facility Image</label>
+                                            <input ref={el => itemImageRefs.current[idx] = el} type="file" accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={e => { if (e.target.files?.[0]) handleItemImageUpload(idx, e.target.files[0]); }} />
+                                            {item.facility_image ? (
+                                                <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', maxWidth: 300 }}>
+                                                    <img src={item.facility_image} alt="" style={{ width: '100%', height: 130, objectFit: 'cover', display: 'block' }} />
+                                                    <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 6 }}>
+                                                        <button onClick={() => itemImageRefs.current[idx]?.click()} className="btn-secondary" style={{ padding: '3px 8px', fontSize: 11 }}>Replace</button>
+                                                        <button onClick={() => updateItem(idx, 'facility_image', '')} className="btn-danger-sm"><X size={13} /></button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div onClick={() => itemImageRefs.current[idx]?.click()}
+                                                    style={{ border: '2px dashed rgba(184,184,184,0.4)', borderRadius: 8, padding: 24, textAlign: 'center', cursor: 'pointer', background: 'var(--secondary-bg)', maxWidth: 300 }}>
+                                                    {itemImageUploading[idx] ? <Loader size={22} className="spin" /> : <UploadCloud size={22} color="#B8B8B8" />}
+                                                    <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 6 }}>Upload facility image</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label className="form-label">Facility Name *</label>
+                                            <input type="text" className="form-input" value={item.facility_name}
+                                                onChange={e => updateItem(idx, 'facility_name', e.target.value)}
+                                                placeholder="e.g. Infrared Sauna" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Facility Type</label>
+                                            <select className="form-input" value={item.facility_type}
+                                                onChange={e => updateItem(idx, 'facility_type', e.target.value)}>
+                                                <option value="">Select type</option>
+                                                {FACILITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Setting</label>
+                                            <select className="form-input" value={item.setting}
+                                                onChange={e => updateItem(idx, 'setting', e.target.value)}>
+                                                {SETTINGS.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Capacity</label>
+                                            <input type="number" className="form-input" value={item.capacity}
+                                                onChange={e => updateItem(idx, 'capacity', parseInt(e.target.value) || 0)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Temperature Range</label>
+                                            <input type="text" className="form-input" value={item.temperature_range}
+                                                onChange={e => updateItem(idx, 'temperature_range', e.target.value)}
+                                                placeholder="e.g. 60–75°C" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Operating Hours / Access Note</label>
+                                            <input type="text" className="form-input" value={item.operating_hours}
+                                                onChange={e => updateItem(idx, 'operating_hours', e.target.value)}
+                                                placeholder="e.g. Included with all stays" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Private</label>
+                                            <div className="toggle-container">
+                                                <div className={`toggle ${item.is_private ? 'active' : ''}`}
+                                                    onClick={() => updateItem(idx, 'is_private', !item.is_private)}>
+                                                    <div className="toggle-knob"></div>
+                                                </div>
+                                                <span className="toggle-label">{item.is_private ? 'Private' : 'Shared'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Available</label>
+                                            <div className="toggle-container">
+                                                <div className={`toggle ${item.is_available ? 'active' : ''}`}
+                                                    onClick={() => updateItem(idx, 'is_available', !item.is_available)}>
+                                                    <div className="toggle-knob"></div>
+                                                </div>
+                                                <span className="toggle-label">{item.is_available ? 'Yes' : 'No'}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Pool-specific fields */}
+                                        {(item.facility_type === 'Pool' || item.facility_type === 'Cold Plunge') && (
+                                            <>
+                                                <div className="form-group">
+                                                    <label className="form-label">Pool Type</label>
+                                                    <input type="text" className="form-input" value={item.pool_type}
+                                                        onChange={e => updateItem(idx, 'pool_type', e.target.value)}
+                                                        placeholder="e.g. Plunge, Lap, Mineral" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label className="form-label">Pool Size</label>
+                                                    <input type="text" className="form-input" value={item.pool_size}
+                                                        onChange={e => updateItem(idx, 'pool_size', e.target.value)}
+                                                        placeholder="e.g. 4m × 2m" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label className="form-label">Pool Depth</label>
+                                                    <input type="text" className="form-input" value={item.pool_depth}
+                                                        onChange={e => updateItem(idx, 'pool_depth', e.target.value)}
+                                                        placeholder="e.g. 1.2m" />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label className="form-label">Heated</label>
+                                                    <div className="toggle-container">
+                                                        <div className={`toggle ${item.is_heated ? 'active' : ''}`}
+                                                            onClick={() => updateItem(idx, 'is_heated', !item.is_heated)}>
+                                                            <div className="toggle-knob"></div>
+                                                        </div>
+                                                        <span className="toggle-label">{item.is_heated ? 'Yes' : 'No'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label className="form-label">Lap Swimming</label>
+                                                    <div className="toggle-container">
+                                                        <div className={`toggle ${item.lap_swimming ? 'active' : ''}`}
+                                                            onClick={() => updateItem(idx, 'lap_swimming', !item.lap_swimming)}>
+                                                            <div className="toggle-knob"></div>
+                                                        </div>
+                                                        <span className="toggle-label">{item.lap_swimming ? 'Yes' : 'No'}</span>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div className="form-group full-width">
+                                            <label className="form-label">Website Display Title</label>
+                                            <input type="text" className="form-input" value={item.website_display_title}
+                                                onChange={e => updateItem(idx, 'website_display_title', e.target.value)}
+                                                placeholder="Title shown on website (if different from name)" />
+                                        </div>
+                                        <div className="form-group full-width">
+                                            <label className="form-label">Website Description</label>
+                                            <textarea className="form-input form-textarea" rows={2}
+                                                value={item.website_description}
+                                                onChange={e => updateItem(idx, 'website_description', e.target.value)}
+                                                placeholder="Description shown on website..." />
+                                        </div>
+
+                                        {/* Features / Tags */}
+                                        <div className="form-group full-width">
+                                            <label className="form-label">Features / Tags</label>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                                                {item.features.map((feat, fi) => (
+                                                    <span key={fi} style={{ background: 'var(--secondary-bg)', border: '1px solid var(--border)', padding: '3px 10px', borderRadius: 12, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        {feat}
+                                                        <button onClick={() => removeFeature(idx, fi)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--accent)' }}>
+                                                            <X size={12} />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <input type="text" className="form-input" style={{ flex: 1 }}
+                                                    id={`feat-input-r-${idx}`}
+                                                    placeholder="e.g. Chromotherapy, Full spectrum — press Enter"
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            const val = (e.target as HTMLInputElement).value;
+                                                            addFeature(idx, val);
+                                                            (e.target as HTMLInputElement).value = '';
+                                                        }
+                                                    }} />
+                                                <button className="btn-secondary" style={{ padding: '0 14px', fontSize: 13 }}
+                                                    onClick={() => {
+                                                        const input = document.getElementById(`feat-input-r-${idx}`) as HTMLInputElement;
+                                                        if (input) { addFeature(idx, input.value); input.value = ''; }
+                                                    }}>Add</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    <button className="btn-secondary" onClick={addItem} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <Plus size={16} /> Add Facility
+                    </button>
+                </div>
+            </section>
+
+            {/* Facility Summary */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Facility Summary</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Total Facility Space (sqm)</label>
+                            <input type="number" className="form-input" value={config.facility_space_sqm}
+                                onChange={e => setConfigField('facility_space_sqm', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Facility Philosophy</label>
+                            <input type="text" className="form-input" value={config.facility_philosophy}
+                                onChange={e => setConfigField('facility_philosophy', e.target.value)}
+                                placeholder="e.g. Urban sanctuary combining modern wellness" />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Facility Highlights</label>
+                            <textarea className="form-input form-textarea" rows={3}
+                                value={config.facility_highlights}
+                                onChange={e => setConfigField('facility_highlights', e.target.value)}
+                                placeholder="Brief overview of key facilities..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Treatment Rooms */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Treatment Rooms</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Total Treatment Rooms</label>
+                            <input type="number" className="form-input" value={config.total_treatment_rooms}
+                                onChange={e => setConfigField('total_treatment_rooms', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Private Treatment Suites</label>
+                            <input type="number" className="form-input" value={config.private_suites}
+                                onChange={e => setConfigField('private_suites', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Couples Rooms</label>
+                            <input type="number" className="form-input" value={config.couples_rooms}
+                                onChange={e => setConfigField('couples_rooms', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Group Treatment Spaces</label>
+                            <input type="number" className="form-input" value={config.group_spaces}
+                                onChange={e => setConfigField('group_spaces', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Room Sizes</label>
+                            <input type="text" className="form-input" value={config.room_sizes}
+                                onChange={e => setConfigField('room_sizes', e.target.value)}
+                                placeholder="e.g. 12–18 sqm per room" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Treatment Tables Available</label>
+                            <div className="toggle-container">
+                                <div className={`toggle ${config.tables_available ? 'active' : ''}`}
+                                    onClick={() => setConfigField('tables_available', !config.tables_available)}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{config.tables_available ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Specialized Equipment</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.specialized_equipment}
+                                onChange={e => setConfigField('specialized_equipment', e.target.value)}
+                                placeholder="e.g. Electric height-adjustable tables, hot stone warmers..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Treatment Room Features</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.room_features}
+                                onChange={e => setConfigField('room_features', e.target.value)}
+                                placeholder="e.g. Dimmable lighting, integrated sound systems..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Supporting Facilities */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Supporting Facilities</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        {SUPPORTING_OPTIONS.map(opt => (
+                            <div key={opt} className="wa-inclusion-item"
+                                onClick={() => toggleArrayItem('supporting_facilities', opt)}>
+                                <div className={`wa-inclusion-check ${config.supporting_facilities.includes(opt) ? 'active' : ''}`}>
+                                    {config.supporting_facilities.includes(opt) && <Check size={10} color="#fff" strokeWidth={3} />}
+                                </div>
+                                <span>{opt}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="form-grid" style={{ marginTop: 20 }}>
+                        <div className="form-group">
+                            <label className="form-label">Steam Room Count</label>
+                            <input type="number" className="form-input" value={config.steam_room_count}
+                                onChange={e => setConfigField('steam_room_count', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Support Facilities Details</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.support_details}
+                                onChange={e => setConfigField('support_details', e.target.value)}
+                                placeholder="Describe your supporting facilities..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Thermal & Sauna */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Thermal & Sauna Facilities</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        {THERMAL_OPTIONS.map(opt => (
+                            <div key={opt} className="wa-inclusion-item"
+                                onClick={() => toggleArrayItem('thermal_types', opt)}>
+                                <div className={`wa-inclusion-check ${config.thermal_types.includes(opt) ? 'active' : ''}`}>
+                                    {config.thermal_types.includes(opt) && <Check size={10} color="#fff" strokeWidth={3} />}
+                                </div>
+                                <span>{opt}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="form-grid" style={{ marginTop: 20 }}>
+                        <div className="form-group">
+                            <label className="form-label">Indoor Pool Count</label>
+                            <input type="number" className="form-input" value={config.indoor_pool_count}
+                                onChange={e => setConfigField('indoor_pool_count', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Outdoor Pool Count</label>
+                            <input type="number" className="form-input" value={config.outdoor_pool_count}
+                                onChange={e => setConfigField('outdoor_pool_count', parseInt(e.target.value) || 0)} />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Pool / Thermal Features</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.thermal_features}
+                                onChange={e => setConfigField('thermal_features', e.target.value)}
+                                placeholder="Describe your thermal and sauna facilities..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Traditional Bathing */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Traditional Bathing Facilities</h3>
+                    <span style={{ fontSize: 12, color: 'var(--accent)' }}>For venues with traditional bathing culture</span>
+                </div>
+                <div className="form-section-body">
+                    {Object.entries(config.bathing_sections).map(([key, section]) => (
+                        <div key={key} className="wf-collapsible-section">
+                            <div className="wf-collapsible-header"
+                                onClick={() => setConfig(c => ({
+                                    ...c,
+                                    bathing_sections: { ...c.bathing_sections, [key]: { ...c.bathing_sections[key], active: !c.bathing_sections[key].active } }
+                                }))}>
+                                <h4 className="wf-collapsible-title">{section.title}</h4>
+                                <div className="toggle-container" onClick={e => e.stopPropagation()}>
+                                    <div className={`toggle ${section.active ? 'active' : ''}`}
+                                        onClick={() => setConfig(c => ({
+                                            ...c,
+                                            bathing_sections: { ...c.bathing_sections, [key]: { ...c.bathing_sections[key], active: !c.bathing_sections[key].active } }
+                                        }))}>
+                                        <div className="toggle-knob"></div>
+                                    </div>
+                                    <span className="toggle-label">{section.active ? 'Available' : 'Not Available'}</span>
+                                </div>
+                            </div>
+                            {section.active && (
+                                <div className="wf-collapsible-body">
+                                    <div className="form-group">
+                                        <label className="form-label">Details</label>
+                                        <textarea className="form-input form-textarea" rows={2}
+                                            value={section.details || ''}
+                                            onChange={e => setConfig(c => ({
+                                                ...c,
+                                                bathing_sections: { ...c.bathing_sections, [key]: { ...c.bathing_sections[key], details: e.target.value } }
+                                            }))}
+                                            placeholder={`Details about ${section.title}...`} />
+                                    </div>
+                                </div>
+                            )}
+                            {!section.active && (
+                                <div className="wf-collapsible-body inactive">
+                                    <p className="wf-inactive-note">Enable toggle to add {section.title} details.</p>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Medical Spa */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Medical Spa Facilities</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Medical Spa Suites</label>
+                            <div className="toggle-container">
+                                <div className={`toggle ${config.med_spa_suites ? 'active' : ''}`}
+                                    onClick={() => setConfigField('med_spa_suites', !config.med_spa_suites)}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{config.med_spa_suites ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        {config.med_spa_suites && (
+                            <div className="form-group">
+                                <label className="form-label">Medical Suite Count</label>
+                                <input type="number" className="form-input" value={config.med_suite_count}
+                                    onChange={e => setConfigField('med_suite_count', parseInt(e.target.value) || 0)} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* Changing & Locker */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Changing & Locker Facilities</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group full-width">
+                            <label className="form-label">Changing / Locker Facilities</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.changing_details}
+                                onChange={e => setConfigField('changing_details', e.target.value)}
+                                placeholder="Describe changing rooms and locker facilities..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Shower Facilities</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.shower_details}
+                                onChange={e => setConfigField('shower_details', e.target.value)}
+                                placeholder="Describe shower facilities..." />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Towels & Robes Provided</label>
+                            <div className="toggle-container">
+                                <div className={`toggle ${config.towels_provided ? 'active' : ''}`}
+                                    onClick={() => setConfigField('towels_provided', !config.towels_provided)}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{config.towels_provided ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Slippers & Amenities Provided</label>
+                            <div className="toggle-container">
+                                <div className={`toggle ${config.slippers_provided ? 'active' : ''}`}
+                                    onClick={() => setConfigField('slippers_provided', !config.slippers_provided)}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{config.slippers_provided ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Additional Amenities</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.changing_amenities}
+                                onChange={e => setConfigField('changing_amenities', e.target.value)}
+                                placeholder="e.g. Hairdryers, complimentary toiletries..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Certifications & Standards */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Certifications & Standards</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group full-width">
+                            <label className="form-label">Medical Certifications</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.med_certs}
+                                onChange={e => setConfigField('med_certs', e.target.value)}
+                                placeholder="e.g. N/A - Day spa (non-medical)" />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Traditional Practice Certifications</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.trad_certs}
+                                onChange={e => setConfigField('trad_certs', e.target.value)}
+                                placeholder="e.g. All therapists hold Diploma of Remedial Massage..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Water Quality Testing</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.water_testing}
+                                onChange={e => setConfigField('water_testing', e.target.value)}
+                                placeholder="Water testing and maintenance schedule..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Safety Standards</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.safety_standards}
+                                onChange={e => setConfigField('safety_standards', e.target.value)}
+                                placeholder="Health and safety compliance details..." />
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Sustainability Practices</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.sustainability}
+                                onChange={e => setConfigField('sustainability', e.target.value)}
+                                placeholder="Sustainability and eco-friendly practices..." />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Accessibility */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Accessibility</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="wa-inclusions-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        {ACCESS_OPTIONS.map(opt => (
+                            <div key={opt} className="wa-inclusion-item"
+                                onClick={() => toggleArrayItem('accessibility_features', opt)}>
+                                <div className={`wa-inclusion-check ${config.accessibility_features.includes(opt) ? 'active' : ''}`}>
+                                    {config.accessibility_features.includes(opt) && <Check size={10} color="#fff" strokeWidth={3} />}
+                                </div>
+                                <span>{opt}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Other Wellness Facilities */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <h3 className="form-section-title">Other Wellness Facilities</h3>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Other Wellness Facilities</label>
+                            <div className="toggle-container">
+                                <div className={`toggle ${config.other_facilities_available ? 'active' : ''}`}
+                                    onClick={() => setConfigField('other_facilities_available', !config.other_facilities_available)}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{config.other_facilities_available ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Other Facility Types</label>
+                            <textarea className="form-input form-textarea" rows={2}
+                                value={config.other_facility_types}
+                                onChange={e => setConfigField('other_facility_types', e.target.value)}
+                                placeholder="Describe any other wellness facilities not covered above..."
+                                disabled={!config.other_facilities_available} />
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }

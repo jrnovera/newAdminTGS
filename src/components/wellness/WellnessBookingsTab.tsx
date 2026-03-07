@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users, Download, Upload, X, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Venue } from '../../context/VenueContext';
@@ -30,6 +31,18 @@ interface Booking {
     source: string;
 }
 
+interface PkgOption {
+    name: string;
+    type: string;
+    price: string;
+    per: string;
+}
+
+const TIME_SLOTS = [
+    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+    '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM',
+];
+
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -47,48 +60,52 @@ export default function WellnessBookingsTab({ venue }: Props) {
     const [viewYear, setViewYear]   = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-    // Selection — multi-select dates
+    // Multi-select dates
     const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
 
     // Data from Supabase
-    const [blocks, setBlocks]   = useState<DateBlock[]>([]);
+    const [blocks, setBlocks]     = useState<DateBlock[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading]   = useState(true);
 
-    // Filter tab for booking list
+    // Filter tab
     const [activeBookingTab, setActiveBookingTab] = useState('All');
 
-    // Modals
+    // Block modal
     const [showBlockModal, setShowBlockModal] = useState(false);
-    const [blockReason, setBlockReason]         = useState('');
-    const [blockSaving, setBlockSaving]         = useState(false);
+    const [blockReason, setBlockReason]       = useState('');
+    const [blockSaving, setBlockSaving]       = useState(false);
 
+    // Booking modal
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [modalLoading, setModalLoading]         = useState(false);
+    const [bookingDate, setBookingDate]           = useState('');
+    const [availablePackages, setAvailablePackages] = useState<PkgOption[]>([]);
+    const [selectedPkgIdx, setSelectedPkgIdx]     = useState<number | null>(null);
+    const [customServiceName, setCustomServiceName] = useState('');
+    const [selectedTimeSlots, setSelectedTimeSlots] = useState<Set<string>>(new Set());
+    const [dateBookings, setDateBookings]           = useState<Booking[]>([]);
     const [bookingForm, setBookingForm] = useState({
-        guest_name: '',
+        guest_name:  '',
         guest_email: '',
         guest_phone: '',
-        service_name: '',
-        time_slot: '',
-        guests: 1,
-        amount: '',
-        notes: '',
-        status: 'confirmed' as Booking['status'],
+        guests:      1,
+        amount:      '',
+        notes:       '',
+        status:      'confirmed' as Booking['status'],
     });
     const [bookingSaving, setBookingSaving] = useState(false);
 
     // -------------------------------------------------------------------------
-    // Fetch data
+    // Fetch
     // -------------------------------------------------------------------------
     const fetchData = useCallback(async () => {
         if (!venue.id) return;
         setLoading(true);
-
         const [blocksRes, bookingsRes] = await Promise.all([
             supabase.from('venue_date_blocks').select('id, block_date, reason').eq('venue_id', venue.id),
             supabase.from('venue_bookings').select('*').eq('venue_id', venue.id).order('check_in_date', { ascending: false }),
         ]);
-
         setBlocks(blocksRes.data || []);
         setBookings(bookingsRes.data || []);
         setLoading(false);
@@ -101,17 +118,13 @@ export default function WellnessBookingsTab({ venue }: Props) {
     // -------------------------------------------------------------------------
     const blockedSet = new Set(blocks.map(b => b.block_date));
     const bookedSet  = new Set(
-        bookings
-            .filter(b => b.status === 'confirmed' || b.status === 'pending')
-            .map(b => b.check_in_date)
+        bookings.filter(b => b.status === 'confirmed' || b.status === 'pending').map(b => b.check_in_date)
     );
-    const pendingSet = new Set(
-        bookings.filter(b => b.status === 'pending').map(b => b.check_in_date)
-    );
+    const pendingSet = new Set(bookings.filter(b => b.status === 'pending').map(b => b.check_in_date));
 
-    const daysInMonth   = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
-    const daysInPrev    = new Date(viewYear, viewMonth, 0).getDate();
+    const daysInMonth    = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInPrev     = new Date(viewYear, viewMonth, 0).getDate();
 
     function prevMonth() {
         if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
@@ -151,22 +164,13 @@ export default function WellnessBookingsTab({ venue }: Props) {
     }
 
     // -------------------------------------------------------------------------
-    // Block Dates action
+    // Block Dates
     // -------------------------------------------------------------------------
     async function handleBlockDates() {
         if (selectedDates.size === 0) return;
         setBlockSaving(true);
-
-        const rows = Array.from(selectedDates).map(d => ({
-            venue_id: venue.id,
-            block_date: d,
-            reason: blockReason || null,
-        }));
-
-        const { error } = await supabase
-            .from('venue_date_blocks')
-            .upsert(rows, { onConflict: 'venue_id,block_date' });
-
+        const rows = Array.from(selectedDates).map(d => ({ venue_id: venue.id, block_date: d, reason: blockReason || null }));
+        const { error } = await supabase.from('venue_date_blocks').upsert(rows, { onConflict: 'venue_id,block_date' });
         if (!error) {
             await fetchData();
             setShowBlockModal(false);
@@ -182,41 +186,185 @@ export default function WellnessBookingsTab({ venue }: Props) {
     }
 
     // -------------------------------------------------------------------------
-    // Add Booking action
+    // Open Booking Modal — fetch packages + existing bookings for that date
+    // -------------------------------------------------------------------------
+    async function openBookingModal() {
+        const date = Array.from(selectedDates).sort()[0];
+        setBookingDate(date);
+        setSelectedPkgIdx(null);
+        setCustomServiceName('');
+        setSelectedTimeSlots(new Set());
+        setDateBookings([]);
+        setBookingForm({ guest_name: '', guest_email: '', guest_phone: '', guests: 1, amount: '', notes: '', status: 'confirmed' });
+        setModalLoading(true);
+        setShowBookingModal(true);
+
+        const [pricingRes, dateBookingsRes] = await Promise.all([
+            supabase
+                .from('venue_pricing')
+                .select('packages')
+                .eq('venue_id', venue.id)
+                .eq('venue_type', 'wellness')
+                .maybeSingle(),
+            supabase
+                .from('venue_bookings')
+                .select('*')
+                .eq('venue_id', venue.id)
+                .eq('check_in_date', date)
+                .in('status', ['confirmed', 'pending']),
+        ]);
+
+        // Parse packages from JSON
+        let pkgs: PkgOption[] = [];
+        if (pricingRes.data?.packages) {
+            try {
+                const raw = typeof pricingRes.data.packages === 'string'
+                    ? JSON.parse(pricingRes.data.packages)
+                    : pricingRes.data.packages;
+                pkgs = (raw as Array<{ name: string; type: string; price: string; per: string; active?: boolean }>)
+                    .filter(p => p.active !== false)
+                    .map(p => ({ name: p.name, type: p.type, price: p.price, per: p.per }));
+            } catch {
+                pkgs = [];
+            }
+        }
+
+        setAvailablePackages(pkgs);
+        setDateBookings(dateBookingsRes.data || []);
+        setModalLoading(false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Time slot helpers
+    // -------------------------------------------------------------------------
+    function getSlotInfo(slot: string): { status: 'available' | 'partial' | 'blocked'; count: number } {
+        const atSlot = dateBookings.filter(b => b.time_slot === slot);
+        const hasGlobalBlock = atSlot.some(b => b.service_name === null);
+        if (hasGlobalBlock) return { status: 'blocked', count: atSlot.length };
+        if (atSlot.length > 0) return { status: 'partial', count: atSlot.length };
+        return { status: 'available', count: 0 };
+    }
+
+    function getSlotStyle(slot: string): CSSProperties {
+        const info     = getSlotInfo(slot);
+        const isSel    = selectedTimeSlots.has(slot);
+
+        if (info.status === 'blocked') {
+            return {
+                background:    'rgba(220,53,53,0.10)',
+                border:        '2px solid rgba(220,53,53,0.30)',
+                color:         '#dc3535',
+                cursor:        'not-allowed',
+                opacity:       0.65,
+                borderRadius:  8,
+                padding:       '10px 6px',
+                textAlign:     'center',
+                fontSize:      13,
+                fontWeight:    500,
+                position:      'relative',
+                userSelect:    'none',
+            };
+        }
+        if (info.status === 'partial') {
+            return {
+                background:    isSel ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.08)',
+                border:        `2px solid ${isSel ? '#f59e0b' : 'rgba(245,158,11,0.40)'}`,
+                color:         '#f59e0b',
+                cursor:        'pointer',
+                borderRadius:  8,
+                padding:       '10px 6px',
+                textAlign:     'center',
+                fontSize:      13,
+                fontWeight:    500,
+                position:      'relative',
+                transition:    'all 0.15s',
+                userSelect:    'none',
+            };
+        }
+        // available
+        return {
+            background:    isSel ? 'var(--primary-btn, #2f855a)' : 'var(--secondary-bg)',
+            border:        `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
+            color:         isSel ? '#fff' : 'var(--text-primary, #e0e0e0)',
+            cursor:        'pointer',
+            borderRadius:  8,
+            padding:       '10px 6px',
+            textAlign:     'center',
+            fontSize:      13,
+            fontWeight:    500,
+            position:      'relative',
+            transition:    'all 0.15s',
+            userSelect:    'none',
+        };
+    }
+
+    function handleSelectTimeSlot(slot: string) {
+        const info = getSlotInfo(slot);
+        if (info.status === 'blocked') return;
+        setSelectedTimeSlots(prev => {
+            const next = new Set(prev);
+            if (next.has(slot)) next.delete(slot);
+            else next.add(slot);
+            return next;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Package tile selection
+    // -------------------------------------------------------------------------
+    function handleSelectPackage(idx: number) {
+        if (selectedPkgIdx === idx) {
+            setSelectedPkgIdx(null);
+            setBookingForm(p => ({ ...p, amount: '' }));
+        } else {
+            setSelectedPkgIdx(idx);
+            setCustomServiceName('');
+            const pkg = availablePackages[idx];
+            const numericPrice = parseFloat(pkg.price.replace(/[^0-9.]/g, ''));
+            if (!isNaN(numericPrice)) {
+                setBookingForm(p => ({ ...p, amount: String(numericPrice) }));
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Add Booking
     // -------------------------------------------------------------------------
     async function handleAddBooking() {
-        if (selectedDates.size === 0 || !bookingForm.guest_name) return;
+        if (!bookingDate || !bookingForm.guest_name || selectedTimeSlots.size === 0) return;
         setBookingSaving(true);
 
-        const sortedDates = Array.from(selectedDates).sort();
-        const checkIn = sortedDates[0];
+        const selectedPkg = selectedPkgIdx !== null ? availablePackages[selectedPkgIdx] : null;
+        const serviceName = selectedPkg?.name || customServiceName.trim() || null;
+        const amountVal   = bookingForm.amount ? parseFloat(bookingForm.amount) : null;
 
-        const { error } = await supabase.from('venue_bookings').insert({
-            venue_id:       venue.id,
-            guest_name:     bookingForm.guest_name,
-            guest_email:    bookingForm.guest_email || null,
-            guest_phone:    bookingForm.guest_phone || null,
-            service_name:   bookingForm.service_name || null,
-            check_in_date:  checkIn,
-            time_slot:      bookingForm.time_slot || null,
-            guests:         bookingForm.guests,
-            amount:         bookingForm.amount ? parseFloat(bookingForm.amount) : null,
-            notes:          bookingForm.notes || null,
-            status:         bookingForm.status,
-            source:         'admin',
-        });
+        const rows = Array.from(selectedTimeSlots).sort().map(slot => ({
+            venue_id:      venue.id,
+            guest_name:    bookingForm.guest_name,
+            guest_email:   bookingForm.guest_email || null,
+            guest_phone:   bookingForm.guest_phone || null,
+            service_name:  serviceName,
+            check_in_date: bookingDate,
+            time_slot:     slot,
+            guests:        bookingForm.guests,
+            amount:        amountVal,
+            notes:         bookingForm.notes || null,
+            status:        bookingForm.status,
+            source:        'admin',
+        }));
+
+        const { error } = await supabase.from('venue_bookings').insert(rows);
 
         if (!error) {
             await fetchData();
             setShowBookingModal(false);
-            setBookingForm({ guest_name:'', guest_email:'', guest_phone:'', service_name:'', time_slot:'', guests:1, amount:'', notes:'', status:'confirmed' });
             setSelectedDates(new Set());
         }
         setBookingSaving(false);
     }
 
     // -------------------------------------------------------------------------
-    // Update booking status
+    // Update / Delete booking
     // -------------------------------------------------------------------------
     async function updateBookingStatus(id: string, status: Booking['status']) {
         await supabase.from('venue_bookings').update({ status }).eq('id', id);
@@ -229,7 +377,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
     }
 
     // -------------------------------------------------------------------------
-    // Derived stats
+    // Stats
     // -------------------------------------------------------------------------
     const totalBookings     = bookings.length;
     const completedBookings = bookings.filter(b => b.status === 'completed').length;
@@ -240,30 +388,27 @@ export default function WellnessBookingsTab({ venue }: Props) {
         .reduce((sum, b) => sum + (b.amount || 0), 0);
 
     const filteredBookings = bookings.filter(b => {
-        if (activeBookingTab === 'All') return true;
-        if (activeBookingTab === 'Upcoming') return b.status === 'confirmed';
-        if (activeBookingTab === 'Pending')  return b.status === 'pending';
+        if (activeBookingTab === 'All')       return true;
+        if (activeBookingTab === 'Upcoming')  return b.status === 'confirmed';
+        if (activeBookingTab === 'Pending')   return b.status === 'pending';
         if (activeBookingTab === 'Completed') return b.status === 'completed';
         if (activeBookingTab === 'Cancelled') return b.status === 'cancelled';
         return true;
     });
 
     const tabCounts: Record<string, number> = {
-        All: totalBookings,
-        Upcoming: upcomingBookings,
-        Pending: pendingBookings,
+        All:       totalBookings,
+        Upcoming:  upcomingBookings,
+        Pending:   pendingBookings,
         Completed: completedBookings,
         Cancelled: bookings.filter(b => b.status === 'cancelled').length,
     };
 
-    // -------------------------------------------------------------------------
-    // Calendar grid cells
-    // -------------------------------------------------------------------------
-    const totalCells = 42;
+    // Calendar grid
+    const totalCells  = 42;
     const cellsBefore = firstDayOfWeek;
     const cellsAfter  = totalCells - cellsBefore - daysInMonth;
-
-    const todayKey = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayKey    = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
 
     // -------------------------------------------------------------------------
     // Render
@@ -317,7 +462,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                 </button>
                                 <button
                                     className="wvd-btn-primary wvd-btn-small"
-                                    onClick={() => setShowBookingModal(true)}
+                                    onClick={openBookingModal}
                                 >
                                     <Clock size={14} /> Add Booking
                                 </button>
@@ -334,14 +479,11 @@ export default function WellnessBookingsTab({ venue }: Props) {
                         {WEEKDAYS.map(d => <div key={d} className="wb-calendar-weekday">{d}</div>)}
                     </div>
                     <div className="wb-calendar-days">
-                        {/* Prev month padding */}
                         {Array.from({ length: cellsBefore }).map((_, i) => (
                             <div key={`prev-${i}`} className="wb-calendar-day other-month">
                                 <span className="wb-calendar-day-number">{daysInPrev - cellsBefore + i + 1}</span>
                             </div>
                         ))}
-
-                        {/* Current month */}
                         {Array.from({ length: daysInMonth }).map((_, i) => {
                             const day = i + 1;
                             const key = toDateKey(viewYear, viewMonth, day);
@@ -359,8 +501,6 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                 </div>
                             );
                         })}
-
-                        {/* Next month padding */}
                         {Array.from({ length: cellsAfter }).map((_, i) => (
                             <div key={`next-${i}`} className="wb-calendar-day other-month">
                                 <span className="wb-calendar-day-number">{i + 1}</span>
@@ -440,7 +580,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
 
                     <div className="wb-booking-list">
                         {filteredBookings.map(b => {
-                            const d = new Date(b.check_in_date + 'T00:00:00');
+                            const d   = new Date(b.check_in_date + 'T00:00:00');
                             const mon = d.toLocaleString('en', { month: 'short' });
                             const day = d.getDate();
                             const yr  = d.getFullYear();
@@ -454,7 +594,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                     </div>
                                     <div className="wb-booking-content">
                                         <div className="wb-booking-info">
-                                            <div className="wb-booking-title">{b.service_name || 'Appointment'}</div>
+                                            <div className="wb-booking-title">{b.service_name || 'General Appointment'}</div>
                                             <div className="wb-booking-subtitle">
                                                 {b.guest_name}{b.time_slot ? ` • ${b.time_slot}` : ''}
                                             </div>
@@ -466,9 +606,8 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                         </div>
                                         <div className="wb-booking-meta">
                                             <span className={`wb-booking-status ${b.status}`}>
-                                                {b.status === 'confirmed' && <Check size={12} strokeWidth={2} />}
-                                                {b.status === 'pending'   && <Clock size={12} strokeWidth={2} />}
-                                                {b.status === 'completed' && <Check size={12} strokeWidth={2} />}
+                                                {(b.status === 'confirmed' || b.status === 'completed') && <Check size={12} strokeWidth={2} />}
+                                                {b.status === 'pending' && <Clock size={12} strokeWidth={2} />}
                                                 {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                                             </span>
                                             {b.amount != null && (
@@ -569,77 +708,274 @@ export default function WellnessBookingsTab({ venue }: Props) {
             )}
 
             {/* ------------------------------------------------------------------ */}
-            {/* ADD BOOKING MODAL                                                   */}
+            {/* ADD BOOKING MODAL — redesigned                                      */}
             {/* ------------------------------------------------------------------ */}
             {showBookingModal && (
                 <div className="wvd-modal-overlay" onClick={() => setShowBookingModal(false)}>
-                    <div className="wvd-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
-                        <div className="wvd-modal-header">
-                            <h3 className="wvd-modal-title">Add Booking</h3>
+                    <div
+                        className="wvd-modal"
+                        onClick={e => e.stopPropagation()}
+                        style={{ maxWidth: 660, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                    >
+                        {/* Modal Header */}
+                        <div className="wvd-modal-header" style={{ flexShrink: 0 }}>
+                            <div>
+                                <h3 className="wvd-modal-title">Add Booking</h3>
+                                <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 2 }}>
+                                    {bookingDate ? formatDateKey(bookingDate) : '—'}
+                                </p>
+                            </div>
                             <button className="wvd-modal-close" onClick={() => setShowBookingModal(false)}><X size={20} /></button>
                         </div>
-                        <div className="wvd-modal-body">
-                            <p style={{ fontSize: 13, color: 'var(--accent)', marginBottom: 16 }}>
-                                Booking date: <strong>{Array.from(selectedDates).sort()[0] ? formatDateKey(Array.from(selectedDates).sort()[0]) : '—'}</strong>
-                            </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label className="wvd-form-label">Guest Name *</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.guest_name}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_name: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Guest Email</label>
-                                    <input type="email" className="wvd-form-input" value={bookingForm.guest_email}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_email: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Guest Phone</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.guest_phone}
-                                        onChange={e => setBookingForm(p => ({ ...p, guest_phone: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Service / Treatment</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.service_name}
-                                        placeholder="e.g. Deep Tissue Massage"
-                                        onChange={e => setBookingForm(p => ({ ...p, service_name: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Time Slot</label>
-                                    <input type="text" className="wvd-form-input" value={bookingForm.time_slot}
-                                        placeholder="e.g. 10:00 AM"
-                                        onChange={e => setBookingForm(p => ({ ...p, time_slot: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Guests</label>
-                                    <input type="number" className="wvd-form-input" min={1} value={bookingForm.guests}
-                                        onChange={e => setBookingForm(p => ({ ...p, guests: parseInt(e.target.value) || 1 }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Amount (AUD)</label>
-                                    <input type="number" className="wvd-form-input" value={bookingForm.amount}
-                                        placeholder="0.00"
-                                        onChange={e => setBookingForm(p => ({ ...p, amount: e.target.value }))} />
-                                </div>
-                                <div className="wvd-form-group">
-                                    <label className="wvd-form-label">Status</label>
-                                    <select className="wvd-form-select" value={bookingForm.status}
-                                        onChange={e => setBookingForm(p => ({ ...p, status: e.target.value as Booking['status'] }))}>
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                </div>
-                                <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label className="wvd-form-label">Notes</label>
-                                    <textarea className="wvd-form-textarea" rows={2} value={bookingForm.notes}
-                                        onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))} />
-                                </div>
-                            </div>
+
+                        {/* Modal Body — scrollable */}
+                        <div className="wvd-modal-body" style={{ overflowY: 'auto', flex: 1 }}>
+
+                            {modalLoading ? (
+                                <p style={{ fontSize: 13, color: 'var(--accent)', padding: '20px 0', textAlign: 'center' }}>
+                                    Loading services and availability…
+                                </p>
+                            ) : (
+                                <>
+                                    {/* ---- Section 1: Service / Package ---- */}
+                                    <div style={{ marginBottom: 24 }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Service / Package</h4>
+                                            <span style={{ fontSize: 11, color: 'var(--accent)' }}>Optional</span>
+                                        </div>
+
+                                        {/* No service warning */}
+                                        {selectedPkgIdx === null && !customServiceName.trim() && (
+                                            <div style={{
+                                                fontSize: 11, color: '#f59e0b',
+                                                background: 'rgba(245,158,11,0.08)',
+                                                border: '1px solid rgba(245,158,11,0.25)',
+                                                borderRadius: 6, padding: '6px 10px', marginBottom: 12,
+                                            }}>
+                                                No service selected — this time slot will be blocked for <strong>all</strong> services on this date.
+                                            </div>
+                                        )}
+
+                                        {/* Package tiles */}
+                                        {availablePackages.length > 0 ? (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 10 }}>
+                                                {availablePackages.map((pkg, idx) => {
+                                                    const isSel = selectedPkgIdx === idx;
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => handleSelectPackage(idx)}
+                                                            style={{
+                                                                background:   isSel ? 'rgba(var(--primary-rgb, 47,133,90), 0.15)' : 'var(--secondary-bg)',
+                                                                border:       `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
+                                                                borderRadius: 8,
+                                                                padding:      '10px 12px',
+                                                                textAlign:    'left',
+                                                                cursor:       'pointer',
+                                                                transition:   'all 0.15s',
+                                                            }}
+                                                        >
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                                                                <div>
+                                                                    <div style={{ fontSize: 13, fontWeight: 600, color: isSel ? 'var(--primary-btn, #2f855a)' : 'var(--text-primary, #e0e0e0)', marginBottom: 2 }}>
+                                                                        {pkg.name}
+                                                                    </div>
+                                                                    <div style={{ fontSize: 11, color: 'var(--accent)' }}>{pkg.type}</div>
+                                                                </div>
+                                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                                    <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--primary-btn, #2f855a)' : 'var(--text-primary, #e0e0e0)' }}>
+                                                                        {pkg.price}
+                                                                    </div>
+                                                                    <div style={{ fontSize: 10, color: 'var(--accent)' }}>{pkg.per}</div>
+                                                                </div>
+                                                            </div>
+                                                            {isSel && (
+                                                                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--primary-btn, #2f855a)' }}>
+                                                                    <Check size={11} strokeWidth={2.5} /> Selected
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <p style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 10 }}>
+                                                No packages configured for this venue yet.
+                                            </p>
+                                        )}
+
+                                        {/* Custom service name */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            {availablePackages.length > 0 && (
+                                                <span style={{ fontSize: 12, color: 'var(--accent)', flexShrink: 0 }}>or</span>
+                                            )}
+                                            <input
+                                                type="text"
+                                                className="wvd-form-input"
+                                                placeholder="Enter custom service name…"
+                                                value={customServiceName}
+                                                onChange={e => {
+                                                    setCustomServiceName(e.target.value);
+                                                    if (e.target.value) setSelectedPkgIdx(null);
+                                                }}
+                                                style={{ fontSize: 13 }}
+                                            />
+                                            {(selectedPkgIdx !== null || customServiceName) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setSelectedPkgIdx(null); setCustomServiceName(''); setBookingForm(p => ({ ...p, amount: '' })); }}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
+                                                >
+                                                    Clear
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* ---- Section 2: Time Slot ---- */}
+                                    <div style={{ marginBottom: 24 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <h4 style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>
+                                                Select Time Slot(s) <span style={{ color: '#dc3535' }}>*</span>
+                                            </h4>
+                                            {selectedTimeSlots.size > 0 && (
+                                                <span style={{ fontSize: 12, color: 'var(--primary-btn, #2f855a)', fontWeight: 500 }}>
+                                                    {selectedTimeSlots.size} slot{selectedTimeSlots.size > 1 ? 's' : ''} selected
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                                            {TIME_SLOTS.map(slot => {
+                                                const info = getSlotInfo(slot);
+                                                return (
+                                                    <div
+                                                        key={slot}
+                                                        style={getSlotStyle(slot)}
+                                                        onClick={() => handleSelectTimeSlot(slot)}
+                                                    >
+                                                        <div>{slot}</div>
+                                                        {info.count > 0 && (
+                                                            <div style={{
+                                                                fontSize: 10,
+                                                                marginTop: 3,
+                                                                opacity: 0.85,
+                                                            }}>
+                                                                {info.status === 'blocked'
+                                                                    ? 'Unavailable'
+                                                                    : `${info.count} booked`}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Legend */}
+                                        <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+                                            {[
+                                                { color: 'var(--primary-btn, #2f855a)', label: 'Available' },
+                                                { color: '#f59e0b', label: 'Partially booked' },
+                                                { color: '#dc3535', label: 'Unavailable' },
+                                            ].map(item => (
+                                                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--accent)' }}>
+                                                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, display: 'inline-block', flexShrink: 0 }} />
+                                                    {item.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* ---- Section 3: Guest Details ---- */}
+                                    <div>
+                                        <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px' }}>Guest Details</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="wvd-form-label">Guest Name <span style={{ color: '#dc3535' }}>*</span></label>
+                                                <input
+                                                    type="text"
+                                                    className="wvd-form-input"
+                                                    value={bookingForm.guest_name}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_name: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Guest Email</label>
+                                                <input
+                                                    type="email"
+                                                    className="wvd-form-input"
+                                                    value={bookingForm.guest_email}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_email: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Guest Phone</label>
+                                                <input
+                                                    type="text"
+                                                    className="wvd-form-input"
+                                                    value={bookingForm.guest_phone}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guest_phone: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Guests</label>
+                                                <input
+                                                    type="number"
+                                                    className="wvd-form-input"
+                                                    min={1}
+                                                    value={bookingForm.guests}
+                                                    onChange={e => setBookingForm(p => ({ ...p, guests: parseInt(e.target.value) || 1 }))}
+                                                />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Amount (AUD)</label>
+                                                <input
+                                                    type="number"
+                                                    className="wvd-form-input"
+                                                    value={bookingForm.amount}
+                                                    placeholder="0.00"
+                                                    onChange={e => setBookingForm(p => ({ ...p, amount: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="wvd-form-group">
+                                                <label className="wvd-form-label">Status</label>
+                                                <select
+                                                    className="wvd-form-select"
+                                                    value={bookingForm.status}
+                                                    onChange={e => setBookingForm(p => ({ ...p, status: e.target.value as Booking['status'] }))}
+                                                >
+                                                    <option value="confirmed">Confirmed</option>
+                                                    <option value="pending">Pending</option>
+                                                </select>
+                                            </div>
+                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="wvd-form-label">Notes</label>
+                                                <textarea
+                                                    className="wvd-form-textarea"
+                                                    rows={2}
+                                                    value={bookingForm.notes}
+                                                    onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <div className="wvd-modal-footer">
+
+                        {/* Modal Footer */}
+                        <div className="wvd-modal-footer" style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: 11, color: 'var(--accent)', flex: 1 }}>
+                                {selectedTimeSlots.size === 0 && <span style={{ color: '#dc3535' }}>Please select at least one time slot</span>}
+                                {selectedTimeSlots.size > 0 && !bookingForm.guest_name && <span style={{ color: '#dc3535' }}>Please enter guest name</span>}
+                            </div>
                             <button className="wvd-btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
-                            <button className="wvd-btn-primary" onClick={handleAddBooking}
-                                disabled={bookingSaving || !bookingForm.guest_name}>
+                            <button
+                                className="wvd-btn-primary"
+                                onClick={handleAddBooking}
+                                disabled={bookingSaving || !bookingForm.guest_name || selectedTimeSlots.size === 0 || modalLoading}
+                            >
                                 {bookingSaving ? 'Saving…' : 'Add Booking'}
                             </button>
                         </div>

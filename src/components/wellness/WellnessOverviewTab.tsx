@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Plus, X, Image as ImageIcon } from 'lucide-react';
+import { uploadFile } from '../../lib/storage';
 import type { Venue } from '../../context/VenueContext';
 
 interface Props {
@@ -147,6 +148,33 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                 Sunday: { open: '10:00 AM', close: '5:00 PM', isOpen: true },
             }
     );
+
+    const [galleryPhotos, setGalleryPhotos] = useState<string[]>(venue.galleryPhotos || []);
+    const [galleryUploading, setGalleryUploading] = useState(false);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
+
+    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        setGalleryUploading(true);
+        try {
+            const urls = await Promise.all(files.map(f => uploadFile(f)));
+            const updated = [...galleryPhotos, ...urls];
+            setGalleryPhotos(updated);
+            onUpdate({ galleryPhotos: updated });
+        } catch (err) {
+            console.error('Gallery upload failed:', err);
+        } finally {
+            setGalleryUploading(false);
+            if (galleryInputRef.current) galleryInputRef.current.value = '';
+        }
+    };
+
+    const removeGalleryPhoto = (index: number) => {
+        const updated = galleryPhotos.filter((_, i) => i !== index);
+        setGalleryPhotos(updated);
+        onUpdate({ galleryPhotos: updated });
+    };
 
     const update = (field: string, value: any) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -530,15 +558,41 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                 </div>
                 <div className="form-section-body">
                     <div className="image-gallery">
-                        {[1, 2, 3].map(i => (
+                        {galleryPhotos.map((url, i) => (
+                            <div key={i} className="image-item" style={{ position: 'relative', backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => removeGalleryPhoto(i)}
+                                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                >
+                                    <X size={13} color="#fff" />
+                                </button>
+                            </div>
+                        ))}
+                        {galleryPhotos.length === 0 && [0, 1, 2].map(i => (
                             <div key={i} className="image-item">
                                 <ImageIcon size={40} strokeWidth={1} color="var(--accent)" />
                             </div>
                         ))}
-                        <div className="image-item add-new">
-                            <Plus size={40} strokeWidth={1.5} color="var(--accent)" />
+                        <div
+                            className="image-item add-new"
+                            onClick={() => !galleryUploading && galleryInputRef.current?.click()}
+                            style={{ cursor: galleryUploading ? 'wait' : 'pointer' }}
+                        >
+                            {galleryUploading
+                                ? <span style={{ fontSize: 12, color: 'var(--accent)' }}>Uploading…</span>
+                                : <Plus size={40} strokeWidth={1.5} color="var(--accent)" />
+                            }
                         </div>
                     </div>
+                    <input
+                        ref={galleryInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: 'none' }}
+                        onChange={handleGalleryUpload}
+                    />
                 </div>
             </section>
         </div>

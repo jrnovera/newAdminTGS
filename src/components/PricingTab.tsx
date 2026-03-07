@@ -1,15 +1,328 @@
-import { Plus, Check, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, UploadCloud, Save, Loader } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { uploadFile } from '../lib/storage';
 import type { Venue } from '../context/VenueContext';
 
 interface PricingTabProps {
     venue: Venue;
-    onUpdate: (updates: Partial<Venue>) => void;
 }
 
-export default function PricingTab(_props: PricingTabProps) {
+interface SeasonRow {
+    id?: string;
+    season_name: string;
+    date_range: string;
+    season_type: string;
+    nightly_rate: number;
+    minimum_stay: string;
+}
+
+interface PricingData {
+    pricing_hero_image: string;
+    section_label: string;
+    section_title: string;
+    section_subtitle: string;
+    currency: string;
+    pricing_model: string;
+    price_range_category: string;
+    base_nightly_rate: number;
+    weekend_rate: number;
+    weekly_rate: number;
+    cleaning_fee: number;
+    group_discounts_available: boolean;
+    group_discount_percentage: number;
+    min_nights_for_discount: number;
+    group_discount_details: string;
+    holiday_surcharge_percentage: number;
+    min_stay_default: number;
+    min_stay_weekends: number;
+    max_stay: number;
+    advance_booking_required: string;
+    booking_window_opens: string;
+    checkin_day_restrictions: string;
+    checkin_time: string;
+    checkout_time: string;
+    booking_deposit: string;
+    deposit_due: string;
+    balance_due: string;
+    security_bond: number;
+    bond_collection_method: string;
+    accepted_payment_methods: string[];
+    cancellation_policy_type: string;
+    cancellation_grace_period: string;
+    refund_policy_details: string;
+    pricing_notes: string;
+}
+
+const DEFAULT_DATA: PricingData = {
+    pricing_hero_image: '',
+    section_label: 'Booking & Terms',
+    section_title: 'Plan Your Retreat',
+    section_subtitle: '',
+    currency: 'AUD',
+    pricing_model: '',
+    price_range_category: '',
+    base_nightly_rate: 0,
+    weekend_rate: 0,
+    weekly_rate: 0,
+    cleaning_fee: 0,
+    group_discounts_available: false,
+    group_discount_percentage: 0,
+    min_nights_for_discount: 3,
+    group_discount_details: '',
+    holiday_surcharge_percentage: 0,
+    min_stay_default: 1,
+    min_stay_weekends: 1,
+    max_stay: 0,
+    advance_booking_required: '',
+    booking_window_opens: '',
+    checkin_day_restrictions: '',
+    checkin_time: '',
+    checkout_time: '',
+    booking_deposit: '',
+    deposit_due: '',
+    balance_due: '',
+    security_bond: 0,
+    bond_collection_method: '',
+    accepted_payment_methods: [],
+    cancellation_policy_type: '',
+    cancellation_grace_period: '',
+    refund_policy_details: '',
+    pricing_notes: '',
+};
+
+const PAYMENT_METHODS = ['Credit Card', 'Debit Card', 'Bank Transfer', 'Cash', 'EFTPOS'];
+
+export default function PricingTab({ venue }: PricingTabProps) {
+    const [data, setData] = useState<PricingData>(DEFAULT_DATA);
+    const [seasons, setSeasons] = useState<SeasonRow[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveMsg, setSaveMsg] = useState('');
+    const [uploadingHero, setUploadingHero] = useState(false);
+    const heroInputRef = useRef<HTMLInputElement>(null);
+    const saveMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // ─── Fetch ───────────────────────────────────────────────────────────
+    useEffect(() => {
+        async function fetchData() {
+            if (!venue.id) return;
+            setLoading(true);
+
+            const [pricingRes, seasonRes] = await Promise.all([
+                supabase
+                    .from('venue_pricing')
+                    .select('*')
+                    .eq('venue_id', venue.id)
+                    .eq('venue_type', 'retreat')
+                    .maybeSingle(),
+                supabase
+                    .from('venue_seasonal_pricing')
+                    .select('*')
+                    .eq('venue_id', venue.id)
+                    .eq('venue_type', 'retreat')
+                    .order('created_at', { ascending: true }),
+            ]);
+
+            if (pricingRes.data) {
+                const d = pricingRes.data;
+                setData({
+                    pricing_hero_image: d.pricing_hero_image || '',
+                    section_label: d.section_label || 'Booking & Terms',
+                    section_title: d.section_title || 'Plan Your Retreat',
+                    section_subtitle: d.section_subtitle || '',
+                    currency: d.currency || 'AUD',
+                    pricing_model: d.pricing_model || '',
+                    price_range_category: d.price_range_category || '',
+                    base_nightly_rate: parseFloat(d.base_nightly_rate) || 0,
+                    weekend_rate: parseFloat(d.weekend_rate) || 0,
+                    weekly_rate: parseFloat(d.weekly_rate) || 0,
+                    cleaning_fee: parseFloat(d.cleaning_fee) || 0,
+                    group_discounts_available: d.group_discounts_available ?? false,
+                    group_discount_percentage: parseFloat(d.group_discount_percentage) || 0,
+                    min_nights_for_discount: d.min_nights_for_discount || 3,
+                    group_discount_details: d.group_discount_details || '',
+                    holiday_surcharge_percentage: parseFloat(d.holiday_surcharge_percentage) || 0,
+                    min_stay_default: d.min_stay_default || 1,
+                    min_stay_weekends: d.min_stay_weekends || 1,
+                    max_stay: d.max_stay || 0,
+                    advance_booking_required: d.advance_booking_required || '',
+                    booking_window_opens: d.booking_window_opens || '',
+                    checkin_day_restrictions: d.checkin_day_restrictions || '',
+                    checkin_time: d.checkin_time || '',
+                    checkout_time: d.checkout_time || '',
+                    booking_deposit: d.booking_deposit || '',
+                    deposit_due: d.deposit_due || '',
+                    balance_due: d.balance_due || '',
+                    security_bond: parseFloat(d.security_bond) || 0,
+                    bond_collection_method: d.bond_collection_method || '',
+                    accepted_payment_methods: d.accepted_payment_methods || [],
+                    cancellation_policy_type: d.cancellation_policy_type || '',
+                    cancellation_grace_period: d.cancellation_grace_period || '',
+                    refund_policy_details: d.refund_policy_details || '',
+                    pricing_notes: d.pricing_notes || '',
+                });
+            }
+
+            if (seasonRes.data) {
+                setSeasons(seasonRes.data.map((s: Record<string, unknown>) => ({
+                    id: s.id as string,
+                    season_name: (s.season_name as string) || '',
+                    date_range: (s.date_range as string) || '',
+                    season_type: (s.season_type as string) || 'Standard',
+                    nightly_rate: parseFloat(s.nightly_rate as string) || 0,
+                    minimum_stay: (s.minimum_stay as string) || '',
+                })));
+            }
+
+            setLoading(false);
+        }
+        fetchData();
+    }, [venue.id]);
+
+    // ─── Field update helper ──────────────────────────────────────────────
+    function set<K extends keyof PricingData>(key: K, value: PricingData[K]) {
+        setData(prev => ({ ...prev, [key]: value }));
+    }
+
+    // ─── Hero image upload ────────────────────────────────────────────────
+    async function handleHeroUpload(file: File) {
+        setUploadingHero(true);
+        try {
+            const url = await uploadFile(file, 'photo');
+            set('pricing_hero_image', url);
+        } catch {
+            alert('Failed to upload image. Please try again.');
+        }
+        setUploadingHero(false);
+    }
+
+    // ─── Payment method toggle ────────────────────────────────────────────
+    function togglePaymentMethod(method: string) {
+        const current = data.accepted_payment_methods;
+        if (current.includes(method)) {
+            set('accepted_payment_methods', current.filter(m => m !== method));
+        } else {
+            set('accepted_payment_methods', [...current, method]);
+        }
+    }
+
+    // ─── Season row helpers ───────────────────────────────────────────────
+    function addSeason() {
+        setSeasons(prev => [
+            ...prev,
+            { season_name: '', date_range: '', season_type: 'Standard', nightly_rate: 0, minimum_stay: '' },
+        ]);
+    }
+
+    function updateSeason(idx: number, field: keyof SeasonRow, value: string | number) {
+        setSeasons(prev => prev.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+    }
+
+    function removeSeason(idx: number) {
+        setSeasons(prev => prev.filter((_, i) => i !== idx));
+    }
+
+    // ─── Computed pricing overview ────────────────────────────────────────
+    const allRates = seasons.map(s => s.nightly_rate).filter(r => r > 0);
+    const lowestRate = allRates.length > 0 ? Math.min(...allRates) : data.base_nightly_rate;
+    const peakRate = allRates.length > 0 ? Math.max(...allRates) : 0;
+
+    // ─── Save ─────────────────────────────────────────────────────────────
+    async function handleSave() {
+        setSaving(true);
+        if (saveMsgTimer.current) clearTimeout(saveMsgTimer.current);
+        try {
+            const payload = {
+                venue_id: venue.id,
+                venue_type: 'retreat' as const,
+                ...data,
+            };
+
+            const { data: existing, error: selErr } = await supabase
+                .from('venue_pricing')
+                .select('id')
+                .eq('venue_id', venue.id)
+                .eq('venue_type', 'retreat')
+                .maybeSingle();
+            if (selErr) throw selErr;
+
+            if (existing?.id) {
+                const { error: updErr } = await supabase
+                    .from('venue_pricing').update(payload).eq('id', existing.id);
+                if (updErr) throw updErr;
+            } else {
+                const { error: insErr } = await supabase
+                    .from('venue_pricing').insert(payload);
+                if (insErr) throw insErr;
+            }
+
+            // Seasonal: delete all then bulk insert
+            const { error: delErr } = await supabase
+                .from('venue_seasonal_pricing')
+                .delete()
+                .eq('venue_id', venue.id)
+                .eq('venue_type', 'retreat');
+            if (delErr) throw delErr;
+
+            if (seasons.length > 0) {
+                const { error: seaErr } = await supabase.from('venue_seasonal_pricing').insert(
+                    seasons.map(s => ({
+                        venue_id: venue.id,
+                        venue_type: 'retreat',
+                        season_name: s.season_name,
+                        date_range: s.date_range,
+                        season_type: s.season_type,
+                        nightly_rate: s.nightly_rate,
+                        minimum_stay: s.minimum_stay,
+                    }))
+                );
+                if (seaErr) throw seaErr;
+            }
+
+            setSaveMsg('Pricing saved successfully');
+            saveMsgTimer.current = setTimeout(() => setSaveMsg(''), 5000);
+        } catch (err: any) {
+            console.error('Save error:', err);
+            setSaveMsg('Error: ' + (err.message || 'Failed to save'));
+            saveMsgTimer.current = setTimeout(() => setSaveMsg(''), 8000);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    // ─── Render ───────────────────────────────────────────────────────────
+    if (loading) {
+        return (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--accent)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                <Loader size={18} className="spin" />
+                Loading pricing…
+            </div>
+        );
+    }
+
     return (
-        <div>
-            {/* Tab Images */}
+        <div className="content-area">
+
+            {/* Sticky Save */}
+            <div style={{ position: 'sticky', top: 12, zIndex: 100, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                {saveMsg && (
+                    <span style={{ fontSize: 13, color: saveMsg.startsWith('Error') ? 'var(--danger, #e53e3e)' : 'var(--success)', fontWeight: 500 }}>
+                        {saveMsg}
+                    </span>
+                )}
+                <button
+                    className="btn btn-primary"
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                >
+                    {saving ? <Loader size={15} className="spin" style={{ marginRight: 6 }} /> : <Save size={15} style={{ marginRight: 6 }} />}
+                    {saving ? 'Saving…' : 'Save Pricing'}
+                </button>
+            </div>
+
+            {/* ── Tab Images ──────────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
@@ -18,753 +331,657 @@ export default function PricingTab(_props: PricingTabProps) {
                     </div>
                 </div>
                 <div className="form-section-body">
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Booking Tab Hero Image</label>
-                            <div
-                                className="image-upload-area"
-                                style={{
-                                    border: '2px dashed rgba(184, 184, 184, 0.4)',
-                                    borderRadius: 12,
-                                    padding: 40,
-                                    textAlign: 'center',
-                                    backgroundColor: 'var(--secondary-bg)',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <ImageIcon color="#B8B8B8" size={48} style={{ marginBottom: 16 }} />
-                                <p style={{ color: 'var(--text)', fontWeight: 500, marginBottom: 4 }}>Click to upload or drag and drop</p>
-                                <p style={{ color: 'var(--accent)', fontSize: 12 }}>Recommended: 1920×600px, JPG or PNG</p>
+                    <div className="form-group">
+                        <label className="form-label">Booking Tab Hero Image</label>
+                        <input
+                            ref={heroInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) handleHeroUpload(file);
+                                e.target.value = '';
+                            }}
+                        />
+                        {data.pricing_hero_image ? (
+                            <div style={{ position: 'relative' }}>
+                                <img src={data.pricing_hero_image} alt="Hero" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }} />
+                                <button
+                                    onClick={() => set('pricing_hero_image', '')}
+                                    style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11 }}
+                                >
+                                    Remove
+                                </button>
+                                <button
+                                    onClick={() => heroInputRef.current?.click()}
+                                    style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11 }}
+                                >
+                                    Replace
+                                </button>
                             </div>
-                        </div>
+                        ) : uploadingHero ? (
+                            <div style={{ width: '100%', height: 180, border: '2px dashed rgba(184,184,184,0.4)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)' }}>
+                                <Loader size={28} color="var(--accent)" strokeWidth={1.5} className="spin" />
+                                <span style={{ fontSize: 12, color: 'var(--accent)', marginTop: 8 }}>Uploading…</span>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => heroInputRef.current?.click()}
+                                style={{ width: '100%', height: 180, border: '2px dashed rgba(184,184,184,0.4)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary-bg)', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--success)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(184,184,184,0.4)')}
+                            >
+                                <UploadCloud size={32} color="#B8B8B8" strokeWidth={1.5} />
+                                <span style={{ fontSize: 12, color: 'var(--accent)', marginTop: 8 }}>Click to upload hero image</span>
+                                <span style={{ fontSize: 11, color: 'var(--accent)' }}>Recommended: 1920 × 600px</span>
+                            </div>
+                        )}
+                        <p className="form-hint">This image appears as the large hero banner at the top of the Booking tab on your public listing.</p>
                     </div>
                 </div>
             </section>
 
-            {/* Booking Tab Content */}
+            {/* ── Booking Tab Content ──────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Booking Tab Content</h3>
-                        <p className="form-section-subtitle">Intro text displayed on the Booking tab of your public listing</p>
+                        <p className="form-section-subtitle">Header text shown at the top of the Booking tab</p>
                     </div>
                 </div>
                 <div className="form-section-body">
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Section Label</label>
-                            <input type="text" className="form-input" defaultValue="Booking & Terms" placeholder="e.g. Booking & Terms, Rates & Availability" />
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={data.section_label}
+                                onChange={e => set('section_label', e.target.value)}
+                                placeholder="e.g. Booking & Terms"
+                            />
+                            <p className="form-hint">Small overline label displayed above the title.</p>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Section Title</label>
-                            <input type="text" className="form-input" defaultValue="Plan Your Retreat" placeholder="e.g. Plan Your Retreat, Reserve Your Experience" />
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={data.section_title}
+                                onChange={e => set('section_title', e.target.value)}
+                                placeholder="e.g. Plan Your Retreat"
+                            />
                         </div>
                         <div className="form-group full-width">
                             <label className="form-label">Section Subtitle</label>
-                            <input type="text" className="form-input" defaultValue="Everything you need to know about rates, availability, and the booking process." placeholder="Brief intro text for the booking section..." />
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={data.section_subtitle}
+                                onChange={e => set('section_subtitle', e.target.value)}
+                                placeholder="Brief supporting text shown below the title…"
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Pricing Overview Cards */}
-            <div className="pricing-cards">
-                <div className="pricing-card">
-                    <div className="pricing-card-label">Starting From</div>
-                    <div className="pricing-card-value">$4,000</div>
-                    <div className="pricing-card-period">per night (low season)</div>
+            {/* ── Pricing Overview Cards (computed, display only) ──────── */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <div>
+                        <h3 className="form-section-title">Pricing Overview</h3>
+                        <p className="form-section-subtitle">Auto-computed from your rates below — displayed as summary cards on the public listing</p>
+                    </div>
                 </div>
-                <div className="pricing-card featured">
-                    <div className="pricing-card-label">Standard Rate</div>
-                    <div className="pricing-card-value">$4,500</div>
-                    <div className="pricing-card-period">per night</div>
+                <div className="form-section-body">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                        {[
+                            { label: 'Starting From', value: lowestRate > 0 ? `${data.currency} $${lowestRate.toLocaleString()}` : '—', sub: 'Lowest seasonal or base rate' },
+                            { label: 'Standard Rate', value: data.base_nightly_rate > 0 ? `${data.currency} $${data.base_nightly_rate.toLocaleString()}` : '—', sub: 'Base nightly rate' },
+                            { label: 'Peak Rate', value: peakRate > 0 ? `${data.currency} $${peakRate.toLocaleString()}` : '—', sub: 'Highest seasonal rate' },
+                        ].map(card => (
+                            <div key={card.label} style={{ background: 'var(--secondary-bg)', border: '1px solid rgba(184,184,184,0.2)', borderRadius: 8, padding: '20px 24px', textAlign: 'center' }}>
+                                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent)', marginBottom: 8 }}>{card.label}</div>
+                                <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{card.value}</div>
+                                <div style={{ fontSize: 11, color: 'var(--accent)' }}>{card.sub}</div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                <div className="pricing-card">
-                    <div className="pricing-card-label">Peak Season</div>
-                    <div className="pricing-card-value">$5,500</div>
-                    <div className="pricing-card-period">per night</div>
-                </div>
-            </div>
+            </section>
 
-            {/* Base Pricing */}
+            {/* ── Base Pricing ─────────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Base Pricing</h3>
-                        <p className="form-section-subtitle">Primary venue hire rates</p>
+                        <p className="form-section-subtitle">Standard nightly rates and pricing model</p>
                     </div>
                 </div>
                 <div className="form-section-body">
-                    <div className="form-grid three-col">
+                    <div className="form-grid">
                         <div className="form-group">
-                            <label className="form-label">Currency <span className="required">*</span></label>
-                            <select className="form-input form-select" defaultValue="AUD - Australian Dollar">
-                                <option>AUD - Australian Dollar</option>
-                                <option>USD - US Dollar</option>
-                                <option>EUR - Euro</option>
-                                <option>GBP - British Pound</option>
-                                <option>NZD - New Zealand Dollar</option>
-                                <option>JPY - Japanese Yen</option>
+                            <label className="form-label">Currency</label>
+                            <select className="form-select form-input" value={data.currency} onChange={e => set('currency', e.target.value)}>
+                                <option value="AUD">AUD — Australian Dollar</option>
+                                <option value="USD">USD — US Dollar</option>
+                                <option value="EUR">EUR — Euro</option>
+                                <option value="GBP">GBP — British Pound</option>
+                                <option value="NZD">NZD — New Zealand Dollar</option>
+                                <option value="JPY">JPY — Japanese Yen</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Pricing Model <span className="required">*</span></label>
-                            <select className="form-input form-select" defaultValue="Per Night (Whole Property)">
-                                <option>Per Night (Whole Property)</option>
-                                <option>Per Person Per Night</option>
-                                <option>Per Room Per Night</option>
-                                <option>Flat Rate (Multi-day Package)</option>
+                            <label className="form-label">Pricing Model</label>
+                            <select className="form-select form-input" value={data.pricing_model} onChange={e => set('pricing_model', e.target.value)}>
+                                <option value="">Select model…</option>
+                                <option value="Per Night (Whole Property)">Per Night (Whole Property)</option>
+                                <option value="Per Person Per Night">Per Person Per Night</option>
+                                <option value="Per Room Per Night">Per Room Per Night</option>
+                                <option value="Flat Rate (Multi-day Package)">Flat Rate (Multi-day Package)</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Price Range Category</label>
-                            <select className="form-input form-select" defaultValue="Upscale">
-                                <option>Budget</option>
-                                <option>Mid-Range</option>
-                                <option>Upscale</option>
-                                <option>Luxury</option>
-                                <option>Ultra-Luxury</option>
+                            <select className="form-select form-input" value={data.price_range_category} onChange={e => set('price_range_category', e.target.value)}>
+                                <option value="">Select category…</option>
+                                <option value="Budget">Budget</option>
+                                <option value="Mid-Range">Mid-Range</option>
+                                <option value="Upscale">Upscale</option>
+                                <option value="Luxury">Luxury</option>
+                                <option value="Ultra-Luxury">Ultra-Luxury</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Base Nightly Rate <span className="required">*</span></label>
-                            <div className="price-input-wrapper">
-                                <span className="price-currency">$</span>
-                                <input type="text" className="form-input price-input" defaultValue="4,500" />
-                                <span className="price-suffix">/ night</span>
-                            </div>
+                            <label className="form-label">Base Nightly Rate ({data.currency})</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                value={data.base_nightly_rate || ''}
+                                onChange={e => set('base_nightly_rate', parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Weekend Rate</label>
-                            <div className="price-input-wrapper">
-                                <span className="price-currency">$</span>
-                                <input type="text" className="form-input price-input" defaultValue="5,000" />
-                                <span className="price-suffix">/ night</span>
-                            </div>
+                            <label className="form-label">Weekend Rate ({data.currency})</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                value={data.weekend_rate || ''}
+                                onChange={e => set('weekend_rate', parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
+                            <p className="form-hint">Leave at 0 if same as base rate.</p>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Weekly Rate (7+ nights)</label>
-                            <div className="price-input-wrapper">
-                                <span className="price-currency">$</span>
-                                <input type="text" className="form-input price-input" defaultValue="28,000" />
-                                <span className="price-suffix">/ week</span>
-                            </div>
+                            <label className="form-label">Weekly Rate ({data.currency})</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                value={data.weekly_rate || ''}
+                                onChange={e => set('weekly_rate', parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
+                            <p className="form-hint">Flat rate for 7-night stays.</p>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Cleaning Fee</label>
-                            <div className="price-input-wrapper">
-                                <span className="price-currency">$</span>
-                                <input type="text" className="form-input price-input" defaultValue="500" />
-                                <span className="price-suffix">one-time</span>
-                            </div>
+                            <label className="form-label">Cleaning Fee ({data.currency})</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                value={data.cleaning_fee || ''}
+                                onChange={e => set('cleaning_fee', parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Group Discounts */}
+            {/* ── Group Discounts ──────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Group Discounts</h3>
-                        <p className="form-section-subtitle">Volume discounts for larger or longer bookings</p>
+                        <p className="form-section-subtitle">Discount applied for longer or group stays</p>
                     </div>
                 </div>
                 <div className="form-section-body">
-                    <div className="form-grid three-col">
+                    <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Group Discounts Available</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
+                            <div className="toggle-container" onClick={() => set('group_discounts_available', !data.group_discounts_available)}>
+                                <div className={`toggle ${data.group_discounts_available ? 'active' : ''}`}>
+                                    <div className="toggle-knob" />
                                 </div>
-                                <span className="toggle-label">Yes</span>
+                                <span className="toggle-label">{data.group_discounts_available ? 'Yes' : 'No'}</span>
                             </div>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Discount Percentage</label>
-                            <div className="price-input-wrapper">
-                                <input type="text" className="form-input price-input" defaultValue="10" style={{ textAlign: 'right' }} />
-                                <span className="price-suffix">%</span>
-                            </div>
+                            <label className="form-label">Discount Percentage (%)</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                max={100}
+                                value={data.group_discount_percentage || ''}
+                                onChange={e => set('group_discount_percentage', parseFloat(e.target.value) || 0)}
+                                placeholder="e.g. 10"
+                                disabled={!data.group_discounts_available}
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Minimum Nights for Discount</label>
-                            <select className="form-input form-select" defaultValue="7 nights">
-                                <option>3 nights</option>
-                                <option>5 nights</option>
-                                <option>7 nights</option>
-                                <option>10 nights</option>
-                                <option>14 nights</option>
+                            <select
+                                className="form-select form-input"
+                                value={data.min_nights_for_discount}
+                                onChange={e => set('min_nights_for_discount', parseInt(e.target.value))}
+                                disabled={!data.group_discounts_available}
+                            >
+                                <option value={3}>3 nights</option>
+                                <option value={5}>5 nights</option>
+                                <option value={7}>7 nights</option>
+                                <option value={10}>10 nights</option>
+                                <option value={14}>14 nights</option>
                             </select>
                         </div>
                         <div className="form-group full-width">
-                            <label className="form-label">Group Discount Details (Optional)</label>
-                            <textarea className="form-input form-textarea" rows={2} defaultValue="10% discount for bookings of 7+ nights. 15% discount for bookings of 14+ nights. Contact us for extended stay pricing." placeholder="Describe any additional discount structures..."></textarea>
+                            <label className="form-label">Group Discount Details</label>
+                            <textarea
+                                className="form-input form-textarea"
+                                rows={2}
+                                value={data.group_discount_details}
+                                onChange={e => set('group_discount_details', e.target.value)}
+                                placeholder="Describe the group discount terms…"
+                                disabled={!data.group_discounts_available}
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Seasonal Pricing */}
+            {/* ── Seasonal Pricing ─────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Seasonal Pricing</h3>
-                        <p className="form-section-subtitle">Rate variations by season</p>
+                        <p className="form-section-subtitle">Define rate variations for different seasons or periods</p>
                     </div>
-                    <button className="btn btn-secondary btn-small">
-                        <Plus className="icon icon-small" /> Add Season
+                    <button className="btn btn-secondary btn-small" onClick={addSeason}>
+                        <Plus size={14} style={{ marginRight: 4 }} />
+                        Add Season
                     </button>
                 </div>
                 <div className="form-section-body">
-                    <table className="season-table">
-                        <thead>
-                            <tr>
-                                <th>Season</th>
-                                <th>Date Range</th>
-                                <th>Type</th>
-                                <th>Nightly Rate</th>
-                                <th>Min. Stay</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div className="season-name">Peak Season</div>
-                                    <div className="season-dates">Christmas / New Year</div>
-                                </td>
-                                <td>Dec 20 - Jan 10</td>
-                                <td><span className="season-badge peak">Peak</span></td>
-                                <td><span className="season-price">$5,500</span></td>
-                                <td>3 nights</td>
-                                <td className="season-actions">
-                                    <button className="btn btn-secondary btn-small">Edit</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div className="season-name">High Season</div>
-                                    <div className="season-dates">School Holidays</div>
-                                </td>
-                                <td>Apr 5 - Apr 25, Jul 1 - Jul 21, Sep 20 - Oct 10</td>
-                                <td><span className="season-badge high">High</span></td>
-                                <td><span className="season-price">$5,000</span></td>
-                                <td>2 nights</td>
-                                <td className="season-actions">
-                                    <button className="btn btn-secondary btn-small">Edit</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div className="season-name">Standard Season</div>
-                                    <div className="season-dates">Default Rate</div>
-                                </td>
-                                <td>All other dates</td>
-                                <td><span className="season-badge standard">Standard</span></td>
-                                <td><span className="season-price">$4,500</span></td>
-                                <td>2 nights</td>
-                                <td className="season-actions">
-                                    <button className="btn btn-secondary btn-small">Edit</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div className="season-name">Low Season</div>
-                                    <div className="season-dates">Winter Midweek</div>
-                                </td>
-                                <td>Jun 1 - Aug 31 (Mon-Thu only)</td>
-                                <td><span className="season-badge low">Low</span></td>
-                                <td><span className="season-price">$4,000</span></td>
-                                <td>2 nights</td>
-                                <td className="season-actions">
-                                    <button className="btn btn-secondary btn-small">Edit</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    {seasons.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--accent)', fontSize: 13, border: '1px dashed rgba(184,184,184,0.3)', borderRadius: 8 }}>
+                            No seasons added yet. Click <strong>Add Season</strong> to define seasonal rate variations.
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(184,184,184,0.2)' }}>
+                                        {['Season Name', 'Date Range', 'Season Type', `Nightly Rate (${data.currency})`, 'Min Stay', ''].map(h => (
+                                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, color: 'var(--accent)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {seasons.map((row, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(184,184,184,0.1)' }}>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    style={{ minWidth: 120 }}
+                                                    value={row.season_name}
+                                                    onChange={e => updateSeason(idx, 'season_name', e.target.value)}
+                                                    placeholder="e.g. Summer Peak"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    style={{ minWidth: 160 }}
+                                                    value={row.date_range}
+                                                    onChange={e => updateSeason(idx, 'date_range', e.target.value)}
+                                                    placeholder="e.g. Dec 15 – Jan 31"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <select
+                                                    className="form-select form-input"
+                                                    value={row.season_type}
+                                                    onChange={e => updateSeason(idx, 'season_type', e.target.value)}
+                                                >
+                                                    <option value="Peak">Peak</option>
+                                                    <option value="High">High</option>
+                                                    <option value="Standard">Standard</option>
+                                                    <option value="Low">Low</option>
+                                                </select>
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    style={{ minWidth: 100 }}
+                                                    min={0}
+                                                    value={row.nightly_rate || ''}
+                                                    onChange={e => updateSeason(idx, 'nightly_rate', parseFloat(e.target.value) || 0)}
+                                                    placeholder="0"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    style={{ minWidth: 100 }}
+                                                    value={row.minimum_stay}
+                                                    onChange={e => updateSeason(idx, 'minimum_stay', e.target.value)}
+                                                    placeholder="e.g. 3 nights"
+                                                />
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <button
+                                                    onClick={() => removeSeason(idx)}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 4, display: 'flex', alignItems: 'center' }}
+                                                    title="Remove season"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </section>
 
-                    <div className="form-grid three-col" style={{ marginTop: 24 }}>
+            {/* ── Holiday Surcharge ────────────────────────────────────── */}
+            <section className="form-section">
+                <div className="form-section-header">
+                    <div>
+                        <h3 className="form-section-title">Holiday Surcharge</h3>
+                        <p className="form-section-subtitle">Additional percentage applied during public holidays</p>
+                    </div>
+                </div>
+                <div className="form-section-body">
+                    <div className="form-grid">
                         <div className="form-group">
-                            <label className="form-label">Holiday Surcharge</label>
-                            <div className="price-input-wrapper">
-                                <input type="text" className="form-input price-input" defaultValue="20" style={{ textAlign: 'right' }} />
-                                <span className="price-suffix">%</span>
+                            <label className="form-label">Holiday Surcharge (%)</label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    min={0}
+                                    max={100}
+                                    value={data.holiday_surcharge_percentage || ''}
+                                    onChange={e => set('holiday_surcharge_percentage', parseFloat(e.target.value) || 0)}
+                                    placeholder="0"
+                                    style={{ paddingRight: 36 }}
+                                />
+                                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)', fontSize: 13, pointerEvents: 'none' }}>%</span>
                             </div>
-                            <p className="form-hint" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--accent)', marginTop: 6 }}>Additional charge for public holidays (Easter, Christmas Day, etc.)</p>
+                            <p className="form-hint">Set to 0 to disable the holiday surcharge.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Booking Rules */}
+            {/* ── Booking Rules ────────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Booking Rules</h3>
-                        <p className="form-section-subtitle">Minimum stays, lead times, and booking windows</p>
+                        <p className="form-section-subtitle">Minimum/maximum stay requirements and check-in constraints</p>
                     </div>
                 </div>
                 <div className="form-section-body">
-                    <div className="form-grid four-col">
+                    <div className="form-grid">
                         <div className="form-group">
-                            <label className="form-label">Minimum Stay (Default)</label>
-                            <select className="form-input form-select" defaultValue="2 nights">
-                                <option>1 night</option>
-                                <option>2 nights</option>
-                                <option>3 nights</option>
-                                <option>4 nights</option>
-                                <option>5 nights</option>
-                                <option>7 nights</option>
+                            <label className="form-label">Minimum Stay (default)</label>
+                            <select className="form-select form-input" value={data.min_stay_default} onChange={e => set('min_stay_default', parseInt(e.target.value))}>
+                                <option value={1}>1 night</option>
+                                <option value={2}>2 nights</option>
+                                <option value={3}>3 nights</option>
+                                <option value={4}>4 nights</option>
+                                <option value={5}>5 nights</option>
+                                <option value={6}>6 nights</option>
+                                <option value={7}>7+ nights</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Minimum Stay (Weekends)</label>
-                            <select className="form-input form-select" defaultValue="2 nights">
-                                <option>1 night</option>
-                                <option>2 nights</option>
-                                <option>3 nights</option>
+                            <label className="form-label">Minimum Stay (weekends)</label>
+                            <select className="form-select form-input" value={data.min_stay_weekends} onChange={e => set('min_stay_weekends', parseInt(e.target.value))}>
+                                <option value={1}>1 night</option>
+                                <option value={2}>2 nights</option>
+                                <option value={3}>3 nights</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Maximum Stay</label>
-                            <select className="form-input form-select" defaultValue="28 nights">
-                                <option>7 nights</option>
-                                <option>14 nights</option>
-                                <option>21 nights</option>
-                                <option>28 nights</option>
-                                <option>No limit</option>
+                            <select className="form-select form-input" value={data.max_stay} onChange={e => set('max_stay', parseInt(e.target.value))}>
+                                <option value={0}>No limit</option>
+                                <option value={7}>7 nights</option>
+                                <option value={14}>14 nights</option>
+                                <option value={21}>21 nights</option>
+                                <option value={28}>28 nights</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Advance Booking Required</label>
-                            <select className="form-input form-select" defaultValue="7 days">
-                                <option>None</option>
-                                <option>24 hours</option>
-                                <option>48 hours</option>
-                                <option>7 days</option>
-                                <option>14 days</option>
-                                <option>30 days</option>
+                            <select className="form-select form-input" value={data.advance_booking_required} onChange={e => set('advance_booking_required', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="None">None</option>
+                                <option value="24h">24 hours</option>
+                                <option value="48h">48 hours</option>
+                                <option value="7d">7 days</option>
+                                <option value="14d">14 days</option>
+                                <option value="30d">30 days</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Booking Window Opens</label>
-                            <select className="form-input form-select" defaultValue="12 months ahead">
-                                <option>3 months ahead</option>
-                                <option>6 months ahead</option>
-                                <option>12 months ahead</option>
-                                <option>18 months ahead</option>
-                                <option>24 months ahead</option>
+                            <select className="form-select form-input" value={data.booking_window_opens} onChange={e => set('booking_window_opens', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="3 months">3 months in advance</option>
+                                <option value="6 months">6 months in advance</option>
+                                <option value="12 months">12 months in advance</option>
+                                <option value="18 months">18 months in advance</option>
+                                <option value="24 months">24 months in advance</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Check-in Day Restrictions</label>
-                            <select className="form-input form-select" defaultValue="Any day">
-                                <option>Any day</option>
-                                <option>Friday/Saturday only</option>
-                                <option>Weekdays only</option>
-                                <option>Monday only</option>
+                            <select className="form-select form-input" value={data.checkin_day_restrictions} onChange={e => set('checkin_day_restrictions', e.target.value)}>
+                                <option value="">No restrictions</option>
+                                <option value="Weekdays only">Weekdays only</option>
+                                <option value="Weekends only">Weekends only</option>
+                                <option value="Friday only">Friday only</option>
+                                <option value="Saturday only">Saturday only</option>
+                                <option value="Monday only">Monday only</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Check-in Time</label>
-                            <input type="text" className="form-input" defaultValue="3:00 PM" />
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={data.checkin_time}
+                                onChange={e => set('checkin_time', e.target.value)}
+                                placeholder="e.g. 2:00 PM"
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Check-out Time</label>
-                            <input type="text" className="form-input" defaultValue="10:00 AM" />
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={data.checkout_time}
+                                onChange={e => set('checkout_time', e.target.value)}
+                                placeholder="e.g. 10:00 AM"
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Deposit & Payment */}
+            {/* ── Deposit & Payment ────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Deposit & Payment</h3>
-                        <p className="form-section-subtitle">Payment terms and security deposits</p>
+                        <p className="form-section-subtitle">Payment requirements and accepted methods</p>
                     </div>
                 </div>
                 <div className="form-section-body">
-                    <div className="form-grid three-col">
+                    <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Booking Deposit</label>
-                            <select className="form-input form-select" defaultValue="50% of total">
-                                <option>No deposit required</option>
-                                <option>25% of total</option>
-                                <option>50% of total</option>
-                                <option>Full payment</option>
-                                <option>Fixed amount</option>
+                            <select className="form-select form-input" value={data.booking_deposit} onChange={e => set('booking_deposit', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="No deposit">No deposit required</option>
+                                <option value="25%">25% deposit</option>
+                                <option value="50%">50% deposit</option>
+                                <option value="Full">Full payment at booking</option>
+                                <option value="Fixed">Fixed amount deposit</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Deposit Due</label>
-                            <select className="form-input form-select" defaultValue="At time of booking">
-                                <option>At time of booking</option>
-                                <option>Within 48 hours</option>
-                                <option>Within 7 days</option>
+                            <select className="form-select form-input" value={data.deposit_due} onChange={e => set('deposit_due', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="At booking">At booking</option>
+                                <option value="Within 48h">Within 48 hours</option>
+                                <option value="Within 7 days">Within 7 days</option>
                             </select>
                         </div>
                         <div className="form-group">
                             <label className="form-label">Balance Due</label>
-                            <select className="form-input form-select" defaultValue="14 days before arrival">
-                                <option>At check-in</option>
-                                <option>7 days before arrival</option>
-                                <option>14 days before arrival</option>
-                                <option>30 days before arrival</option>
+                            <select className="form-select form-input" value={data.balance_due} onChange={e => set('balance_due', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="At check-in">At check-in</option>
+                                <option value="7 days before">7 days before</option>
+                                <option value="14 days before">14 days before</option>
+                                <option value="30 days before">30 days before</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Security Bond</label>
-                            <div className="price-input-wrapper">
-                                <span className="price-currency">$</span>
-                                <input type="text" className="form-input price-input" defaultValue="2,000" />
-                            </div>
+                            <label className="form-label">Security Bond ({data.currency})</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min={0}
+                                value={data.security_bond || ''}
+                                onChange={e => set('security_bond', parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Bond Collection Method</label>
-                            <select className="form-input form-select" defaultValue="Held & refunded post-stay">
-                                <option>Pre-authorisation only</option>
-                                <option>Held & refunded post-stay</option>
-                                <option>Insurance-backed (no charge)</option>
+                            <select className="form-select form-input" value={data.bond_collection_method} onChange={e => set('bond_collection_method', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="Credit card pre-authorisation">Credit card pre-authorisation</option>
+                                <option value="Bank transfer">Bank transfer</option>
+                                <option value="Cash on arrival">Cash on arrival</option>
+                                <option value="No bond required">No bond required</option>
                             </select>
                         </div>
-                        <div className="form-group">
+                        <div className="form-group full-width">
                             <label className="form-label">Accepted Payment Methods</label>
-                            <select className="form-input form-select" defaultValue="Credit Card, Bank Transfer">
-                                <option>Credit Card, Bank Transfer</option>
-                                <option>Credit Card only</option>
-                                <option>Bank Transfer only</option>
-                            </select>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+                                {PAYMENT_METHODS.map(method => {
+                                    const checked = data.accepted_payment_methods.includes(method);
+                                    return (
+                                        <label
+                                            key={method}
+                                            style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, padding: '6px 12px', borderRadius: 6, border: `1px solid ${checked ? 'var(--success)' : 'rgba(184,184,184,0.3)'}`, background: checked ? 'rgba(var(--success-rgb, 72, 187, 120), 0.08)' : 'transparent', userSelect: 'none' }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => togglePaymentMethod(method)}
+                                                style={{ accentColor: 'var(--success)' }}
+                                            />
+                                            {method}
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Cancellation Policy */}
+            {/* ── Cancellation Policy ──────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Cancellation Policy</h3>
-                        <p className="form-section-subtitle">Refund terms for cancelled bookings</p>
+                        <p className="form-section-subtitle">Cancellation terms displayed to guests on the booking page</p>
                     </div>
                 </div>
                 <div className="form-section-body">
                     <div className="form-grid">
                         <div className="form-group">
                             <label className="form-label">Cancellation Policy Type</label>
-                            <select className="form-input form-select" defaultValue="Firm (Full refund 30 days before)">
-                                <option>Flexible (Full refund 24hrs before)</option>
-                                <option>Moderate (Full refund 7 days before)</option>
-                                <option>Firm (Full refund 30 days before)</option>
-                                <option>Strict (50% refund 30 days before)</option>
-                                <option>Super Strict (No refunds)</option>
-                                <option>Custom</option>
+                            <select className="form-select form-input" value={data.cancellation_policy_type} onChange={e => set('cancellation_policy_type', e.target.value)}>
+                                <option value="">Select…</option>
+                                <option value="Flexible">Flexible</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Firm">Firm</option>
+                                <option value="Strict">Strict</option>
+                                <option value="Super Strict">Super Strict</option>
+                                <option value="Custom">Custom</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Grace Period</label>
-                            <select className="form-input form-select" defaultValue="48 hours after booking">
-                                <option>None</option>
-                                <option>48 hours after booking</option>
-                                <option>7 days after booking</option>
+                            <label className="form-label">Cancellation Grace Period</label>
+                            <select className="form-select form-input" value={data.cancellation_grace_period} onChange={e => set('cancellation_grace_period', e.target.value)}>
+                                <option value="">None</option>
+                                <option value="48h">48 hours</option>
+                                <option value="7d">7 days</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div className="form-group full-width" style={{ marginTop: 16, marginBottom: 24 }}>
-                        <label className="form-label">Refund Policy Details</label>
-                        <textarea className="form-input form-textarea" rows={3} defaultValue="Cancellations must be submitted in writing via email. Refunds are processed within 14 business days. Service fees are non-refundable. For cancellations due to extenuating circumstances, please contact us directly to discuss options." placeholder="Provide full refund policy details..."></textarea>
-                        <p className="form-hint" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--accent)', marginTop: 6 }}>Detailed refund terms displayed on your booking page</p>
-                    </div>
-
-                    <div className="policy-grid" style={{ marginTop: 24 }}>
-                        <div className="policy-card">
-                            <div className="policy-card-header">
-                                <div className="policy-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" strokeWidth="1.5">
-                                        <polyline points="20,6 9,17 4,12" />
-                                    </svg>
-                                </div>
-                                <div className="policy-title">Full Refund</div>
-                            </div>
-                            <div className="policy-content">
-                                Cancel more than <strong>30 days</strong> before check-in for a full refund minus service fees.
-                                <div className="policy-highlight">100% refund</div>
-                            </div>
-                        </div>
-
-                        <div className="policy-card">
-                            <div className="policy-card-header">
-                                <div className="policy-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4A853" strokeWidth="1.5">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="12" y1="8" x2="12" y2="12" />
-                                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                                    </svg>
-                                </div>
-                                <div className="policy-title">Partial Refund</div>
-                            </div>
-                            <div className="policy-content">
-                                Cancel <strong>14-30 days</strong> before check-in to receive 50% of the booking total.
-                                <div className="policy-highlight">50% refund</div>
-                            </div>
-                        </div>
-
-                        <div className="policy-card">
-                            <div className="policy-card-header">
-                                <div className="policy-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C45C5C" strokeWidth="1.5">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <line x1="15" y1="9" x2="9" y2="15" />
-                                        <line x1="9" y1="9" x2="15" y2="15" />
-                                    </svg>
-                                </div>
-                                <div className="policy-title">No Refund</div>
-                            </div>
-                            <div className="policy-content">
-                                Cancellations within <strong>14 days</strong> of check-in are non-refundable.
-                                <div className="policy-highlight">0% refund</div>
-                            </div>
-                        </div>
-
-                        <div className="policy-card">
-                            <div className="policy-card-header">
-                                <div className="policy-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B8EC9" strokeWidth="1.5">
-                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                    </svg>
-                                </div>
-                                <div className="policy-title">Extenuating Circumstances</div>
-                            </div>
-                            <div className="policy-content">
-                                Refunds may be available for documented emergencies, natural disasters, or government restrictions.
-                                <div className="policy-highlight">Case by case</div>
-                            </div>
+                        <div className="form-group full-width">
+                            <label className="form-label">Refund Policy Details</label>
+                            <textarea
+                                className="form-input form-textarea"
+                                rows={3}
+                                value={data.refund_policy_details}
+                                onChange={e => set('refund_policy_details', e.target.value)}
+                                placeholder="Describe the full cancellation and refund policy shown to guests…"
+                            />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* What's Included */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">What's Included in Venue Hire</h3>
-                        <p className="form-section-subtitle">Items and services included in the base rate</p>
-                    </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="included-list">
-                        {[
-                            'Exclusive use of property',
-                            'All bedrooms & suites',
-                            'Yoga shala & meditation room',
-                            'Swimming pool & spa',
-                            'Sauna & cold plunge',
-                            'Treatment rooms',
-                            'Commercial kitchen',
-                            'Yoga equipment (mats, props)',
-                            'Linens & towels',
-                            'WiFi & AV equipment',
-                            'Fire pit & outdoor areas',
-                            'Parking for 15 vehicles'
-                        ].map((feature, i) => (
-                            <div className="included-item" key={i}>
-                                <div className="included-check">
-                                    <Check color="white" size={12} strokeWidth={3} />
-                                </div>
-                                <span className="included-label">{feature}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Additional Fees / Add-ons */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Additional Fees & Add-ons</h3>
-                        <p className="form-section-subtitle">Optional extras and services at additional cost</p>
-                    </div>
-                    <button className="btn btn-secondary btn-small">
-                        <Plus className="icon icon-small" /> Add Fee
-                    </button>
-                </div>
-                <div className="form-section-body">
-                    <table className="season-table">
-                        <thead>
-                            <tr>
-                                <th>Item / Service</th>
-                                <th>Description</th>
-                                <th>Price</th>
-                                <th>Per</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {[
-                                { name: 'Catering - Chef Service', desc: 'Private chef for retreat meals', price: '$800', per: 'per day' },
-                                { name: 'Catering - Meal Packages', desc: 'Pre-prepared organic meals delivered', price: '$120', per: 'per person/day' },
-                                { name: 'Airport Transfers', desc: 'Sydney Airport pickup/dropoff (up to 6 pax)', price: '$400', per: 'per trip' },
-                                { name: 'Early Check-in', desc: 'Check-in from 12pm (subject to availability)', price: '$500', per: 'one-time' },
-                                { name: 'Late Check-out', desc: 'Check-out by 2pm (subject to availability)', price: '$500', per: 'one-time' },
-                                { name: 'Mid-stay Housekeeping', desc: 'Full property clean for stays 5+ nights', price: '$350', per: 'per clean' }
-                            ].map((item, i) => (
-                                <tr key={i}>
-                                    <td><strong>{item.name}</strong></td>
-                                    <td>{item.desc}</td>
-                                    <td><span className="season-price">{item.price}</span></td>
-                                    <td>{item.per}</td>
-                                    <td className="season-actions">
-                                        <button className="btn btn-secondary btn-small">Edit</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <button className="add-row-btn">
-                        <Plus className="icon" /> Add Another Fee or Add-on
-                    </button>
-                </div>
-            </section>
-
-            {/* Booking Settings */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Booking Settings</h3>
-                        <p className="form-section-subtitle">Instant booking and enquiry preferences</p>
-                    </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-grid three-col">
-                        <div className="form-group">
-                            <label className="form-label">Instant Book Enabled</label>
-                            <div className="toggle-container">
-                                <div className="toggle">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">No - Enquiry required</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Requires Owner Approval</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes - Review each enquiry</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Require Retreat Details</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Auto-confirm Repeat Guests</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Yes</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Response Time Target</label>
-                            <select className="form-input form-select" defaultValue="Within 24 hours">
-                                <option>Within 1 hour</option>
-                                <option>Within 24 hours</option>
-                                <option>Within 48 hours</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Enquiry Expiry</label>
-                            <select className="form-input form-select" defaultValue="48 hours">
-                                <option>24 hours</option>
-                                <option>48 hours</option>
-                                <option>72 hours</option>
-                                <option>7 days</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Calendar Sync</label>
-                            <div className="toggle-container">
-                                <div className="toggle active">
-                                    <div className="toggle-knob"></div>
-                                </div>
-                                <span className="toggle-label">Enabled - iCal</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Booking FAQ */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Booking FAQ</h3>
-                        <p className="form-section-subtitle">Common questions displayed on the Booking tab of your public listing</p>
-                    </div>
-                    <button className="btn btn-secondary btn-small">
-                        <Plus className="icon icon-small" /> Add FAQ
-                    </button>
-                </div>
-                <div className="form-section-body">
-                    <div className="faq-list" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        {[
-                            {
-                                q: "Can I book for fewer than 24 people?",
-                                a: "Yes, absolutely. Our pricing is based on exclusive use of the property rather than per-person rates. Whether you bring 10 or 24 guests, the nightly rate remains the same."
-                            },
-                            {
-                                q: "What if my guest numbers change?",
-                                a: "We understand retreat numbers can fluctuate. Final guest counts are confirmed 14 days before arrival."
-                            },
-                            {
-                                q: "Do you provide catering?",
-                                a: "Catering is not included but can be arranged through our preferred caterers or you're welcome to bring your own chef."
-                            }
-                        ].map((faq, i) => (
-                            <div key={i} className="faq-item" style={{ backgroundColor: 'var(--secondary-bg)', borderRadius: 8, padding: 16 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
-                                    <div style={{ flex: 1 }}>
-                                        <label className="form-label" style={{ marginBottom: 8 }}>Question</label>
-                                        <input type="text" className="form-input" defaultValue={faq.q} />
-                                    </div>
-                                    <button className="btn btn-secondary btn-small" style={{ marginTop: 24 }}>Remove</button>
-                                </div>
-                                <div style={{ marginTop: 12 }}>
-                                    <label className="form-label" style={{ marginBottom: 8 }}>Answer</label>
-                                    <textarea className="form-input form-textarea" rows={2} defaultValue={faq.a}></textarea>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <button className="add-row-btn" style={{ marginTop: 16 }}>
-                        <Plus className="icon" /> Add Another FAQ
-                    </button>
-                </div>
-            </section>
-
-            {/* Pricing Notes */}
+            {/* ── Pricing Notes ────────────────────────────────────────── */}
             <section className="form-section">
                 <div className="form-section-header">
                     <h3 className="form-section-title">Pricing Notes</h3>
                 </div>
                 <div className="form-section-body">
                     <div className="form-group">
-                        <label className="form-label">Internal Notes (Not visible to guests)</label>
-                        <textarea className="form-input form-textarea" defaultValue="Owner prefers minimum 2-night bookings but will consider single nights midweek in low season at $5,000. Negotiable for repeat bookers or longer stays (10+ nights). Wedding/event pricing is different - refer to owner directly." placeholder="Any additional pricing notes..."></textarea>
+                        <label className="form-label">Internal Notes (not visible to guests)</label>
+                        <textarea
+                            className="form-input form-textarea"
+                            rows={3}
+                            value={data.pricing_notes}
+                            onChange={e => set('pricing_notes', e.target.value)}
+                            placeholder="Any additional pricing notes for internal reference…"
+                        />
                     </div>
                 </div>
             </section>

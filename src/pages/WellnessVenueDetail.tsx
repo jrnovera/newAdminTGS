@@ -1,12 +1,12 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
+
+// Tabs with their own save button — global "Save Changes" is hidden on these
+const SELF_SAVE_TABS = new Set(['wellness-facilities', 'pricing', 'media', 'internal', 'owner']);
 import { Trash2, MapPin, Clock, Calendar, Eye, Save } from 'lucide-react';
 import { useVenues } from '../context/VenueContext';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import WellnessAccommodationTab from '../components/wellness/WellnessAccommodationTab';
-import MediaTab from '../components/MediaTab';
-import BookingsTab from '../components/BookingsTab';
-import OwnerManagerTab from '../components/OwnerManagerTab';
 import WellnessInternalTab from '../components/wellness/WellnessInternalTab';
 import WellnessFacilitiesTab from '../components/wellness/WellnessFacilitiesTab';
 import WellnessServicesTab from '../components/wellness/WellnessServicesTab';
@@ -137,9 +137,11 @@ export default function WellnessVenueDetail() {
                     <button className="btn btn-secondary" onClick={() => setShowDelete(true)}>
                         <Trash2 size={16} /> Delete
                     </button>
-                    <button className="btn btn-primary" onClick={handleSaveChanges}>
-                        <Save size={16} /> Save Changes
-                    </button>
+                    {!SELF_SAVE_TABS.has(activeTab) && (
+                        <button className="btn btn-primary" onClick={handleSaveChanges}>
+                            <Save size={16} /> Save Changes
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -172,7 +174,7 @@ export default function WellnessVenueDetail() {
             {activeTab === 'wellness-facilities' && (
                 <WellnessFacilitiesTab venue={venue} onUpdate={handleTabUpdate} />
             )}
-            {activeTab === 'owner-manager' && venue && (
+            {activeTab === 'owner' && venue && (
                 <WellnessOwnerManagerTab venue={venue} onUpdate={handleTabUpdate} />
             )}
             {activeTab === 'media' && venue && (
@@ -184,17 +186,8 @@ export default function WellnessVenueDetail() {
             {activeTab === 'pricing' && venue && (
                 <WellnessPricingTab venue={venue} onUpdate={handleTabUpdate} />
             )}
-            {activeTab === 'media' && (
-                <MediaTab venue={venue} onUpdate={handleTabUpdate} />
-            )}
             {activeTab === 'internal' && venue && (
                 <WellnessInternalTab venue={venue} onUpdate={handleTabUpdate} />
-            )}
-            {activeTab === 'owner' && (
-                <OwnerManagerTab venue={venue} onUpdate={handleTabUpdate} />
-            )}
-            {activeTab === 'bookings' && (
-                <BookingsTab venue={venue} onUpdate={handleTabUpdate} />
             )}
             {activeTab === 'reviews' && (
                 <ReviewsTab venue={venue} onUpdate={handleTabUpdate} />

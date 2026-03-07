@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Edit3, Upload } from 'lucide-react';
-import type { Venue } from '../../context/VenueContext';
+import { Plus, Edit3, Upload, Trash2 } from 'lucide-react';
+import type { Venue, IndividualRoom } from '../../context/VenueContext';
+import { uploadFile } from '../../lib/storage';
 
 interface Props {
     venue: Venue;
@@ -38,22 +39,45 @@ interface RoomData {
 export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
     const [hasAccommodation, setHasAccommodation] = useState(venue.hasAccommodation ?? false);
 
+    // Accommodation tab hero image
+    const [accommodationHeroImage, setAccommodationHeroImage] = useState(venue.accommodationHeroImage || '');
+    const [heroUploading, setHeroUploading] = useState(false);
+    const heroInputRef = useRef<HTMLInputElement>(null);
+
+    const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setHeroUploading(true);
+        try {
+            const url = await uploadFile(file);
+            setAccommodationHeroImage(url);
+            onUpdate({ accommodationHeroImage: url });
+        } catch (err) {
+            console.error('Accommodation hero upload failed:', err);
+        } finally {
+            setHeroUploading(false);
+            if (heroInputRef.current) heroInputRef.current.value = '';
+        }
+    };
+
     // Website display fields
     const [stayLabel, setStayLabel] = useState('Stay With Us');
     const [showStaySection, setShowStaySection] = useState(true);
     const [introParagraph1, setIntroParagraph1] = useState(venue.introParagraph1 || '');
-    const [introParagraph2, setIntroParagraph2] = useState('');
+    const [introParagraph2, setIntroParagraph2] = useState(venue.introParagraph2 || '');
     const [roomTypesLabel, setRoomTypesLabel] = useState('Room Types');
     const [roomTypesSubtitle, setRoomTypesSubtitle] = useState('Choose your sanctuary');
     const [whatsIncludedLabel, setWhatsIncludedLabel] = useState("What's Included");
     const [selectedInclusions, setSelectedInclusions] = useState<string[]>(
-        venue.whatsIncluded || ['Wellness Breakfast', 'Robes & Slippers', 'Thermal Access', 'Organic Amenities', 'In-Room Tea', 'WiFi']
+        venue.whatsIncluded?.length
+            ? venue.whatsIncluded
+            : ['Wellness Breakfast', 'Robes & Slippers', 'Thermal Access', 'Organic Amenities', 'In-Room Tea', 'WiFi']
     );
 
-    // Capacity fields
+    // Day service capacity (maps to wellness_venues columns)
     const [maxDayGuests, setMaxDayGuests] = useState(venue.capacity || 0);
-    const [treatmentRooms, setTreatmentRooms] = useState(0);
-    const [maxConcurrent, setMaxConcurrent] = useState(0);
+    const [treatmentRooms, setTreatmentRooms] = useState(venue.totalTreatmentRooms || 0);
+    const [maxConcurrent, setMaxConcurrent] = useState(venue.maxGuests || 0);
     const [practitionerCapacity, setPractitionerCapacity] = useState(0);
 
     // Accommodation capacity
@@ -77,19 +101,21 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
         rollaway: venue.bedConfigRollaway || 0,
     });
 
-    // Rooms
+    // Rooms — loaded from DB via VenueContext; stored as RoomData for local display
     const [rooms, setRooms] = useState<RoomData[]>(
-        (venue.individualRooms as any[] || []).map((r: any, i: number) => ({
+        (venue.individualRooms || []).map((r, i) => ({
             id: r.id || `room-${i}`,
             name: r.roomName || `Room ${i + 1}`,
             roomType: r.roomType || 'Standard Room',
-            bedConfig: r.bedConfiguration ? `1 x ${Object.entries(r.bedConfiguration).find(([, v]) => (v as number) > 0)?.[0] || 'Queen'}` : '1 x Queen',
+            bedConfig: r.bedConfiguration
+                ? `${Object.entries(r.bedConfiguration).filter(([, v]) => (v as number) > 0).map(([k, v]) => `${v} x ${k.replace('Beds', '')}`).join(', ') || '1 x Queen'}`
+                : '1 x Queen',
             maxOccupancy: r.maxOccupancy || 2,
             bathroom: r.bathroom || 'Private Ensuite',
-            roomSize: r.roomSize || 0,
+            roomSize: Number(r.roomSize) || 0,
             floor: r.floor || '',
-            pricePerNight: r.pricePerNight || 0,
-            view: r.view || '',
+            pricePerNight: Number(r.pricePerNight) || 0,
+            view: '',
             amenities: r.roomAmenities || [],
             description: r.websiteDescription || '',
             showOnWebsite: true,
@@ -106,16 +132,42 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
     const [petsAllowed, setPetsAllowed] = useState(venue.petsAllowed ?? false);
     const [smokingAllowed, setSmokingAllowed] = useState(venue.smokingAllowed ?? false);
 
+    /** Convert local RoomData to the IndividualRoom shape VenueContext expects */
+    const toIndividualRooms = (localRooms: RoomData[]): IndividualRoom[] =>
+        localRooms.map(r => ({
+            id: r.id,
+            roomName: r.name,
+            roomImage: '',
+            websiteDescription: r.description,
+            roomType: r.roomType,
+            bedConfiguration: {
+                kingBeds: 0, queenBeds: r.maxOccupancy > 1 ? 1 : 0,
+                doubleBeds: 0, singleBeds: 0,
+                twinBeds: 0, bunkBeds: 0, sofaBeds: 0, rollawayBeds: 0,
+            },
+            maxOccupancy: r.maxOccupancy,
+            bathroom: r.bathroom,
+            roomSize: String(r.roomSize),
+            floor: r.floor,
+            pricePerNight: String(r.pricePerNight),
+            roomAmenities: r.amenities,
+        }));
+
     // Batch-save all accommodation fields whenever any state changes
     const isMount = useRef(true);
     useEffect(() => {
         if (isMount.current) { isMount.current = false; return; }
         onUpdate({
             hasAccommodation,
+            accommodationHeroImage,
             introParagraph1,
+            introParagraph2,
             whatsIncluded: selectedInclusions,
+            // Day service capacity → wellness_venues columns
             capacity: maxDayGuests,
-            maxGuests,
+            totalTreatmentRooms: treatmentRooms,
+            maxGuests: maxConcurrent,
+            // Overnight capacity (only relevant when hasAccommodation)
             minGuests,
             totalBedrooms,
             totalBathrooms,
@@ -138,12 +190,14 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
             minimumChildAge: minChildAge,
             petsAllowed,
             smokingAllowed,
+            individualRooms: toIndividualRooms(rooms),
         });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasAccommodation, introParagraph1, selectedInclusions, maxDayGuests, maxGuests, minGuests,
+    }, [hasAccommodation, accommodationHeroImage, introParagraph1, introParagraph2,
+        selectedInclusions, maxDayGuests, treatmentRooms, maxConcurrent, maxGuests, minGuests,
         totalBedrooms, totalBathrooms, sharedBathrooms, privateEnsuites, accommodationStyle,
         beds, checkInTime, checkOutTime, earlyCheckIn, lateCheckOut, childrenAllowed,
-        minChildAge, petsAllowed, smokingAllowed]);
+        minChildAge, petsAllowed, smokingAllowed, rooms]);
 
     const toggleInclusion = (label: string) => {
         setSelectedInclusions(prev =>
@@ -172,6 +226,8 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
             showOnWebsite: true,
         }]);
     };
+
+    const removeRoom = (id: string) => setRooms(prev => prev.filter(r => r.id !== id));
 
     return (
         <div className="wvd-content">
@@ -207,11 +263,35 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
                         <div className="wvd-form-section-body">
                             <div className="wvd-form-group">
                                 <label className="wvd-form-label">Hero Image</label>
-                                <div className="wa-image-upload">
-                                    <Upload size={40} strokeWidth={1} color="#B8B8B8" />
-                                    <p style={{ fontWeight: 500, marginBottom: 4 }}>Click to upload or drag and drop</p>
-                                    <p style={{ color: 'var(--accent)', fontSize: 12 }}>Recommended: 1920×600px, JPG or PNG</p>
+                                <div
+                                    className="wa-image-upload"
+                                    onClick={() => !heroUploading && heroInputRef.current?.click()}
+                                    style={{
+                                        cursor: heroUploading ? 'wait' : 'pointer',
+                                        backgroundImage: accommodationHeroImage ? `url(${accommodationHeroImage})` : 'none',
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                    }}
+                                >
+                                    {!accommodationHeroImage && !heroUploading && (
+                                        <>
+                                            <Upload size={40} strokeWidth={1} color="#B8B8B8" />
+                                            <p style={{ fontWeight: 500, marginBottom: 4 }}>Click to upload or drag and drop</p>
+                                            <p style={{ color: 'var(--accent)', fontSize: 12 }}>Recommended: 1920×600px, JPG or PNG</p>
+                                        </>
+                                    )}
+                                    {heroUploading && <p style={{ color: 'var(--accent)', fontSize: 13 }}>Uploading…</p>}
+                                    {accommodationHeroImage && !heroUploading && (
+                                        <button
+                                            type="button"
+                                            onClick={e => { e.stopPropagation(); setAccommodationHeroImage(''); onUpdate({ accommodationHeroImage: '' }); }}
+                                            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 16 }}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
                                 </div>
+                                <input ref={heroInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleHeroUpload} />
                             </div>
                         </div>
                     </section>
@@ -463,6 +543,14 @@ export default function WellnessAccommodationTab({ venue, onUpdate }: Props) {
                                                 </div>
                                                 <button className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: 12, borderRadius: 16 }}>
                                                     <Edit3 size={14} /> Edit
+                                                </button>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '8px 12px', fontSize: 12, borderRadius: 16, color: 'var(--error)', borderColor: 'var(--error)' }}
+                                                    onClick={() => removeRoom(room.id)}
+                                                    title="Remove room"
+                                                >
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
                                         </div>

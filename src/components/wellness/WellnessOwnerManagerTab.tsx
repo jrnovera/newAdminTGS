@@ -1,122 +1,346 @@
-import { useState, useRef, useEffect } from 'react';
-import { Mail, Phone, MapPin, Calendar, Check, Edit2, Plus, Upload, User, UserPlus, FileText, Download, Eye, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mail, Phone, MapPin, Calendar, Check, Plus, Upload, FileText, Trash2, UserPlus } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
+import { supabase } from '../../lib/supabase';
+import { uploadFile, deleteFile } from '../../lib/storage';
 
 interface Props {
     venue: Venue;
     onUpdate: (updates: Partial<Venue>) => void;
 }
 
-export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
-    // Contact Details State
-    const [firstName, setFirstName] = useState(venue.firstName || venue.owner?.split(' ')[0] || '');
-    const [lastName, setLastName] = useState(venue.lastName || venue.owner?.split(' ').slice(1).join(' ') || '');
-    const [role, setRole] = useState(venue.ownerRole || 'Owner');
-    const [email, setEmail] = useState(venue.email || '');
-    const [phonePrimary, setPhonePrimary] = useState(venue.phone || '');
-    const [phoneSecondary, setPhoneSecondary] = useState(venue.phoneSecondary || '');
-    const [mailingAddress, setMailingAddress] = useState(venue.ownerAddress || '');
+const VENUE_TYPE = 'wellness';
+
+interface TeamMember {
+    id: string;
+    name: string;
+    role: string;
+    avatar_url: string | null;
+    status: string;
+}
+
+interface VenueDocument {
+    id: string;
+    file_url: string;
+    file_name: string;
+    file_size_bytes: number | null;
+    file_type: string | null;
+    created_at: string;
+}
+
+export default function WellnessOwnerManagerTab({ venue }: Props) {
+    // Contact Details
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [role, setRole] = useState('Owner');
+    const [email, setEmail] = useState('');
+    const [phonePrimary, setPhonePrimary] = useState('');
+    const [phoneSecondary, setPhoneSecondary] = useState('');
+    const [mailingAddress, setMailingAddress] = useState('');
     const [timezone, setTimezone] = useState('Australia/Sydney (AEDT)');
     const [preferredLanguage, setPreferredLanguage] = useState('English');
 
-    // Business Details State
-    const [businessName, setBusinessName] = useState(venue.businessName || '');
-    const [taxId, setTaxId] = useState(venue.taxId || '');
-    const [businessType, setBusinessType] = useState(venue.businessType || 'Company (Pty Ltd)');
-    const [registeredAddress, setRegisteredAddress] = useState(venue.ownerAddress || '');
-    const [gstRegistered, setGstRegistered] = useState(venue.gstRegistered ?? false);
+    // Business Details
+    const [businessName, setBusinessName] = useState('');
+    const [abnTaxId, setAbnTaxId] = useState('');
+    const [businessType, setBusinessType] = useState('Company (Pty Ltd)');
+    const [registeredAddress, setRegisteredAddress] = useState('');
+    const [gstRegistered, setGstRegistered] = useState(false);
 
-    // Host Public Profile State
-    const [hostDisplayNames, setHostDisplayNames] = useState(venue.owner || '');
-    const [hostQuote, setHostQuote] = useState(venue.quote || '');
-    const [hostBio, setHostBio] = useState(venue.hostBio || '');
-    const [showHostProfile, setShowHostProfile] = useState(venue.showHostProfile ?? true);
+    // Host Public Profile
+    const [hostDisplayName, setHostDisplayName] = useState('');
+    const [hostImageUrl, setHostImageUrl] = useState('');
+    const [hostQuote, setHostQuote] = useState('');
+    const [hostBio, setHostBio] = useState('');
+    const [showHostProfile, setShowHostProfile] = useState(true);
 
-    // Communication Preferences State
-    const [preferredContact, setPreferredContact] = useState('Email');
+    // Communication Preferences
+    const [preferredContactMethod, setPreferredContactMethod] = useState('Email');
     const [bestTimeToCall, setBestTimeToCall] = useState('Afternoon (12pm-5pm)');
     const [responseTime, setResponseTime] = useState('Within 24 hours');
     const [bookingNotifications, setBookingNotifications] = useState(true);
-    const [marketingEmails, setMarketingEmails] = useState(true);
+    const [marketingEmails, setMarketingEmails] = useState(false);
     const [platformUpdates, setPlatformUpdates] = useState(true);
 
-    // Relationship Notes State
-    const [relationshipNotes, setRelationshipNotes] = useState(venue.relationshipNotes || '');
+    // Relationship Notes
+    const [relationshipNotes, setRelationshipNotes] = useState('');
 
-    // Batch-save all owner/business fields whenever any state changes
-    const isMount = useRef(true);
+    // Team Members
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [newMemberName, setNewMemberName] = useState('');
+    const [newMemberRole, setNewMemberRole] = useState('');
+    const [newMemberStatus, setNewMemberStatus] = useState('Active');
+    const [showAddMember, setShowAddMember] = useState(false);
+
+    // Documents
+    const [documents, setDocuments] = useState<VenueDocument[]>([]);
+
+    // UI State
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+
+    const hostImageInputRef = useRef<HTMLInputElement>(null);
+    const docInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
-        if (isMount.current) { isMount.current = false; return; }
-        onUpdate({
-            owner: `${firstName} ${lastName}`.trim(),
-            firstName,
-            lastName,
-            ownerRole: role,
-            email,
-            phone: phonePrimary,
-            phoneSecondary,
-            ownerAddress: mailingAddress,
-            businessName,
-            taxId,
-            businessType,
-            gstRegistered,
-            hostBio,
-            showHostProfile,
-            relationshipNotes,
-        });
+        loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [firstName, lastName, role, email, phonePrimary, phoneSecondary, mailingAddress,
-        businessName, taxId, businessType, gstRegistered, hostBio, showHostProfile, relationshipNotes]);
+    }, [venue.id]);
+
+    async function loadData() {
+        setLoading(true);
+        const [ownerRes, teamRes, docsRes] = await Promise.all([
+            supabase.from('venue_owner_manager').select('*').eq('venue_id', venue.id).eq('venue_type', VENUE_TYPE).maybeSingle(),
+            supabase.from('venue_team_members').select('*').eq('venue_id', venue.id).eq('venue_type', VENUE_TYPE).order('created_at'),
+            supabase.from('venue_documents').select('*').eq('venue_id', venue.id).eq('venue_type', VENUE_TYPE).eq('doc_category', 'legal').order('created_at'),
+        ]);
+
+        if (ownerRes.error) console.error(ownerRes.error);
+        if (teamRes.error) console.error(teamRes.error);
+        if (docsRes.error) console.error(docsRes.error);
+
+        const o = ownerRes.data;
+        if (o) {
+            setFirstName(o.first_name || '');
+            setLastName(o.last_name || '');
+            setRole(o.role || 'Owner');
+            setEmail(o.email || '');
+            setPhonePrimary(o.phone_primary || '');
+            setPhoneSecondary(o.phone_secondary || '');
+            setMailingAddress(o.mailing_address || '');
+            setTimezone(o.timezone || 'Australia/Sydney (AEDT)');
+            setPreferredLanguage(o.preferred_language || 'English');
+            setBusinessName(o.business_name || '');
+            setAbnTaxId(o.abn_tax_id || '');
+            setBusinessType(o.business_type || 'Company (Pty Ltd)');
+            setRegisteredAddress(o.registered_business_address || '');
+            setGstRegistered(o.gst_registered ?? false);
+            setHostDisplayName(o.host_display_name || '');
+            setHostImageUrl(o.host_image_url || '');
+            setHostQuote(o.host_quote || '');
+            setHostBio(o.host_bio || '');
+            setShowHostProfile(o.show_host_profile ?? true);
+            setPreferredContactMethod(o.preferred_contact_method || 'Email');
+            setBestTimeToCall(o.best_time_to_call || 'Afternoon (12pm-5pm)');
+            setResponseTime(o.response_time || 'Within 24 hours');
+            setBookingNotifications(o.booking_notifications ?? true);
+            setMarketingEmails(o.marketing_emails ?? false);
+            setPlatformUpdates(o.platform_updates ?? true);
+            setRelationshipNotes(o.relationship_notes || '');
+        }
+
+        setTeamMembers(teamRes.data || []);
+        setDocuments(docsRes.data || []);
+        setLoading(false);
+    }
+
+    async function handleSave() {
+        setSaving(true);
+        setSaveStatus('idle');
+        try {
+            const payload = {
+                venue_id: venue.id,
+                venue_type: VENUE_TYPE,
+                first_name: firstName,
+                last_name: lastName,
+                role,
+                email,
+                phone_primary: phonePrimary,
+                phone_secondary: phoneSecondary,
+                mailing_address: mailingAddress,
+                timezone,
+                preferred_language: preferredLanguage,
+                business_name: businessName,
+                abn_tax_id: abnTaxId,
+                business_type: businessType,
+                registered_business_address: registeredAddress,
+                gst_registered: gstRegistered,
+                host_display_name: hostDisplayName,
+                host_image_url: hostImageUrl,
+                host_quote: hostQuote,
+                host_bio: hostBio,
+                show_host_profile: showHostProfile,
+                preferred_contact_method: preferredContactMethod,
+                best_time_to_call: bestTimeToCall,
+                response_time: responseTime,
+                booking_notifications: bookingNotifications,
+                marketing_emails: marketingEmails,
+                platform_updates: platformUpdates,
+                relationship_notes: relationshipNotes,
+            };
+
+            const { data: existing, error: fetchErr } = await supabase
+                .from('venue_owner_manager')
+                .select('id')
+                .eq('venue_id', venue.id)
+                .eq('venue_type', VENUE_TYPE)
+                .maybeSingle();
+            if (fetchErr) throw fetchErr;
+
+            if (existing) {
+                const { error } = await supabase.from('venue_owner_manager').update(payload).eq('id', existing.id);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from('venue_owner_manager').insert(payload);
+                if (error) throw error;
+            }
+
+            setSaveStatus('saved');
+        } catch (err) {
+            console.error('Failed to save owner/manager:', err);
+            setSaveStatus('error');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleHostImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const url = await uploadFile(file, 'photo');
+            if (hostImageUrl) await deleteFile(hostImageUrl, 'photo');
+            setHostImageUrl(url);
+        } catch (err) {
+            console.error('Failed to upload host image:', err);
+        }
+        e.target.value = '';
+    }
+
+    async function handleAddTeamMember() {
+        if (!newMemberName.trim()) return;
+        try {
+            const { data, error } = await supabase.from('venue_team_members').insert({
+                venue_id: venue.id,
+                venue_type: VENUE_TYPE,
+                name: newMemberName.trim(),
+                role: newMemberRole.trim(),
+                status: newMemberStatus,
+                avatar_url: null,
+            }).select().single();
+            if (error) throw error;
+            setTeamMembers(prev => [...prev, data]);
+            setNewMemberName('');
+            setNewMemberRole('');
+            setNewMemberStatus('Active');
+            setShowAddMember(false);
+        } catch (err) {
+            console.error('Failed to add team member:', err);
+        }
+    }
+
+    async function handleDeleteTeamMember(id: string) {
+        try {
+            const { error } = await supabase.from('venue_team_members').delete().eq('id', id);
+            if (error) throw error;
+            setTeamMembers(prev => prev.filter(m => m.id !== id));
+        } catch (err) {
+            console.error('Failed to delete team member:', err);
+        }
+    }
+
+    async function handleDocUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        for (const file of Array.from(files)) {
+            try {
+                const url = await uploadFile(file, 'photo');
+                const { data, error } = await supabase.from('venue_documents').insert({
+                    venue_id: venue.id,
+                    venue_type: VENUE_TYPE,
+                    file_url: url,
+                    file_name: file.name,
+                    file_size_bytes: file.size,
+                    file_type: file.type,
+                    doc_category: 'legal',
+                }).select().single();
+                if (error) throw error;
+                setDocuments(prev => [...prev, data]);
+            } catch (err) {
+                console.error('Failed to upload document:', err);
+            }
+        }
+        e.target.value = '';
+    }
+
+    async function handleDeleteDocument(doc: VenueDocument) {
+        try {
+            const { error } = await supabase.from('venue_documents').delete().eq('id', doc.id);
+            if (error) throw error;
+            await deleteFile(doc.file_url, 'photo');
+            setDocuments(prev => prev.filter(d => d.id !== doc.id));
+        } catch (err) {
+            console.error('Failed to delete document:', err);
+        }
+    }
+
+    function formatFileSize(bytes: number | null) {
+        if (!bytes) return '';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
+
+    if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#B8B8B8' }}>Loading...</div>;
 
     return (
         <div className="wvd-content">
+            {/* Floating Save Bar */}
+            <div className="floating-save-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {saveStatus === 'saved' && <span style={{ color: '#4CAF50', fontSize: 13 }}>Saved successfully</span>}
+                    {saveStatus === 'error' && <span style={{ color: '#f44336', fontSize: 13 }}>Failed to save</span>}
+                </div>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                    {saving ? 'Saving...' : 'Save Owner'}
+                </button>
+            </div>
+
             {/* Primary Contact Card */}
             <div className="wom-contact-card">
-                <div className="wom-contact-avatar">SM</div>
+                <div className="wom-contact-avatar">{initials}</div>
                 <div className="wom-contact-details">
-                    <div className="wom-contact-name">Sarah Mitchell</div>
-                    <div className="wom-contact-role">Owner & Primary Contact</div>
+                    <div className="wom-contact-name">{`${firstName} ${lastName}`.trim() || 'No name set'}</div>
+                    <div className="wom-contact-role">{role}</div>
                     <div className="wom-contact-info-grid">
                         <div className="wom-contact-info-item">
-                            <div className="wom-contact-info-icon"><Mail size={16} color="#313131" /></div>
+                            <div className="wom-contact-info-icon"><Mail size={16} /></div>
                             <div className="wom-contact-info-text">
                                 <span className="wom-contact-info-label">Email</span>
-                                <span className="wom-contact-info-value"><a href="mailto:sarah@bodhidayspa.com.au">sarah@bodhidayspa.com.au</a></span>
+                                <span className="wom-contact-info-value">{email || '—'}</span>
                             </div>
                         </div>
                         <div className="wom-contact-info-item">
-                            <div className="wom-contact-info-icon"><Phone size={16} color="#313131" /></div>
+                            <div className="wom-contact-info-icon"><Phone size={16} /></div>
                             <div className="wom-contact-info-text">
                                 <span className="wom-contact-info-label">Phone</span>
-                                <span className="wom-contact-info-value">+61 412 345 678</span>
+                                <span className="wom-contact-info-value">{phonePrimary || '—'}</span>
                             </div>
                         </div>
                         <div className="wom-contact-info-item">
-                            <div className="wom-contact-info-icon"><MapPin size={16} color="#313131" /></div>
+                            <div className="wom-contact-info-icon"><MapPin size={16} /></div>
                             <div className="wom-contact-info-text">
-                                <span className="wom-contact-info-label">Location</span>
-                                <span className="wom-contact-info-value">Berry, NSW 2535</span>
+                                <span className="wom-contact-info-label">Address</span>
+                                <span className="wom-contact-info-value">{mailingAddress || '—'}</span>
                             </div>
                         </div>
                         <div className="wom-contact-info-item">
-                            <div className="wom-contact-info-icon"><Calendar size={16} color="#313131" /></div>
+                            <div className="wom-contact-info-icon"><Calendar size={16} /></div>
                             <div className="wom-contact-info-text">
-                                <span className="wom-contact-info-label">Member Since</span>
-                                <span className="wom-contact-info-value">February 2026</span>
+                                <span className="wom-contact-info-label">Venue Added</span>
+                                <span className="wom-contact-info-value">{venue.date || '—'}</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="wom-contact-actions">
                     <span className="wom-status-badge verified">
-                        <Check size={12} strokeWidth={3} />
-                        Verified
+                        <Check size={12} strokeWidth={3} /> Verified
                     </span>
                     <span className="wom-status-badge primary">Primary Contact</span>
-                    <button className="wvd-btn-secondary wvd-btn-small" style={{ marginTop: '8px' }}>
-                        <Edit2 size={12} />
-                        Edit Contact
-                    </button>
                 </div>
             </div>
 
@@ -141,11 +365,11 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">Role</label>
                             <select className="wvd-form-input wvd-form-select" value={role} onChange={e => setRole(e.target.value)}>
-                                <option value="Owner">Owner</option>
-                                <option value="Manager">Manager</option>
-                                <option value="Co-owner">Co-owner</option>
-                                <option value="Spa Director">Spa Director</option>
-                                <option value="Administrator">Administrator</option>
+                                <option>Owner</option>
+                                <option>Manager</option>
+                                <option>Co-owner</option>
+                                <option>Spa Director</option>
+                                <option>Administrator</option>
                             </select>
                         </div>
                         <div className="wvd-form-group">
@@ -208,7 +432,7 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                         </div>
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">ABN / Tax ID</label>
-                            <input type="text" className="wvd-form-input" value={taxId} onChange={e => setTaxId(e.target.value)} />
+                            <input type="text" className="wvd-form-input" value={abnTaxId} onChange={e => setAbnTaxId(e.target.value)} />
                         </div>
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">Business Type</label>
@@ -243,48 +467,57 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                         <h3 className="wvd-form-section-title">Team Members</h3>
                         <p className="wvd-form-hint">Additional contacts with portal access</p>
                     </div>
-                    <button className="wvd-btn-secondary wvd-btn-small">
-                        <UserPlus size={14} />
-                        Add Team Member
+                    <button className="wvd-btn-secondary wvd-btn-small" onClick={() => setShowAddMember(true)}>
+                        <UserPlus size={14} /> Add Team Member
                     </button>
                 </div>
                 <div className="wvd-form-section-body">
+                    {showAddMember && (
+                        <div className="wvd-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 16, padding: 16, background: 'var(--secondary-bg)', borderRadius: 8 }}>
+                            <div className="wvd-form-group">
+                                <label className="wvd-form-label">Name</label>
+                                <input type="text" className="wvd-form-input" value={newMemberName} onChange={e => setNewMemberName(e.target.value)} placeholder="Full name" />
+                            </div>
+                            <div className="wvd-form-group">
+                                <label className="wvd-form-label">Role</label>
+                                <input type="text" className="wvd-form-input" value={newMemberRole} onChange={e => setNewMemberRole(e.target.value)} placeholder="e.g. Spa Manager" />
+                            </div>
+                            <div className="wvd-form-group">
+                                <label className="wvd-form-label">Status</label>
+                                <select className="wvd-form-input wvd-form-select" value={newMemberStatus} onChange={e => setNewMemberStatus(e.target.value)}>
+                                    <option>Active</option>
+                                    <option>Inactive</option>
+                                </select>
+                            </div>
+                            <div className="wvd-form-group wvd-full-width" style={{ display: 'flex', gap: 8 }}>
+                                <button className="btn btn-primary" onClick={handleAddTeamMember}>Add Member</button>
+                                <button className="btn btn-secondary" onClick={() => { setShowAddMember(false); setNewMemberName(''); setNewMemberRole(''); }}>Cancel</button>
+                            </div>
+                        </div>
+                    )}
                     <div className="wom-team-grid">
-                        <div className="wom-team-card">
-                            <div className="wom-team-avatar">MC</div>
-                            <div className="wom-team-info">
-                                <div className="wom-team-name">Maya Chen</div>
-                                <div className="wom-team-role">Owner • Full Access</div>
-                            </div>
-                            <div className="wom-team-actions">
-                                <span className="wom-status-badge primary">Primary</span>
-                            </div>
-                        </div>
-                        <div className="wom-team-card">
-                            <div className="wom-team-avatar">LT</div>
-                            <div className="wom-team-info">
-                                <div className="wom-team-name">Lily Tanaka</div>
-                                <div className="wom-team-role">Spa Manager • Full Access</div>
-                            </div>
-                            <div className="wom-team-actions">
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '6px 12px' }}>Edit</button>
-                            </div>
-                        </div>
-                        <div className="wom-team-card">
-                            <div className="wom-team-avatar">AR</div>
-                            <div className="wom-team-info">
-                                <div className="wom-team-name">Amy Roberts</div>
-                                <div className="wom-team-role">Reception • Booking Access</div>
-                            </div>
-                            <div className="wom-team-actions">
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '6px 12px' }}>Edit</button>
-                            </div>
-                        </div>
+                        {teamMembers.length === 0 && !showAddMember && (
+                            <p style={{ color: '#B8B8B8', fontSize: 13 }}>No team members added yet.</p>
+                        )}
+                        {teamMembers.map(member => {
+                            const parts = member.name?.split(' ') || ['?'];
+                            const av = `${parts[0]?.charAt(0) || ''}${parts[1]?.charAt(0) || ''}`.toUpperCase();
+                            return (
+                                <div key={member.id} className="wom-team-card">
+                                    <div className="wom-team-avatar">{av}</div>
+                                    <div className="wom-team-info">
+                                        <div className="wom-team-name">{member.name}</div>
+                                        <div className="wom-team-role">{member.role} • {member.status}</div>
+                                    </div>
+                                    <div className="wom-team-actions">
+                                        <button className="wvd-btn-secondary wvd-btn-small" onClick={() => handleDeleteTeamMember(member.id)}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                    <button className="wom-add-btn" style={{ marginTop: '16px' }}>
-                        <UserPlus size={16} />
-                        Add Another Team Member
-                    </button>
                 </div>
             </section>
 
@@ -293,33 +526,41 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                 <div className="wvd-form-section-header">
                     <div>
                         <h3 className="wvd-form-section-title">Host Public Profile</h3>
-                        <p className="wvd-form-hint">Information displayed on the venue's public listing (Overview tab)</p>
+                        <p className="wvd-form-hint">Information displayed on the venue's public listing</p>
                     </div>
                 </div>
                 <div className="wvd-form-section-body">
                     <div className="wvd-form-grid">
                         <div className="wvd-form-group">
-                            <label className="wvd-form-label">Host Display Names</label>
-                            <input type="text" className="wvd-form-input" value={hostDisplayNames} onChange={e => setHostDisplayNames(e.target.value)} placeholder="e.g. Maya Chen, The Bodhi Team" />
-                            <p className="wvd-form-hint" style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '6px' }}>How hosts are displayed on the public listing</p>
+                            <label className="wvd-form-label">Host Display Name</label>
+                            <input type="text" className="wvd-form-input" value={hostDisplayName} onChange={e => setHostDisplayName(e.target.value)} placeholder="e.g. Maya Chen, The Bodhi Team" />
+                            <p className="wvd-form-hint" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 6 }}>How hosts are displayed on the public listing</p>
                         </div>
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">Host Image</label>
-                            <div className="wom-image-upload-placeholder" style={{ width: '120px', height: '120px', border: '2px dashed rgba(184, 184, 184, 0.4)', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--secondary-bg)', cursor: 'pointer' }}>
-                                <User size={32} color="#B8B8B8" strokeWidth={1.5} />
-                                <span style={{ fontSize: '10px', color: 'var(--accent)', marginTop: '4px' }}>Upload</span>
+                            <div
+                                style={{ width: 120, height: 120, border: '2px dashed rgba(184,184,184,0.4)', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--secondary-bg)', cursor: 'pointer', overflow: 'hidden', backgroundImage: hostImageUrl ? `url(${hostImageUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }}
+                                onClick={() => hostImageInputRef.current?.click()}
+                            >
+                                {!hostImageUrl && (
+                                    <>
+                                        <Upload size={32} color="#B8B8B8" strokeWidth={1.5} />
+                                        <span style={{ fontSize: 10, color: 'var(--accent)', marginTop: 4 }}>Upload</span>
+                                    </>
+                                )}
                             </div>
-                            <p className="wvd-form-hint" style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '6px' }}>Square image, min 400×400px</p>
+                            <input ref={hostImageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleHostImageUpload} />
+                            <p className="wvd-form-hint" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 6 }}>Square image, min 400×400px</p>
                         </div>
                         <div className="wvd-form-group wvd-full-width">
                             <label className="wvd-form-label">Host Quote</label>
                             <input type="text" className="wvd-form-input" value={hostQuote} onChange={e => setHostQuote(e.target.value)} placeholder="A short quote that captures your wellness philosophy..." />
-                            <p className="wvd-form-hint" style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '6px' }}>Displayed in the Host Introduction section on the Overview tab</p>
+                            <p className="wvd-form-hint" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 6 }}>Displayed in the Host Introduction section on the Overview tab</p>
                         </div>
                         <div className="wvd-form-group wvd-full-width">
                             <label className="wvd-form-label">Host Bio</label>
-                            <textarea className="wvd-form-input wvd-form-textarea" rows={4} value={hostBio} onChange={e => setHostBio(e.target.value)} placeholder="Tell potential guests about yourselves..."></textarea>
-                            <p className="wvd-form-hint" style={{ fontSize: '11px', fontStyle: 'italic', marginTop: '6px' }}>2-3 paragraphs about the hosts. Displayed on the public listing.</p>
+                            <textarea className="wvd-form-input wvd-form-textarea" rows={4} value={hostBio} onChange={e => setHostBio(e.target.value)} placeholder="Tell potential guests about yourselves..." />
+                            <p className="wvd-form-hint" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 6 }}>2-3 paragraphs about the hosts. Displayed on the public listing.</p>
                         </div>
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">Show Host Profile on Listing</label>
@@ -346,7 +587,7 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                     <div className="wvd-form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                         <div className="wvd-form-group">
                             <label className="wvd-form-label">Preferred Contact Method</label>
-                            <select className="wvd-form-input wvd-form-select" value={preferredContact} onChange={e => setPreferredContact(e.target.value)}>
+                            <select className="wvd-form-input wvd-form-select" value={preferredContactMethod} onChange={e => setPreferredContactMethod(e.target.value)}>
                                 <option>Email</option>
                                 <option>Phone Call</option>
                                 <option>SMS / Text</option>
@@ -408,98 +649,51 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                         <h3 className="wvd-form-section-title">Documents & Contracts</h3>
                         <p className="wvd-form-hint">Legal agreements and uploaded documents</p>
                     </div>
-                    <button className="wvd-btn-secondary wvd-btn-small">
-                        <Upload size={14} />
-                        Upload Document
+                    <button className="wvd-btn-secondary wvd-btn-small" onClick={() => docInputRef.current?.click()}>
+                        <Upload size={14} /> Upload Document
                     </button>
+                    <input ref={docInputRef} type="file" multiple style={{ display: 'none' }} onChange={handleDocUpload} />
                 </div>
                 <div className="wvd-form-section-body">
-                    <div className="wom-document-list">
-                        <div className="wom-document-item">
-                            <div className="wom-document-icon"><FileText size={20} color="#313131" /></div>
-                            <div className="wom-document-info">
-                                <div className="wom-document-name">Venue Partnership Agreement</div>
-                                <div className="wom-document-meta">Signed Jan 13, 2026 • PDF • 245 KB</div>
-                            </div>
-                            <div className="wom-document-actions">
-                                <span className="wom-status-badge verified">Signed</span>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Eye size={12} /></button>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Download size={12} /></button>
-                            </div>
+                    {documents.length === 0 ? (
+                        <p style={{ color: '#B8B8B8', fontSize: 13 }}>No documents uploaded yet.</p>
+                    ) : (
+                        <div className="wom-document-list">
+                            {documents.map(doc => (
+                                <div key={doc.id} className="wom-document-item">
+                                    <div className="wom-document-icon"><FileText size={20} color="#313131" /></div>
+                                    <div className="wom-document-info">
+                                        <div className="wom-document-name">{doc.file_name}</div>
+                                        <div className="wom-document-meta">
+                                            {new Date(doc.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {doc.file_type ? ` • ${doc.file_type.split('/')[1]?.toUpperCase() || doc.file_type}` : ''}
+                                            {doc.file_size_bytes ? ` • ${formatFileSize(doc.file_size_bytes)}` : ''}
+                                        </div>
+                                    </div>
+                                    <div className="wom-document-actions">
+                                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}>View</a>
+                                        <a href={doc.file_url} download={doc.file_name} className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}>Download</a>
+                                        <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }} onClick={() => handleDeleteDocument(doc)}>
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <div className="wom-document-item">
-                            <div className="wom-document-icon"><FileText size={20} color="#313131" /></div>
-                            <div className="wom-document-info">
-                                <div className="wom-document-name">Public Liability Insurance Certificate</div>
-                                <div className="wom-document-meta">Expires Dec 31, 2026 • PDF • 1.2 MB</div>
-                            </div>
-                            <div className="wom-document-actions">
-                                <span className="wom-status-badge verified">Verified</span>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Eye size={12} /></button>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Download size={12} /></button>
-                            </div>
-                        </div>
-                        <div className="wom-document-item">
-                            <div className="wom-document-icon"><FileText size={20} color="#313131" /></div>
-                            <div className="wom-document-info">
-                                <div className="wom-document-name">ABN Registration</div>
-                                <div className="wom-document-meta">Uploaded Jan 13, 2026 • PDF • 89 KB</div>
-                            </div>
-                            <div className="wom-document-actions">
-                                <span className="wom-status-badge verified">Verified</span>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Eye size={12} /></button>
-                                <button className="wvd-btn-secondary wvd-btn-small" style={{ padding: '4px 8px' }}><Download size={12} /></button>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </section>
 
-            {/* Communication History */}
+            {/* Communication History — static display */}
             <section className="wvd-form-section">
                 <div className="wvd-form-section-header">
                     <div>
                         <h3 className="wvd-form-section-title">Communication History</h3>
                         <p className="wvd-form-hint">Recent interactions with this venue owner</p>
                     </div>
-                    <button className="wvd-btn-secondary wvd-btn-small">
-                        <Plus size={14} />
-                        Log Communication
-                    </button>
                 </div>
                 <div className="wvd-form-section-body">
-                    <div className="wom-comm-log">
-                        <div className="wom-comm-item">
-                            <div className="wom-comm-icon email"><Mail size={16} /></div>
-                            <div className="wom-comm-content">
-                                <div className="wom-comm-header">
-                                    <div className="wom-comm-title">Welcome to TGS! <span className="wom-comm-type outbound"><ArrowUpRight size={10} style={{ marginRight: 4 }} />Outbound</span></div>
-                                    <div className="wom-comm-date">Jan 15, 2026</div>
-                                </div>
-                                <div className="wom-comm-summary">Sent welcome email with portal login credentials and onboarding guide. Included links to help center and service listing optimization tips.</div>
-                            </div>
-                        </div>
-                        <div className="wom-comm-item">
-                            <div className="wom-comm-icon call"><Phone size={16} /></div>
-                            <div className="wom-comm-content">
-                                <div className="wom-comm-header">
-                                    <div className="wom-comm-title">Onboarding Call (30 mins) <span className="wom-comm-type outbound"><ArrowUpRight size={10} style={{ marginRight: 4 }} />Outbound</span></div>
-                                    <div className="wom-comm-date">Jan 14, 2026</div>
-                                </div>
-                                <div className="wom-comm-summary">Walked through portal setup, service menu configuration, and photo upload process. Maya asked about featuring in Wellness Edit content — discussed editorial opportunities. Very detail-oriented and enthusiastic.</div>
-                            </div>
-                        </div>
-                        <div className="wom-comm-item">
-                            <div className="wom-comm-icon email"><Mail size={16} /></div>
-                            <div className="wom-comm-content">
-                                <div className="wom-comm-header">
-                                    <div className="wom-comm-title">Inbound Enquiry Response <span className="wom-comm-type inbound"><ArrowDownLeft size={10} style={{ marginRight: 4 }} />Inbound</span></div>
-                                    <div className="wom-comm-date">Jan 10, 2026</div>
-                                </div>
-                                <div className="wom-comm-summary">Maya submitted List Your Venue form expressing interest in TGS platform. Currently using Mindbody for bookings but wants exposure to wellness travelers.</div>
-                            </div>
-                        </div>
-                    </div>
+                    <p style={{ color: '#B8B8B8', fontSize: 13 }}>Communication history will be shown here once available.</p>
                 </div>
             </section>
 
@@ -513,15 +707,15 @@ export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
                         <label className="wvd-form-label">Notes (Internal)</label>
                         <textarea
                             className="wvd-form-input wvd-form-textarea"
+                            rows={6}
                             placeholder="Add notes about this relationship..."
-                            style={{ minHeight: '150px' }}
+                            style={{ minHeight: 150 }}
                             value={relationshipNotes}
                             onChange={e => setRelationshipNotes(e.target.value)}
                         />
                     </div>
                 </div>
             </section>
-
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, ChevronDown, ChevronUp, Upload, Plus, Trash2 } from 'lucide-react';
+import { uploadFile } from '../lib/storage';
 
 interface CreateRetreatModalProps {
     isOpen: boolean;
@@ -82,6 +83,11 @@ export default function CreateRetreatModal({ isOpen, onClose, onSubmit }: Create
     const expInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
+    // Track actual File objects alongside blob preview URLs
+    const [heroFile, setHeroFile] = useState<File | null>(null);
+    const [expFile, setExpFile] = useState<File | null>(null);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+
     // Form state
     const [form, setForm] = useState({
         // Basic Information
@@ -152,23 +158,25 @@ export default function CreateRetreatModal({ isOpen, onClose, onSubmit }: Create
         });
     };
 
-    const handleImageUpload = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (field: 'heroImage' | 'experienceImage', e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            updateField(field, url);
-        }
+        if (!file) return;
+        if (field === 'heroImage') setHeroFile(file);
+        else setExpFile(file);
+        updateField(field, URL.createObjectURL(file));
     };
 
     const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (files) {
-            const urls = Array.from(files).map(f => URL.createObjectURL(f));
-            setForm(prev => ({ ...prev, venueImages: [...prev.venueImages, ...urls] }));
-        }
+        if (!files) return;
+        const newFiles = Array.from(files);
+        const urls = newFiles.map(f => URL.createObjectURL(f));
+        setGalleryFiles(prev => [...prev, ...newFiles]);
+        setForm(prev => ({ ...prev, venueImages: [...prev.venueImages, ...urls] }));
     };
 
     const removeGalleryImage = (index: number) => {
+        setGalleryFiles(prev => prev.filter((_, i) => i !== index));
         setForm(prev => ({
             ...prev,
             venueImages: prev.venueImages.filter((_, i) => i !== index),
@@ -182,6 +190,13 @@ export default function CreateRetreatModal({ isOpen, onClose, onSubmit }: Create
         }
         setSaving(true);
         try {
+            // Upload images to Supabase storage before creating the venue
+            const [heroUrl, expUrl, ...galleryUrls] = await Promise.all([
+                heroFile ? uploadFile(heroFile) : Promise.resolve(form.heroImage),
+                expFile ? uploadFile(expFile) : Promise.resolve(form.experienceImage),
+                ...galleryFiles.map(f => uploadFile(f)),
+            ]);
+
             const gps = form.gpsLat && form.gpsLng ? `${form.gpsLat}, ${form.gpsLng}` : '';
             await onSubmit({
                 name: form.venueName,
@@ -199,14 +214,14 @@ export default function CreateRetreatModal({ isOpen, onClose, onSubmit }: Create
                 amenities: form.modalities,
                 facilities: form.retreatVenueType,
                 hasAccommodation: true,
-                heroImage: form.heroImage,
-                galleryPhotos: form.venueImages,
+                heroImage: heroUrl,
+                galleryPhotos: galleryUrls,
                 quote: form.heroQuote,
                 shortDescription: form.shortDescription,
                 retreatVenueType: form.retreatVenueType,
                 hireType: form.hireType,
-                experienceFeatureImage: form.experienceImage,
-                introText: form.introductionText,
+                experienceFeatureImage: expUrl,
+                introParagraph1: form.introductionText,
                 idealRetreatTypes: form.idealRetreatType,
                 experienceTitle: form.experienceTitle,
                 experienceSubtitle: form.experienceSubtitle,
@@ -237,7 +252,10 @@ export default function CreateRetreatModal({ isOpen, onClose, onSubmit }: Create
                 primaryVenueType: form.primaryVenueType,
             });
             onClose();
-            // Reset form
+            // Reset form and file tracking
+            setHeroFile(null);
+            setExpFile(null);
+            setGalleryFiles([]);
             setForm({
                 venueName: '', primaryVenueType: '', retreatVenueType: [], maxGuests: 0,
                 startingPrice: 0, totalBookings: 0, hireType: 'Exclusive Use',

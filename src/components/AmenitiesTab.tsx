@@ -143,6 +143,7 @@ export default function AmenitiesTab({ venue, onUpdate }: AmenitiesTabProps) {
             .from('venue_amenities')
             .select('*')
             .eq('venue_id', venue.id)
+            .eq('venue_type', 'retreat')
             .single();
 
         if (data) {
@@ -216,14 +217,19 @@ export default function AmenitiesTab({ venue, onUpdate }: AmenitiesTabProps) {
         const amenitiesArr = Array.from(selected);
         const payload: Record<string, any> = {
             venue_id: venue.id,
+            venue_type: 'retreat',
             facilities_list: amenitiesArr,
             ...extras,
         };
 
-        await supabase.from('venue_amenities').upsert(payload, { onConflict: 'venue_id' });
+        const { error } = await supabase.from('venue_amenities').upsert(payload, { onConflict: 'venue_id,venue_type' });
+        setSaving(false);
+        if (error) {
+            alert('Error saving amenities: ' + error.message);
+            return;
+        }
         onUpdate?.({ amenities: amenitiesArr, facilities: amenitiesArr });
         setHasChanges(false);
-        setSaving(false);
         alert('Amenities saved successfully!');
     }
 

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Upload, Plus, Trash2, Check } from 'lucide-react';
+import { uploadFile } from '../lib/storage';
 
 interface CreateWellnessModalProps {
     isOpen: boolean;
@@ -63,6 +64,11 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
     const expInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
+    // Track actual File objects alongside blob preview URLs
+    const [heroFile, setHeroFile] = useState<File | null>(null);
+    const [expFile, setExpFile] = useState<File | null>(null);
+    const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+
     /* ── Form State ── */
     const [form, setForm] = useState({
         // Overview — Basic
@@ -118,18 +124,23 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
         });
     };
 
-    const handleImageUpload = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (field: 'heroImage' | 'experienceImage', e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) u(field, URL.createObjectURL(file));
+        if (!file) return;
+        if (field === 'heroImage') setHeroFile(file);
+        else setExpFile(file);
+        u(field, URL.createObjectURL(file));
     };
     const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (files) {
-            const urls = Array.from(files).map(f => URL.createObjectURL(f));
-            setForm(prev => ({ ...prev, venueImages: [...prev.venueImages, ...urls] }));
-        }
+        if (!files) return;
+        const newFiles = Array.from(files);
+        const urls = newFiles.map(f => URL.createObjectURL(f));
+        setGalleryFiles(prev => [...prev, ...newFiles]);
+        setForm(prev => ({ ...prev, venueImages: [...prev.venueImages, ...urls] }));
     };
     const removeGalleryImage = (idx: number) => {
+        setGalleryFiles(prev => prev.filter((_, i) => i !== idx));
         setForm(prev => ({ ...prev, venueImages: prev.venueImages.filter((_, i) => i !== idx) }));
     };
 
@@ -137,6 +148,13 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
         if (!form.venueName.trim()) { alert('Venue Name is required.'); return; }
         setSaving(true);
         try {
+            // Upload images to Supabase storage before creating the venue
+            const [heroUrl, expUrl, ...galleryUrls] = await Promise.all([
+                heroFile ? uploadFile(heroFile) : Promise.resolve(form.heroImage),
+                expFile ? uploadFile(expFile) : Promise.resolve(form.experienceImage),
+                ...galleryFiles.map(f => uploadFile(f)),
+            ]);
+
             const gps = form.gpsLat && form.gpsLng ? `${form.gpsLat}, ${form.gpsLng}` : '';
             await onSubmit({
                 name: form.venueName, type: 'Wellness',
@@ -149,21 +167,25 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
                 description: form.description, website: '',
                 amenities: form.wellnessCategories, facilities: form.wellnessVenueTypes,
                 hasAccommodation: false,
-                heroImage: form.heroImage, galleryPhotos: form.venueImages,
+                heroImage: heroUrl, galleryPhotos: galleryUrls,
                 quote: form.heroQuote, shortDescription: form.shortDescription,
                 venueTypeCategory: 'Wellness',
-                experienceFeatureImage: form.experienceImage,
-                introText: form.introductionText,
+                experienceFeatureImage: expUrl,
+                introParagraph1: form.introductionText,
                 experienceTitle: form.experienceTitle, experienceSubtitle: form.experienceSubtitle,
                 experienceDescription: form.experienceDescription,
+                wellnessVenueTypes: form.wellnessVenueTypes,
+                wellnessCategories: form.wellnessCategories,
+                totalTreatmentRooms: form.treatmentRooms,
+                couplesRooms: form.couplesSuites,
                 propertySizeValue: form.floorArea, propertySizeUnit: 'sqm',
                 established: form.yearEstablished,
+                maxGuests: form.maxConcurrentClients,
                 streetAddress: form.streetAddress, suburb: form.suburb,
                 postcode: form.postcode, stateProvince: form.stateProvince,
                 country: form.country, locationType: form.locationType,
                 gpsCoordinates: gps, nearestAirport: form.nearestTransport,
                 transportAccess: form.parkingAccess,
-                maxGuests: form.maxConcurrentClients,
                 propertyStatus: form.propertyStatus,
                 sanctumVetted: form.sanctumVetted, featuredListing: form.featuredListing,
                 instantBooking: form.onlineBooking,
@@ -171,7 +193,10 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
                 pricingTiers: [], startingPrice: form.startingPrice, totalBookings: 0,
             });
             onClose();
-            // reset
+            // Reset form and file tracking
+            setHeroFile(null);
+            setExpFile(null);
+            setGalleryFiles([]);
             setActiveTab('overview');
             setForm({
                 venueName: '', wellnessVenueTypes: [], wellnessCategories: [],
