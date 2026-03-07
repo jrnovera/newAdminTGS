@@ -1,26 +1,175 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, Search, Filter, MoreHorizontal, ChevronLeft, ChevronRight, UserPlus, TrendingUp } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-const hosts = [
-  { name: 'Tom Cronin', email: 'tom@thetomcronin.com', specialty: 'Meditation & Mindfulness', retreats: 8, rating: 4.9, status: 'Active', location: 'Sydney, AU', revenue: '$12,400' },
-  { name: 'Dr. Amelia Santos', email: 'amelia@holistichealth.com', specialty: 'Holistic Health', retreats: 12, rating: 4.8, status: 'Active', location: 'Byron Bay, AU', revenue: '$18,200' },
-  { name: 'Yuki Tanaka', email: 'yuki@zenjourney.jp', specialty: 'Zen & Tea Ceremony', retreats: 5, rating: 5.0, status: 'Active', location: 'Kyoto, Japan', revenue: '$9,800' },
-  { name: 'Anna Martinez', email: 'anna@nutritionretreats.com', specialty: 'Nutrition & Detox', retreats: 6, rating: 4.7, status: 'Active', location: 'Bali, Indonesia', revenue: '$7,600' },
-  { name: 'Marcus Wellbeing', email: 'marcus@breathwork.co', specialty: 'Breathwork', retreats: 4, rating: 4.6, status: 'Active', location: 'Sedona, AZ', revenue: '$5,200' },
-  { name: 'Sophie Laurent', email: 'sophie@yogaretreat.fr', specialty: 'Yoga & Pilates', retreats: 15, rating: 4.9, status: 'Active', location: 'Nice, France', revenue: '$22,100' },
-  { name: 'Raj Patel', email: 'raj@ayurvedawise.in', specialty: 'Ayurveda', retreats: 3, rating: 4.5, status: 'Pending', location: 'Kerala, India', revenue: '$0' },
-  { name: 'Clare O\'Brien', email: 'clare@soundhealing.ie', specialty: 'Sound Healing', retreats: 7, rating: 4.8, status: 'Active', location: 'Galway, Ireland', revenue: '$8,900' },
-];
+interface RetreatHost {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  location: string;
+  venues: number;
+  venueNames: string[];
+  status: 'Active' | 'Pending' | 'Inactive';
+  joined: string;
+  company: string;
+  // Host Public Profile fields
+  hostDisplayName: string;
+  hostImageUrl: string;
+  hostQuote: string;
+  hostBio: string;
+  showHostProfile: boolean;
+}
 
-const tabs = [
-  { label: 'All Hosts', count: 76 },
-  { label: 'Active', count: 68 },
-  { label: 'Pending', count: 5 },
-  { label: 'Inactive', count: 3 },
-];
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
 
 export default function RetreatHosts() {
   const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hosts, setHosts] = useState<RetreatHost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHosts();
+  }, []);
+
+  const fetchHosts = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch owner/manager records for retreat venues only
+      const { data: ownerRows, error: ownerError } = await supabase
+        .from('venue_owner_manager')
+        .select('*')
+        .eq('venue_type', 'retreat')
+        .order('created_at', { ascending: false });
+
+      if (ownerError) {
+        console.error('[RetreatHosts] fetch error:', ownerError);
+        return;
+      }
+
+      if (!ownerRows || ownerRows.length === 0) {
+        setHosts([]);
+        return;
+      }
+
+      // Fetch retreat venue details
+      const venueIds = ownerRows.map(r => r.venue_id);
+      const { data: venues } = await supabase
+        .from('retreat_venues')
+        .select('id, venue_name, city, state, listing_status')
+        .in('id', venueIds);
+
+      const venueMap = new Map<string, { name: string; location: string; status: string }>();
+      for (const v of (venues || [])) {
+        venueMap.set(v.id, {
+          name: v.venue_name,
+          location: [v.city, v.state].filter(Boolean).join(', '),
+          status: v.listing_status || 'Draft',
+        });
+      }
+
+      // Group by email (same host can manage multiple retreat venues)
+      const grouped = new Map<string, typeof ownerRows>();
+      for (const row of ownerRows) {
+        const key = (row.email || `${row.first_name}_${row.last_name}_${row.id}`).toLowerCase();
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key)!.push(row);
+      }
+
+      const result: RetreatHost[] = [];
+      for (const [, rows] of grouped) {
+        const primary = rows[0];
+        const name = [primary.first_name, primary.last_name].filter(Boolean).join(' ') || 'Unknown';
+        const venueNames: string[] = [];
+        const locations: string[] = [];
+        const statuses: string[] = [];
+
+        for (const row of rows) {
+          const venue = venueMap.get(row.venue_id);
+          if (venue) {
+            venueNames.push(venue.name);
+            if (venue.location && !locations.includes(venue.location)) locations.push(venue.location);
+            statuses.push(venue.status);
+          }
+        }
+
+        let status: 'Active' | 'Pending' | 'Inactive' = 'Pending';
+        if (statuses.some(s => s === 'Published' || s === 'Active')) {
+          status = 'Active';
+        } else if (statuses.every(s => s === 'Archived' || s === 'Inactive')) {
+          status = 'Inactive';
+        }
+
+        result.push({
+          id: primary.id,
+          name,
+          email: primary.email || '',
+          phone: primary.phone_primary || '',
+          role: primary.role || 'Host',
+          location: locations.join(' / ') || primary.mailing_address || 'N/A',
+          venues: rows.length,
+          venueNames,
+          status,
+          joined: formatDate(primary.created_at),
+          company: primary.business_name || '',
+          hostDisplayName: primary.host_display_name || '',
+          hostImageUrl: primary.host_image_url || '',
+          hostQuote: primary.host_quote || '',
+          hostBio: primary.host_bio || '',
+          showHostProfile: primary.show_host_profile ?? true,
+        });
+      }
+
+      setHosts(result);
+    } catch (err) {
+      console.error('[RetreatHosts] fetchHosts error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter hosts based on tab and search
+  const filteredHosts = hosts.filter((h) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.venueNames.some(v => v.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    switch (activeTab) {
+      case 1: return matchesSearch && h.status === 'Active';
+      case 2: return matchesSearch && h.status === 'Pending';
+      case 3: return matchesSearch && h.status === 'Inactive';
+      default: return matchesSearch;
+    }
+  });
+
+  // Dynamic tab counts
+  const tabCounts = [
+    hosts.length,
+    hosts.filter((h) => h.status === 'Active').length,
+    hosts.filter((h) => h.status === 'Pending').length,
+    hosts.filter((h) => h.status === 'Inactive').length,
+  ];
+
+  const tabs = [
+    { label: 'All Hosts' },
+    { label: 'Active' },
+    { label: 'Pending' },
+    { label: 'Inactive' },
+  ];
+
+  const activeHosts = hosts.filter(h => h.status === 'Active').length;
+  const totalVenues = hosts.reduce((sum, h) => sum + h.venues, 0);
 
   return (
     <>
@@ -38,30 +187,30 @@ export default function RetreatHosts() {
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="stat-card">
           <div className="stat-label">Total Hosts</div>
-          <div className="stat-value">76</div>
-          <div className="stat-change positive"><TrendingUp size={14} /> +8 this month</div>
+          <div className="stat-value">{hosts.length}</div>
+          <div className="stat-change positive"><TrendingUp size={14} /> Retreat hosts</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Active Hosts</div>
-          <div className="stat-value success">68</div>
-          <div className="stat-breakdown">Running 156 retreats</div>
+          <div className="stat-value success">{activeHosts}</div>
+          <div className="stat-breakdown">Managing {totalVenues} retreat venues</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Avg Rating</div>
-          <div className="stat-value" style={{ color: '#D4A853' }}>4.8</div>
-          <div className="stat-breakdown">Based on 1,240 reviews</div>
+          <div className="stat-label">Pending Hosts</div>
+          <div className="stat-value" style={{ color: '#D4A853' }}>{tabCounts[2]}</div>
+          <div className="stat-breakdown">Awaiting activation</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Host Revenue MTD</div>
-          <div className="stat-value">$84,200</div>
-          <div className="stat-change positive"><TrendingUp size={14} /> +31% vs last month</div>
+          <div className="stat-label">Inactive Hosts</div>
+          <div className="stat-value">{tabCounts[3]}</div>
+          <div className="stat-breakdown">Currently inactive</div>
         </div>
       </div>
 
       <div className="tabs-container">
         {tabs.map((tab, i) => (
           <div key={i} className={`tab${activeTab === i ? ' active' : ''}`} onClick={() => setActiveTab(i)}>
-            {tab.label} <span className="tab-count">{tab.count}</span>
+            {tab.label} <span className="tab-count">{tabCounts[i]}</span>
           </div>
         ))}
       </div>
@@ -69,7 +218,12 @@ export default function RetreatHosts() {
       <div className="toolbar">
         <div className="search-box">
           <Search size={18} color="#B8B8B8" />
-          <input type="text" placeholder="Search hosts by name, specialty, or location..." />
+          <input
+            type="text"
+            placeholder="Search hosts by name, email, or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <div className="toolbar-actions">
           <button className="filter-btn"><Filter size={16} /> Filters</button>
@@ -81,60 +235,100 @@ export default function RetreatHosts() {
           <thead>
             <tr>
               <th>Host</th>
-              <th>Specialty</th>
+              <th>Display Name</th>
               <th>Location</th>
-              <th>Retreats</th>
-              <th>Rating</th>
+              <th>Venues</th>
+              <th>Quote</th>
+              <th>Profile</th>
               <th>Status</th>
-              <th>Revenue MTD</th>
               <th style={{ width: 50 }}></th>
             </tr>
           </thead>
           <tbody>
-            {hosts.map((h, i) => (
-              <tr key={i}>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4A7C59, #3d6b4a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
-                      {h.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{h.name}</div>
-                      <div style={{ fontSize: 12, color: '#B8B8B8' }}>{h.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td><span className="badge badge-retreat">{h.specialty}</span></td>
-                <td>{h.location}</td>
-                <td style={{ fontWeight: 500 }}>{h.retreats}</td>
-                <td>
-                  <span style={{ color: '#D4A853', fontWeight: 600 }}>★ {h.rating}</span>
-                </td>
-                <td>
-                  <span className={`status-badge ${h.status === 'Active' ? 'active' : h.status === 'Pending' ? 'pending' : 'inactive'}`}>
-                    {h.status}
-                  </span>
-                </td>
-                <td style={{ fontWeight: 500 }}>{h.revenue}</td>
-                <td>
-                  <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#B8B8B8' }}>
-                    <MoreHorizontal size={16} />
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '48px 20px', color: '#B8B8B8' }}>
+                  <div style={{ fontSize: 16 }}>Loading hosts...</div>
                 </td>
               </tr>
-            ))}
+            ) : filteredHosts.length === 0 ? (
+              <tr>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '48px 20px', color: '#B8B8B8' }}>
+                  <div style={{ fontSize: 16, marginBottom: 8 }}>No retreat hosts found</div>
+                  <div style={{ fontSize: 13 }}>
+                    {searchQuery ? 'Try adjusting your search or filters' : 'Retreat hosts will appear here once venues have owner/manager data'}
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filteredHosts.map((h) => (
+                <tr key={h.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {h.hostImageUrl ? (
+                        <img
+                          src={h.hostImageUrl}
+                          alt={h.hostDisplayName || h.name}
+                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4A7C59, #3d6b4a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
+                          {h.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                      )}
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{h.name}</div>
+                        <div style={{ fontSize: 12, color: '#B8B8B8' }}>{h.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{h.hostDisplayName || '—'}</td>
+                  <td>{h.location}</td>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>{h.venues}</div>
+                    {h.venueNames.length > 0 && (
+                      <div style={{ fontSize: 11, color: '#B8B8B8' }}>{h.venueNames.join(', ')}</div>
+                    )}
+                  </td>
+                  <td>
+                    {h.hostQuote ? (
+                      <div style={{ fontSize: 12, fontStyle: 'italic', color: '#999', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        "{h.hostQuote}"
+                      </div>
+                    ) : (
+                      <span style={{ color: '#B8B8B8' }}>—</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`status-badge ${h.showHostProfile ? 'active' : 'inactive'}`}>
+                      {h.showHostProfile ? 'Visible' : 'Hidden'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${h.status === 'Active' ? 'active' : h.status === 'Pending' ? 'pending' : 'inactive'}`}>
+                      {h.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#B8B8B8' }}>
+                      <MoreHorizontal size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-        <div className="pagination">
-          <div className="pagination-info">Showing 1-8 of 76 hosts</div>
-          <div className="pagination-controls">
-            <button className="page-btn"><ChevronLeft size={16} /></button>
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-            <button className="page-btn"><ChevronRight size={16} /></button>
+        {filteredHosts.length > 0 && (
+          <div className="pagination">
+            <div className="pagination-info">Showing 1-{filteredHosts.length} of {filteredHosts.length} hosts</div>
+            <div className="pagination-controls">
+              <button className="page-btn"><ChevronLeft size={16} /></button>
+              <button className="page-btn active">1</button>
+              <button className="page-btn"><ChevronRight size={16} /></button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

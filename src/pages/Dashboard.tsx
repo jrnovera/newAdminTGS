@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Upload,
@@ -7,8 +8,109 @@ import {
   DollarSign,
   UserPlus,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+interface ActivityItem {
+  id: string;
+  type: 'venue' | 'booking' | 'enquiry';
+  text: string;
+  detail: string;
+  time: string;
+  timestamp: number;
+}
+
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+  const d = new Date(dateStr);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
 
 export default function Dashboard() {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+
+  useEffect(() => {
+    fetchRecentActivity();
+  }, []);
+
+  const fetchRecentActivity = async () => {
+    try {
+      setLoadingActivity(true);
+
+      const [retreatRes, wellnessRes, bookingsRes, enquiriesRes] = await Promise.all([
+        supabase.from('retreat_venues').select('id, venue_name, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('wellness_venues').select('id, venue_name, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('bookings').select('id, guest_name, service_name, status, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('enquiries').select('id, customer_name, venue_name, enquiry_type, created_at').order('created_at', { ascending: false }).limit(5),
+      ]);
+
+      const items: ActivityItem[] = [];
+
+      for (const v of (retreatRes.data || [])) {
+        items.push({
+          id: `rv-${v.id}`,
+          type: 'venue',
+          text: `New retreat venue added: <strong>${v.venue_name}</strong>`,
+          detail: 'Retreat Venue',
+          time: timeAgo(v.created_at),
+          timestamp: new Date(v.created_at).getTime(),
+        });
+      }
+
+      for (const v of (wellnessRes.data || [])) {
+        items.push({
+          id: `wv-${v.id}`,
+          type: 'venue',
+          text: `New wellness venue added: <strong>${v.venue_name}</strong>`,
+          detail: 'Wellness Venue',
+          time: timeAgo(v.created_at),
+          timestamp: new Date(v.created_at).getTime(),
+        });
+      }
+
+      for (const b of (bookingsRes.data || [])) {
+        const service = b.service_name ? ` for <strong>${b.service_name}</strong>` : '';
+        items.push({
+          id: `bk-${b.id}`,
+          type: 'booking',
+          text: `<strong>${b.guest_name || 'Guest'}</strong> made a booking${service}`,
+          detail: `Status: ${b.status || 'pending'}`,
+          time: timeAgo(b.created_at),
+          timestamp: new Date(b.created_at).getTime(),
+        });
+      }
+
+      for (const e of (enquiriesRes.data || [])) {
+        items.push({
+          id: `eq-${e.id}`,
+          type: 'enquiry',
+          text: `<strong>${e.customer_name}</strong> enquired about <strong>${e.venue_name}</strong>`,
+          detail: e.enquiry_type || 'General Enquiry',
+          time: timeAgo(e.created_at),
+          timestamp: new Date(e.created_at).getTime(),
+        });
+      }
+
+      // Sort all by timestamp descending, take top 10
+      items.sort((a, b) => b.timestamp - a.timestamp);
+      setActivities(items.slice(0, 10));
+    } catch (err) {
+      console.error('[Dashboard] fetchRecentActivity error:', err);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
   return (
     <>
       {/* Page Header */}
@@ -160,46 +262,29 @@ export default function Dashboard() {
         <div className="content-card">
           <div className="card-header">
             <h3 className="card-title">Recent Activity</h3>
-            <a href="#" className="card-action">View All</a>
           </div>
           <div className="card-body">
-            <ul className="activity-list">
-              <li className="activity-item">
-                <div className="activity-dot booking"></div>
-                <div className="activity-content">
-                  <div className="activity-text"><strong>Sarah Mitchell</strong> booked <strong>Moraea Farm</strong></div>
-                  <div className="activity-time">12 minutes ago</div>
-                </div>
-              </li>
-              <li className="activity-item">
-                <div className="activity-dot venue"></div>
-                <div className="activity-content">
-                  <div className="activity-text">New venue added: <strong>Curraweena House</strong></div>
-                  <div className="activity-time">2 hours ago</div>
-                </div>
-              </li>
-              <li className="activity-item">
-                <div className="activity-dot payment"></div>
-                <div className="activity-content">
-                  <div className="activity-text">Payment received: <strong>$490</strong> from Byron Wellness Retreat</div>
-                  <div className="activity-time">3 hours ago</div>
-                </div>
-              </li>
-              <li className="activity-item">
-                <div className="activity-dot user"></div>
-                <div className="activity-content">
-                  <div className="activity-text"><strong>Tom Cronin</strong> registered as Retreat Host</div>
-                  <div className="activity-time">5 hours ago</div>
-                </div>
-              </li>
-              <li className="activity-item">
-                <div className="activity-dot booking"></div>
-                <div className="activity-content">
-                  <div className="activity-text">Booking confirmed: <strong>Anna's Nutrition Retreat</strong></div>
-                  <div className="activity-time">Yesterday</div>
-                </div>
-              </li>
-            </ul>
+            {loadingActivity ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: '#B8B8B8', fontSize: 14 }}>
+                Loading recent activity...
+              </div>
+            ) : activities.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: '#B8B8B8', fontSize: 14 }}>
+                No recent activity found
+              </div>
+            ) : (
+              <ul className="activity-list">
+                {activities.map((a) => (
+                  <li key={a.id} className="activity-item">
+                    <div className={`activity-dot ${a.type === 'venue' ? 'venue' : a.type === 'booking' ? 'booking' : 'user'}`}></div>
+                    <div className="activity-content">
+                      <div className="activity-text" dangerouslySetInnerHTML={{ __html: a.text }} />
+                      <div className="activity-time">{a.time}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </section>

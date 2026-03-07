@@ -7,7 +7,7 @@ import OwnerFormModal from '../components/OwnerFormModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 
 export default function VenueOwners() {
-  const { owners, addOwner, updateOwner, deleteOwner } = useVenueOwners();
+  const { owners, loading, addOwner, updateOwner, deleteOwner } = useVenueOwners();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -184,7 +184,13 @@ export default function VenueOwners() {
             </tr>
           </thead>
           <tbody>
-            {filteredOwners.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '48px 20px', color: '#B8B8B8' }}>
+                  <div style={{ fontSize: 16 }}>Loading owners...</div>
+                </td>
+              </tr>
+            ) : filteredOwners.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ textAlign: 'center', padding: '48px 20px', color: '#B8B8B8' }}>
                   <div style={{ fontSize: 16, marginBottom: 8 }}>No owners found</div>
