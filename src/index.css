@@ -9527,6 +9527,10 @@ a {
 
 /* --- OVERVIEW TAB DEMO CSS --- */
 /* Form Sections */
+.content-area {
+  padding: 32px 48px;
+}
+
 .form-section {
   background-color: var(--white);
   border-radius: 12px;
@@ -9547,6 +9551,18 @@ a {
   font-size: 18px;
   color: var(--text);
   margin: 0;
+}
+
+.form-section-subtitle {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 6px;
 }
 
 .form-section-body {

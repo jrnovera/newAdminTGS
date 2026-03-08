@@ -1,4 +1,6 @@
-import { useState, useRef } from 'react';
+import re
+
+content = """import { useState, useRef } from 'react';
 import { X, ChevronDown, ChevronUp, Upload, Plus, Trash2 } from 'lucide-react';
 import { uploadFile } from '../lib/storage';
 
@@ -593,3 +595,7 @@ export default function CreateWellnessModal({ isOpen, onClose, onSubmit }: Creat
         </div>
     );
 }
+"""
+
+with open('/Users/macbookpro/newAdminTGS/src/components/CreateWellnessModal.tsx', 'w') as f:
+    f.write(content)

@@ -143,7 +143,7 @@ export default function AmenitiesTab({ venue, onUpdate }: AmenitiesTabProps) {
             .from('venue_amenities')
             .select('*')
             .eq('venue_id', venue.id)
-            .eq('venue_type', 'retreat')
+            .eq('venue_type', venue.type ? venue.type.toLowerCase() : 'retreat')
             .single();
 
         if (data) {
@@ -217,7 +217,7 @@ export default function AmenitiesTab({ venue, onUpdate }: AmenitiesTabProps) {
         const amenitiesArr = Array.from(selected);
         const payload: Record<string, any> = {
             venue_id: venue.id,
-            venue_type: 'retreat',
+            venue_type: venue.type ? venue.type.toLowerCase() : 'retreat',
             facilities_list: amenitiesArr,
             ...extras,
         };

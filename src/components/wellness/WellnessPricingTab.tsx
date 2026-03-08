@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Save, Loader } from 'lucide-react';
+import { Plus, Save, Loader, Image as ImageIcon, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { uploadFile, deleteFile } from '../../lib/storage';
 import type { Venue } from '../../context/VenueContext';
 
 interface Props {
@@ -17,6 +18,7 @@ interface WellnessPackage {
     includes: string;
     price: string;
     per: string;
+    image: string;
 }
 
 interface PricingData {
@@ -36,6 +38,7 @@ interface PricingData {
     membership_details: string;
     // Vouchers
     vouchers_available: boolean;
+    voucher_types: string[];
     voucher_validity: string;
     // Booking rules
     advance_booking: string;
@@ -53,15 +56,6 @@ interface PricingData {
     late_fee: string;
     no_show_fee: string;
     cancellation_text: string;
-    // Booking settings
-    online_booking: boolean;
-    booking_platform: string;
-    booking_url: string;
-    calendar_sync: boolean;
-    auto_confirm: boolean;
-    reminders: string;
-    // Notes
-    pricing_notes: string;
 }
 
 const DEFAULT_DATA: PricingData = {
@@ -77,6 +71,7 @@ const DEFAULT_DATA: PricingData = {
     memberships_available: false,
     membership_details: '',
     vouchers_available: false,
+    voucher_types: ['Monetary value', 'Specific service', 'Package'],
     voucher_validity: '12 months',
     advance_booking: 'Recommended',
     min_notice: '24 hours',
@@ -91,13 +86,6 @@ const DEFAULT_DATA: PricingData = {
     late_fee: '50% of service',
     no_show_fee: '100% of service',
     cancellation_text: '',
-    online_booking: false,
-    booking_platform: 'TGS Booking',
-    booking_url: '',
-    calendar_sync: false,
-    auto_confirm: false,
-    reminders: 'None',
-    pricing_notes: '',
 };
 
 let nextPkgId = 100;
@@ -140,6 +128,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                     memberships_available: row.memberships_available ?? false,
                     membership_details: row.membership_details || '',
                     vouchers_available: row.vouchers_available ?? false,
+                    voucher_types: Array.isArray(row.voucher_types) ? row.voucher_types : ['Monetary value', 'Specific service', 'Package'],
                     voucher_validity: row.voucher_validity || '12 months',
                     advance_booking: row.advance_booking || 'Recommended',
                     min_notice: row.min_notice || '24 hours',
@@ -154,13 +143,6 @@ export default function WellnessPricingTab({ venue }: Props) {
                     late_fee: row.late_fee || '50% of service',
                     no_show_fee: row.no_show_fee || '100% of service',
                     cancellation_text: row.cancellation_text || '',
-                    online_booking: row.online_booking ?? false,
-                    booking_platform: row.booking_platform || 'TGS Booking',
-                    booking_url: row.booking_url || '',
-                    calendar_sync: row.calendar_sync ?? false,
-                    auto_confirm: row.auto_confirm ?? false,
-                    reminders: row.reminders || 'None',
-                    pricing_notes: row.pricing_notes || '',
                 });
             }
 
@@ -185,17 +167,33 @@ export default function WellnessPricingTab({ venue }: Props) {
             includes: '',
             price: '',
             per: 'person',
+            image: '',
         };
         set('packages', [...data.packages, newPkg]);
+    }
+
+    async function handlePackageImageUpload(pkgId: number, file: File) {
+        try {
+            const url = await uploadFile(file, 'photo');
+            updatePackage(pkgId, 'image', url);
+        } catch (err) {
+            console.error('Package image upload error:', err);
+        }
+    }
+
+    async function handlePackageImageRemove(pkgId: number, imageUrl: string) {
+        try {
+            await deleteFile(imageUrl, 'photo');
+        } catch {
+            // ignore delete errors
+        }
+        updatePackage(pkgId, 'image', '');
     }
 
     function updatePackage(id: number, field: keyof WellnessPackage, value: string | boolean) {
         set('packages', data.packages.map(p => p.id === id ? { ...p, [field]: value } : p));
     }
 
-    function removePackage(id: number) {
-        set('packages', data.packages.filter(p => p.id !== id));
-    }
 
     // ─── Save ─────────────────────────────────────────────────────────────
     async function handleSave() {
@@ -216,6 +214,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                 memberships_available: data.memberships_available,
                 membership_details: data.membership_details,
                 vouchers_available: data.vouchers_available,
+                voucher_types: data.voucher_types,
                 voucher_validity: data.voucher_validity,
                 advance_booking: data.advance_booking,
                 min_notice: data.min_notice,
@@ -230,13 +229,6 @@ export default function WellnessPricingTab({ venue }: Props) {
                 late_fee: data.late_fee,
                 no_show_fee: data.no_show_fee,
                 cancellation_text: data.cancellation_text,
-                online_booking: data.online_booking,
-                booking_platform: data.booking_platform,
-                booking_url: data.booking_url,
-                calendar_sync: data.calendar_sync,
-                auto_confirm: data.auto_confirm,
-                reminders: data.reminders,
-                pricing_notes: data.pricing_notes,
             };
 
             const { data: existing, error: selErr } = await supabase
@@ -391,18 +383,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                                 <div key={pkg.id} style={{ background: 'var(--secondary-bg)', borderRadius: 8, padding: 16, border: '1px solid rgba(184,184,184,0.2)', position: 'relative' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                                         <div style={{ flex: 1, marginRight: 8 }}>
-                                            <select
-                                                className="form-select form-input"
-                                                style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '2px 6px', marginBottom: 4, color: 'var(--accent)' }}
-                                                value={pkg.type}
-                                                onChange={e => updatePackage(pkg.id, 'type', e.target.value)}
-                                            >
-                                                <option value="Day Package">Day Package</option>
-                                                <option value="Overnight Package">Overnight Package</option>
-                                                <option value="Weekend Package">Weekend Package</option>
-                                                <option value="Retreat Package">Retreat Package</option>
-                                                <option value="Membership Package">Membership Package</option>
-                                            </select>
+                                            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent)', display: 'block', marginBottom: 4 }}>{pkg.type}</span>
                                             <input
                                                 type="text"
                                                 className="form-input"
@@ -412,64 +393,105 @@ export default function WellnessPricingTab({ venue }: Props) {
                                                 placeholder="Package name"
                                             />
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div className="toggle-container" onClick={() => updatePackage(pkg.id, 'active', !pkg.active)}>
-                                                <div className={`toggle ${pkg.active ? 'active' : ''}`} style={{ width: 32, height: 18 }}>
-                                                    <div className="toggle-knob" style={{ width: 14, height: 14 }} />
+                                        <div className="toggle-container" onClick={() => updatePackage(pkg.id, 'active', !pkg.active)}>
+                                            <div className={`toggle ${pkg.active ? 'active' : ''}`} style={{ width: 32, height: 18 }}>
+                                                <div className="toggle-knob" style={{ width: 14, height: 14 }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        {/* Package Image */}
+                                        <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+                                            {pkg.image ? (
+                                                <>
+                                                    <img
+                                                        src={pkg.image}
+                                                        alt={pkg.name}
+                                                        style={{ width: 64, height: 64, borderRadius: 6, objectFit: 'cover' }}
+                                                    />
+                                                    <button
+                                                        onClick={() => handlePackageImageRemove(pkg.id, pkg.image)}
+                                                        style={{
+                                                            position: 'absolute', top: -6, right: -6,
+                                                            width: 18, height: 18, borderRadius: '50%',
+                                                            background: 'var(--error, #C45C5C)', color: '#fff',
+                                                            border: 'none', cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            padding: 0,
+                                                        }}
+                                                        title="Remove image"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <label style={{
+                                                    width: 64, height: 64, borderRadius: 6,
+                                                    background: 'var(--white)', border: '1px dashed rgba(184,184,184,0.4)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                }}>
+                                                    <ImageIcon size={20} color="#B8B8B8" />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={e => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) handlePackageImageUpload(pkg.id, file);
+                                                            e.target.value = '';
+                                                        }}
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+                                        {/* Package Details */}
+                                        <div style={{ flex: 1 }}>
+                                            <textarea
+                                                className="form-input form-textarea"
+                                                style={{ fontSize: 11, padding: '6px 8px', minHeight: 40, resize: 'none', marginBottom: 8 }}
+                                                value={pkg.description}
+                                                onChange={e => updatePackage(pkg.id, 'description', e.target.value)}
+                                                placeholder="Package description…"
+                                            />
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                                                <span style={{ fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap' }}>Includes:</span>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    style={{ flex: 1, fontSize: 10, padding: '4px 6px' }}
+                                                    value={pkg.includes}
+                                                    onChange={e => updatePackage(pkg.id, 'includes', e.target.value)}
+                                                    placeholder="e.g. 60min massage, thermal circuit, lunch"
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                                                <div>
+                                                    <span style={{ fontSize: 10, color: 'var(--accent)', display: 'block', marginBottom: 2 }}>Price</span>
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        style={{ width: 90, fontSize: 12, padding: '4px 6px' }}
+                                                        value={pkg.price}
+                                                        onChange={e => updatePackage(pkg.id, 'price', e.target.value)}
+                                                        placeholder="$299"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <span style={{ fontSize: 10, color: 'var(--accent)', display: 'block', marginBottom: 2 }}>Per</span>
+                                                    <select
+                                                        className="form-select form-input"
+                                                        style={{ fontSize: 11, padding: '4px 6px' }}
+                                                        value={pkg.per}
+                                                        onChange={e => updatePackage(pkg.id, 'per', e.target.value)}
+                                                    >
+                                                        <option value="person">person</option>
+                                                        <option value="couple">couple</option>
+                                                        <option value="package">package</option>
+                                                        <option value="group">group</option>
+                                                    </select>
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => removePackage(pkg.id)}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 2, display: 'flex', alignItems: 'center' }}
-                                                title="Remove package"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <textarea
-                                        className="form-input form-textarea"
-                                        style={{ fontSize: 11, padding: '6px 8px', minHeight: 44, resize: 'none', marginBottom: 8 }}
-                                        value={pkg.description}
-                                        onChange={e => updatePackage(pkg.id, 'description', e.target.value)}
-                                        placeholder="Package description…"
-                                    />
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                                        <span style={{ fontSize: 10, color: 'var(--accent)', whiteSpace: 'nowrap' }}>Includes:</span>
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            style={{ flex: 1, fontSize: 10, padding: '4px 6px' }}
-                                            value={pkg.includes}
-                                            onChange={e => updatePackage(pkg.id, 'includes', e.target.value)}
-                                            placeholder="e.g. 60min massage, thermal circuit, lunch"
-                                        />
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                                        <div>
-                                            <span style={{ fontSize: 10, color: 'var(--accent)', display: 'block', marginBottom: 2 }}>Price</span>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                style={{ width: 90, fontSize: 12, padding: '4px 6px' }}
-                                                value={pkg.price}
-                                                onChange={e => updatePackage(pkg.id, 'price', e.target.value)}
-                                                placeholder="$299"
-                                            />
-                                        </div>
-                                        <div>
-                                            <span style={{ fontSize: 10, color: 'var(--accent)', display: 'block', marginBottom: 2 }}>Per</span>
-                                            <select
-                                                className="form-select form-input"
-                                                style={{ fontSize: 11, padding: '4px 6px' }}
-                                                value={pkg.per}
-                                                onChange={e => updatePackage(pkg.id, 'per', e.target.value)}
-                                            >
-                                                <option value="person">person</option>
-                                                <option value="couple">couple</option>
-                                                <option value="package">package</option>
-                                                <option value="group">group</option>
-                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -547,7 +569,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Memberships</h3>
-                        <p className="form-section-subtitle">Recurring membership options for regular guests</p>
+                        <p className="form-section-subtitle">Recurring membership options</p>
                     </div>
                 </div>
                 <div className="form-section-body">
@@ -596,6 +618,14 @@ export default function WellnessPricingTab({ venue }: Props) {
                             </div>
                         </div>
                         <div className="form-group">
+                            <label className="form-label">Voucher Types</label>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {['Monetary value', 'Specific service', 'Package'].map(vt => (
+                                    <span key={vt} style={{ background: 'var(--secondary-bg)', padding: '6px 12px', borderRadius: 20, fontSize: 12 }}>{vt}</span>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="form-group">
                             <label className="form-label">Voucher Validity</label>
                             <select
                                 className="form-select form-input"
@@ -618,7 +648,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Booking Rules</h3>
-                        <p className="form-section-subtitle">Service booking requirements and group policies</p>
+                        <p className="form-section-subtitle">Service booking requirements</p>
                     </div>
                 </div>
                 <div className="form-section-body">
@@ -661,11 +691,11 @@ export default function WellnessPricingTab({ venue }: Props) {
                         <div className="form-group">
                             <label className="form-label">Max Group Size</label>
                             <input
-                                type="text"
+                                type="number"
                                 className="form-input"
                                 value={data.max_group_size}
                                 onChange={e => set('max_group_size', e.target.value)}
-                                placeholder="e.g. 8"
+                                placeholder="6"
                                 disabled={!data.group_bookings}
                             />
                         </div>
@@ -722,12 +752,11 @@ export default function WellnessPricingTab({ venue }: Props) {
                         </div>
                         <div className="form-group full-width">
                             <label className="form-label">Accepted Payment Methods</label>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                                {['Credit Card', 'Debit Card', 'EFTPOS', 'Cash', 'Bank Transfer'].map(m => (
-                                    <span key={m} style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 20, fontSize: 12, background: 'var(--secondary-bg)', border: '1px solid rgba(184,184,184,0.3)', color: 'var(--text)' }}>{m}</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {['Credit Card', 'Debit Card', 'EFTPOS', 'Cash'].map(m => (
+                                    <span key={m} style={{ background: 'var(--secondary-bg)', padding: '6px 12px', borderRadius: 20, fontSize: 12 }}>{m}</span>
                                 ))}
                             </div>
-                            <p className="form-hint">Payment methods are managed at the business level. Contact support to update.</p>
                         </div>
                     </div>
                 </div>
@@ -738,7 +767,7 @@ export default function WellnessPricingTab({ venue }: Props) {
                 <div className="form-section-header">
                     <div>
                         <h3 className="form-section-title">Cancellation Policy</h3>
-                        <p className="form-section-subtitle">Service cancellation terms displayed to guests</p>
+                        <p className="form-section-subtitle">Service cancellation terms</p>
                     </div>
                 </div>
                 <div className="form-section-body">
@@ -778,94 +807,6 @@ export default function WellnessPricingTab({ venue }: Props) {
                                 placeholder="Describe your cancellation policy in plain language…"
                             />
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Booking Settings ─────────────────────────────────────── */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <div>
-                        <h3 className="form-section-title">Booking Settings</h3>
-                        <p className="form-section-subtitle">Online booking configuration and automation</p>
-                    </div>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-grid three-col">
-                        <div className="form-group">
-                            <label className="form-label">Online Booking Enabled</label>
-                            <div className="toggle-container" onClick={() => set('online_booking', !data.online_booking)}>
-                                <div className={`toggle ${data.online_booking ? 'active' : ''}`}>
-                                    <div className="toggle-knob" />
-                                </div>
-                                <span className="toggle-label">{data.online_booking ? 'Yes' : 'No'}</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Booking Platform</label>
-                            <select className="form-select form-input" value={data.booking_platform} onChange={e => set('booking_platform', e.target.value)}>
-                                <option value="TGS Booking">TGS Booking</option>
-                                <option value="External">External (link out)</option>
-                                <option value="Phone only">Phone only</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">External Booking URL</label>
-                            <input
-                                type="url"
-                                className="form-input"
-                                value={data.booking_url}
-                                onChange={e => set('booking_url', e.target.value)}
-                                placeholder="https://…"
-                                disabled={data.booking_platform !== 'External'}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Calendar Sync</label>
-                            <div className="toggle-container" onClick={() => set('calendar_sync', !data.calendar_sync)}>
-                                <div className={`toggle ${data.calendar_sync ? 'active' : ''}`}>
-                                    <div className="toggle-knob" />
-                                </div>
-                                <span className="toggle-label">{data.calendar_sync ? 'Connected' : 'Not connected'}</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Auto-confirm Bookings</label>
-                            <div className="toggle-container" onClick={() => set('auto_confirm', !data.auto_confirm)}>
-                                <div className={`toggle ${data.auto_confirm ? 'active' : ''}`}>
-                                    <div className="toggle-knob" />
-                                </div>
-                                <span className="toggle-label">{data.auto_confirm ? 'Yes' : 'No'}</span>
-                            </div>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Send Reminders</label>
-                            <div className="toggle-container" onClick={() => set('reminders', data.reminders === '24hr before' ? 'None' : '24hr before')}>
-                                <div className={`toggle ${data.reminders === '24hr before' ? 'active' : ''}`}>
-                                    <div className="toggle-knob" />
-                                </div>
-                                <span className="toggle-label">{data.reminders === '24hr before' ? '24hr before' : 'None'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Pricing Notes ────────────────────────────────────────── */}
-            <section className="form-section">
-                <div className="form-section-header">
-                    <h3 className="form-section-title">Pricing Notes</h3>
-                </div>
-                <div className="form-section-body">
-                    <div className="form-group">
-                        <label className="form-label">Internal Notes (not visible to guests)</label>
-                        <textarea
-                            className="form-input form-textarea"
-                            rows={3}
-                            value={data.pricing_notes}
-                            onChange={e => set('pricing_notes', e.target.value)}
-                            placeholder="Any additional pricing notes for internal reference…"
-                        />
                     </div>
                 </div>
             </section>

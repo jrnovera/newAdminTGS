@@ -414,7 +414,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
     // Render
     // -------------------------------------------------------------------------
     return (
-        <div className="wvd-content">
+        <div className="content-area">
 
             {/* Booking Stats */}
             <div className="wb-stats">
@@ -455,13 +455,13 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                     {selectedDates.size} date{selectedDates.size > 1 ? 's' : ''} selected
                                 </span>
                                 <button
-                                    className="wvd-btn-secondary wvd-btn-small"
+                                    className="btn btn-secondary btn-small"
                                     onClick={() => setShowBlockModal(true)}
                                 >
                                     <CalendarIcon size={14} /> Block Dates
                                 </button>
                                 <button
-                                    className="wvd-btn-primary wvd-btn-small"
+                                    className="btn btn-primary btn-small"
                                     onClick={openBookingModal}
                                 >
                                     <Clock size={14} /> Add Booking
@@ -518,14 +518,14 @@ export default function WellnessBookingsTab({ venue }: Props) {
 
             {/* Blocked Dates List */}
             {blocks.length > 0 && (
-                <section className="wvd-form-section">
-                    <div className="wvd-form-section-header">
+                <section className="form-section">
+                    <div className="form-section-header">
                         <div>
-                            <h3 className="wvd-form-section-title">Blocked Dates</h3>
-                            <p className="wvd-form-hint">Dates marked as unavailable for bookings</p>
+                            <h3 className="form-section-title">Blocked Dates</h3>
+                            <p className="form-section-subtitle">Dates marked as unavailable for bookings</p>
                         </div>
                     </div>
-                    <div className="wvd-form-section-body">
+                    <div className="form-section-body">
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {blocks.map(b => (
                                 <div key={b.id} style={{
@@ -549,17 +549,17 @@ export default function WellnessBookingsTab({ venue }: Props) {
             )}
 
             {/* Bookings List */}
-            <section className="wvd-form-section">
-                <div className="wvd-form-section-header">
+            <section className="form-section">
+                <div className="form-section-header">
                     <div>
-                        <h3 className="wvd-form-section-title">All Appointments</h3>
-                        <p className="wvd-form-hint">Manage service bookings and appointments</p>
+                        <h3 className="form-section-title">All Appointments</h3>
+                        <p className="form-section-subtitle">Manage service bookings and appointments</p>
                     </div>
-                    <button className="wvd-btn-secondary wvd-btn-small">
+                    <button className="btn btn-secondary btn-small">
                         <Download size={14} /> Export
                     </button>
                 </div>
-                <div className="wvd-form-section-body">
+                <div className="form-section-body">
                     <div className="wb-booking-tabs">
                         {['All', 'Upcoming', 'Pending', 'Completed', 'Cancelled'].map(tab => (
                             <button
@@ -615,12 +615,12 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                             )}
                                             <div className="wb-booking-actions">
                                                 {b.status === 'pending' && (
-                                                    <button className="wvd-btn-primary wvd-btn-small" onClick={() => updateBookingStatus(b.id, 'confirmed')}>Confirm</button>
+                                                    <button className="btn btn-primary btn-small" onClick={() => updateBookingStatus(b.id, 'confirmed')}>Confirm</button>
                                                 )}
                                                 {b.status === 'confirmed' && (
-                                                    <button className="wvd-btn-primary wvd-btn-small" onClick={() => updateBookingStatus(b.id, 'completed')}>Complete</button>
+                                                    <button className="btn btn-primary btn-small" onClick={() => updateBookingStatus(b.id, 'completed')}>Complete</button>
                                                 )}
-                                                <button className="wvd-btn-secondary wvd-btn-small" onClick={() => deleteBooking(b.id)}>Remove</button>
+                                                <button className="btn btn-secondary btn-small" onClick={() => deleteBooking(b.id)}>Remove</button>
                                             </div>
                                         </div>
                                     </div>
@@ -632,14 +632,14 @@ export default function WellnessBookingsTab({ venue }: Props) {
             </section>
 
             {/* Calendar Sync */}
-            <section className="wvd-form-section">
-                <div className="wvd-form-section-header">
+            <section className="form-section">
+                <div className="form-section-header">
                     <div>
-                        <h3 className="wvd-form-section-title">Calendar Sync</h3>
-                        <p className="wvd-form-hint">Sync availability with external calendars</p>
+                        <h3 className="form-section-title">Calendar Sync</h3>
+                        <p className="form-section-subtitle">Sync availability with external calendars</p>
                     </div>
                 </div>
-                <div className="wvd-form-section-body">
+                <div className="form-section-body">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
                         <div style={{ padding: '20px', background: 'var(--secondary-bg)', borderRadius: '10px' }}>
                             <div style={{ fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -647,8 +647,8 @@ export default function WellnessBookingsTab({ venue }: Props) {
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--accent)', marginBottom: '12px' }}>Share this link with other platforms to export TGS bookings</p>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <input type="text" className="wvd-form-input" value={`https://theglobalsanctum.com/ical/${venue.id}`} style={{ flex: 1, fontSize: '12px' }} readOnly />
-                                <button className="wvd-btn-secondary wvd-btn-small">Copy</button>
+                                <input type="text" className="form-input" value={`https://theglobalsanctum.com/ical/${venue.id}`} style={{ flex: 1, fontSize: '12px' }} readOnly />
+                                <button className="btn btn-secondary btn-small">Copy</button>
                             </div>
                         </div>
                         <div style={{ padding: '20px', background: 'var(--secondary-bg)', borderRadius: '10px' }}>
@@ -657,8 +657,8 @@ export default function WellnessBookingsTab({ venue }: Props) {
                             </div>
                             <p style={{ fontSize: '12px', color: 'var(--accent)', marginBottom: '12px' }}>Import availability from Mindbody, Fresha, or other platforms</p>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <input type="text" className="wvd-form-input" placeholder="Paste iCal URL here…" style={{ flex: 1, fontSize: '12px' }} />
-                                <button className="wvd-btn-primary wvd-btn-small">Import</button>
+                                <input type="text" className="form-input" placeholder="Paste iCal URL here…" style={{ flex: 1, fontSize: '12px' }} />
+                                <button className="btn btn-primary btn-small">Import</button>
                             </div>
                         </div>
                     </div>
@@ -669,13 +669,13 @@ export default function WellnessBookingsTab({ venue }: Props) {
             {/* BLOCK DATES MODAL                                                   */}
             {/* ------------------------------------------------------------------ */}
             {showBlockModal && (
-                <div className="wvd-modal-overlay" onClick={() => setShowBlockModal(false)}>
-                    <div className="wvd-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
-                        <div className="wvd-modal-header">
-                            <h3 className="wvd-modal-title">Block Dates</h3>
-                            <button className="wvd-modal-close" onClick={() => setShowBlockModal(false)}><X size={20} /></button>
+                <div className="modal-overlay" onClick={() => setShowBlockModal(false)}>
+                    <div className="modal-container modal-small" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">Block Dates</h3>
+                            <button className="modal-close" onClick={() => setShowBlockModal(false)}><X size={20} /></button>
                         </div>
-                        <div className="wvd-modal-body">
+                        <div className="modal-body">
                             <p style={{ fontSize: 13, color: 'var(--accent)', marginBottom: 16 }}>
                                 Marking {selectedDates.size} date{selectedDates.size > 1 ? 's' : ''} as unavailable:
                             </p>
@@ -686,20 +686,20 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                     </span>
                                 ))}
                             </div>
-                            <div className="wvd-form-group">
-                                <label className="wvd-form-label">Reason (optional)</label>
+                            <div className="form-group">
+                                <label className="form-label">Reason (optional)</label>
                                 <input
                                     type="text"
-                                    className="wvd-form-input"
+                                    className="form-input"
                                     placeholder="e.g. Maintenance, Staff holiday, Private event…"
                                     value={blockReason}
                                     onChange={e => setBlockReason(e.target.value)}
                                 />
                             </div>
                         </div>
-                        <div className="wvd-modal-footer">
-                            <button className="wvd-btn-secondary" onClick={() => setShowBlockModal(false)}>Cancel</button>
-                            <button className="wvd-btn-primary" onClick={handleBlockDates} disabled={blockSaving}>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowBlockModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={handleBlockDates} disabled={blockSaving}>
                                 {blockSaving ? 'Saving…' : 'Block Dates'}
                             </button>
                         </div>
@@ -711,25 +711,25 @@ export default function WellnessBookingsTab({ venue }: Props) {
             {/* ADD BOOKING MODAL — redesigned                                      */}
             {/* ------------------------------------------------------------------ */}
             {showBookingModal && (
-                <div className="wvd-modal-overlay" onClick={() => setShowBookingModal(false)}>
+                <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
                     <div
-                        className="wvd-modal"
+                        className="modal-container"
                         onClick={e => e.stopPropagation()}
                         style={{ maxWidth: 660, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
                     >
                         {/* Modal Header */}
-                        <div className="wvd-modal-header" style={{ flexShrink: 0 }}>
+                        <div className="modal-header" style={{ flexShrink: 0 }}>
                             <div>
-                                <h3 className="wvd-modal-title">Add Booking</h3>
+                                <h3 className="modal-title">Add Booking</h3>
                                 <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 2 }}>
                                     {bookingDate ? formatDateKey(bookingDate) : '—'}
                                 </p>
                             </div>
-                            <button className="wvd-modal-close" onClick={() => setShowBookingModal(false)}><X size={20} /></button>
+                            <button className="modal-close" onClick={() => setShowBookingModal(false)}><X size={20} /></button>
                         </div>
 
                         {/* Modal Body — scrollable */}
-                        <div className="wvd-modal-body" style={{ overflowY: 'auto', flex: 1 }}>
+                        <div className="modal-body" style={{ overflowY: 'auto', flex: 1 }}>
 
                             {modalLoading ? (
                                 <p style={{ fontSize: 13, color: 'var(--accent)', padding: '20px 0', textAlign: 'center' }}>
@@ -812,7 +812,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                             )}
                                             <input
                                                 type="text"
-                                                className="wvd-form-input"
+                                                className="form-input"
                                                 placeholder="Enter custom service name…"
                                                 value={customServiceName}
                                                 onChange={e => {
@@ -891,57 +891,57 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                     <div>
                                         <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px' }}>Guest Details</h4>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                                <label className="wvd-form-label">Guest Name <span style={{ color: '#dc3535' }}>*</span></label>
+                                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="form-label">Guest Name <span style={{ color: '#dc3535' }}>*</span></label>
                                                 <input
                                                     type="text"
-                                                    className="wvd-form-input"
+                                                    className="form-input"
                                                     value={bookingForm.guest_name}
                                                     onChange={e => setBookingForm(p => ({ ...p, guest_name: e.target.value }))}
                                                 />
                                             </div>
-                                            <div className="wvd-form-group">
-                                                <label className="wvd-form-label">Guest Email</label>
+                                            <div className="form-group">
+                                                <label className="form-label">Guest Email</label>
                                                 <input
                                                     type="email"
-                                                    className="wvd-form-input"
+                                                    className="form-input"
                                                     value={bookingForm.guest_email}
                                                     onChange={e => setBookingForm(p => ({ ...p, guest_email: e.target.value }))}
                                                 />
                                             </div>
-                                            <div className="wvd-form-group">
-                                                <label className="wvd-form-label">Guest Phone</label>
+                                            <div className="form-group">
+                                                <label className="form-label">Guest Phone</label>
                                                 <input
                                                     type="text"
-                                                    className="wvd-form-input"
+                                                    className="form-input"
                                                     value={bookingForm.guest_phone}
                                                     onChange={e => setBookingForm(p => ({ ...p, guest_phone: e.target.value }))}
                                                 />
                                             </div>
-                                            <div className="wvd-form-group">
-                                                <label className="wvd-form-label">Guests</label>
+                                            <div className="form-group">
+                                                <label className="form-label">Guests</label>
                                                 <input
                                                     type="number"
-                                                    className="wvd-form-input"
+                                                    className="form-input"
                                                     min={1}
                                                     value={bookingForm.guests}
                                                     onChange={e => setBookingForm(p => ({ ...p, guests: parseInt(e.target.value) || 1 }))}
                                                 />
                                             </div>
-                                            <div className="wvd-form-group">
-                                                <label className="wvd-form-label">Amount (AUD)</label>
+                                            <div className="form-group">
+                                                <label className="form-label">Amount (AUD)</label>
                                                 <input
                                                     type="number"
-                                                    className="wvd-form-input"
+                                                    className="form-input"
                                                     value={bookingForm.amount}
                                                     placeholder="0.00"
                                                     onChange={e => setBookingForm(p => ({ ...p, amount: e.target.value }))}
                                                 />
                                             </div>
-                                            <div className="wvd-form-group">
-                                                <label className="wvd-form-label">Status</label>
+                                            <div className="form-group">
+                                                <label className="form-label">Status</label>
                                                 <select
-                                                    className="wvd-form-select"
+                                                    className="form-input form-select"
                                                     value={bookingForm.status}
                                                     onChange={e => setBookingForm(p => ({ ...p, status: e.target.value as Booking['status'] }))}
                                                 >
@@ -949,10 +949,10 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                                     <option value="pending">Pending</option>
                                                 </select>
                                             </div>
-                                            <div className="wvd-form-group" style={{ gridColumn: '1 / -1' }}>
-                                                <label className="wvd-form-label">Notes</label>
+                                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                                <label className="form-label">Notes</label>
                                                 <textarea
-                                                    className="wvd-form-textarea"
+                                                    className="form-input form-textarea"
                                                     rows={2}
                                                     value={bookingForm.notes}
                                                     onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))}
@@ -965,14 +965,14 @@ export default function WellnessBookingsTab({ venue }: Props) {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="wvd-modal-footer" style={{ flexShrink: 0 }}>
+                        <div className="modal-footer" style={{ flexShrink: 0 }}>
                             <div style={{ fontSize: 11, color: 'var(--accent)', flex: 1 }}>
                                 {selectedTimeSlots.size === 0 && <span style={{ color: '#dc3535' }}>Please select at least one time slot</span>}
                                 {selectedTimeSlots.size > 0 && !bookingForm.guest_name && <span style={{ color: '#dc3535' }}>Please enter guest name</span>}
                             </div>
-                            <button className="wvd-btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
+                            <button className="btn btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
                             <button
-                                className="wvd-btn-primary"
+                                className="btn btn-primary"
                                 onClick={handleAddBooking}
                                 disabled={bookingSaving || !bookingForm.guest_name || selectedTimeSlots.size === 0 || modalLoading}
                             >
