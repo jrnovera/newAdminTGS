@@ -43,7 +43,7 @@ function formatBytes(bytes: number): string {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-export default function WellnessMediaTab({ venue, onUpdate }: Props) {
+export default function WellnessMediaTab({ venue }: Props) {
     const [activeCategory, setActiveCategory] = useState('All Photos');
     const [saving, setSaving] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);

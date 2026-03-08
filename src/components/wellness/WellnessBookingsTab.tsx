@@ -55,7 +55,7 @@ function formatDateKey(dateStr: string): string {
     return `${d.toLocaleString('en', { month: 'short' })} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-export default function WellnessBookingsTab({ venue, onUpdate }: Props) {
+export default function WellnessBookingsTab({ venue }: Props) {
     const today = new Date();
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());

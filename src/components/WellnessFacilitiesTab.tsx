@@ -491,7 +491,7 @@ export default function WellnessFacilitiesTab({ venue }: WellnessFacilitiesTabPr
                                         {/* Image */}
                                         <div className="form-group full-width">
                                             <label className="form-label">Facility Image</label>
-                                            <input ref={el => itemImageRefs.current[idx] = el} type="file" accept="image/*"
+                                            <input ref={el => { itemImageRefs.current[idx] = el; }} type="file" accept="image/*"
                                                 style={{ display: 'none' }}
                                                 onChange={e => { if (e.target.files?.[0]) handleItemImageUpload(idx, e.target.files[0]); }} />
                                             {item.facility_image ? (

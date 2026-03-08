@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Mail, Phone, MapPin, Calendar, Check, Plus, Upload, FileText, Trash2, UserPlus } from 'lucide-react';
+import { Mail, Phone, MapPin, Calendar, Check, Upload, FileText, Trash2, UserPlus } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 import { supabase } from '../../lib/supabase';
 import { uploadFile, deleteFile } from '../../lib/storage';
@@ -28,7 +28,7 @@ interface VenueDocument {
     created_at: string;
 }
 
-export default function WellnessOwnerManagerTab({ venue, onUpdate }: Props) {
+export default function WellnessOwnerManagerTab({ venue }: Props) {
     // Contact Details
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');

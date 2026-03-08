@@ -64,7 +64,7 @@ function formatDate(dateStr: string): string {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function ReviewsTab({ venue, onUpdate }: ReviewsTabProps) {
+export default function ReviewsTab({ venue }: ReviewsTabProps) {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
 

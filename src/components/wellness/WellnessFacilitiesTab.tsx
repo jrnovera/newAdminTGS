@@ -177,7 +177,7 @@ function blankFacility(order: number): FacilityItem {
     };
 }
 
-export default function WellnessFacilitiesTab({ venue, onUpdate }: Props) {
+export default function WellnessFacilitiesTab({ venue }: Props) {
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [items, setItems] = useState<FacilityItem[]>([]);
     const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});

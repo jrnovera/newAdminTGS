@@ -192,7 +192,7 @@ export default function VenueDetail() {
         <AmenitiesTab venue={venue} onUpdate={handleTabUpdate} />
       )}
       {activeTab === 'pricing' && (
-        <PricingTab venue={venue} onUpdate={handleTabUpdate} />
+        <PricingTab venue={venue} />
       )}
       {activeTab === 'media' && (
         <MediaTab venue={venue} onUpdate={handleTabUpdate} />

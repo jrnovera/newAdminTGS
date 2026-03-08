@@ -121,7 +121,6 @@ function blankSpace(order: number): Space {
 export default function RetreatFacilitiesTab({ venue }: RetreatFacilitiesTabProps) {
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [spaces, setSpaces] = useState<Space[]>([]);
-    const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>({});
     const [saving, setSaving] = useState(false);
     const [saveMsg, setSaveMsg] = useState('');
     const [heroUploading, setHeroUploading] = useState(false);
@@ -185,7 +184,6 @@ export default function RetreatFacilitiesTab({ venue }: RetreatFacilitiesTabProp
     function addSpace() {
         const idx = spaces.length;
         setSpaces(prev => [...prev, blankSpace(idx)]);
-        setExpandedSpaces(p => ({ ...p, [idx]: true }));
     }
 
     function deleteSpace(idx: number) {
@@ -416,7 +414,7 @@ export default function RetreatFacilitiesTab({ venue }: RetreatFacilitiesTabProp
                             <div className="rf-facility-grid" style={{ marginBottom: 20 }}>
                                 <div className="rf-facility-field span-2">
                                     <div className="rf-facility-field-label">Space Image</div>
-                                    <input ref={el => spaceImageRefs.current[idx] = el} type="file" accept="image/*" hidden
+                                    <input ref={el => { spaceImageRefs.current[idx] = el; }} type="file" accept="image/*" hidden
                                         onChange={e => { if (e.target.files?.[0]) handleSpaceImageUpload(idx, e.target.files[0]); }} />
                                     {space.space_image ? (
                                         <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', maxWidth: 300 }}>
