@@ -28,3 +28,9 @@ CREATE POLICY "Public read venue pricing"
   ON venue_pricing
   FOR SELECT
   USING (true);
+
+-- venue_amenities: public read (needed for amenities tab on detail pages)
+CREATE POLICY "Public read venue amenities"
+  ON venue_amenities
+  FOR SELECT
+  USING (true);

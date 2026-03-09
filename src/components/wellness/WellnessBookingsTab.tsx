@@ -31,11 +31,14 @@ interface Booking {
     source: string;
 }
 
-interface PkgOption {
+interface ServiceOption {
+    id: string;
     name: string;
-    type: string;
+    kind: 'service' | 'package';
+    type: string;    // service_type for services, "Package" for packages
     price: string;
-    per: string;
+    duration: string;
+    category: string;
 }
 
 const TIME_SLOTS = [
@@ -80,8 +83,8 @@ export default function WellnessBookingsTab({ venue }: Props) {
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
     const [bookingDate, setBookingDate] = useState('');
-    const [availablePackages, setAvailablePackages] = useState<PkgOption[]>([]);
-    const [selectedPkgIdx, setSelectedPkgIdx] = useState<number | null>(null);
+    const [serviceOptions, setServiceOptions] = useState<ServiceOption[]>([]);
+    const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
     const [customServiceName, setCustomServiceName] = useState('');
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<Set<string>>(new Set());
     const [dateBookings, setDateBookings] = useState<Booking[]>([]);
@@ -191,7 +194,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
     async function openBookingModal() {
         const date = Array.from(selectedDates).sort()[0];
         setBookingDate(date);
-        setSelectedPkgIdx(null);
+        setSelectedOptionIdx(null);
         setCustomServiceName('');
         setSelectedTimeSlots(new Set());
         setDateBookings([]);
@@ -199,13 +202,19 @@ export default function WellnessBookingsTab({ venue }: Props) {
         setModalLoading(true);
         setShowBookingModal(true);
 
-        const [pricingRes, dateBookingsRes] = await Promise.all([
+        const [svcsRes, pkgsRes, dateBookingsRes] = await Promise.all([
             supabase
-                .from('venue_pricing')
-                .select('packages')
+                .from('wellness_service_items')
+                .select('id, name, service_type, price, duration, category')
                 .eq('venue_id', venue.id)
-                .eq('venue_type', 'wellness')
-                .maybeSingle(),
+                .eq('show_on_website', true)
+                .order('sort_order'),
+            supabase
+                .from('wellness_service_packages')
+                .select('id, name, price, original_price, duration')
+                .eq('venue_id', venue.id)
+                .eq('show_on_website', true)
+                .order('sort_order'),
             supabase
                 .from('venue_bookings')
                 .select('*')
@@ -214,22 +223,29 @@ export default function WellnessBookingsTab({ venue }: Props) {
                 .in('status', ['confirmed', 'pending']),
         ]);
 
-        // Parse packages from JSON
-        let pkgs: PkgOption[] = [];
-        if (pricingRes.data?.packages) {
-            try {
-                const raw = typeof pricingRes.data.packages === 'string'
-                    ? JSON.parse(pricingRes.data.packages)
-                    : pricingRes.data.packages;
-                pkgs = (raw as Array<{ name: string; type: string; price: string; per: string; active?: boolean }>)
-                    .filter(p => p.active !== false)
-                    .map(p => ({ name: p.name, type: p.type, price: p.price, per: p.per }));
-            } catch {
-                pkgs = [];
-            }
-        }
+        // Build unified service option list: individual services first, then packages
+        const options: ServiceOption[] = [
+            ...(svcsRes.data || []).map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                kind: 'service' as const,
+                type: s.service_type || 'Single Treatment',
+                price: s.price || '',
+                duration: s.duration || '',
+                category: s.category || '',
+            })),
+            ...(pkgsRes.data || []).map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                kind: 'package' as const,
+                type: 'Package',
+                price: p.price || '',
+                duration: p.duration || '',
+                category: '',
+            })),
+        ];
 
-        setAvailablePackages(pkgs);
+        setServiceOptions(options);
         setDateBookings(dateBookingsRes.data || []);
         setModalLoading(false);
     }
@@ -312,15 +328,15 @@ export default function WellnessBookingsTab({ venue }: Props) {
     // -------------------------------------------------------------------------
     // Package tile selection
     // -------------------------------------------------------------------------
-    function handleSelectPackage(idx: number) {
-        if (selectedPkgIdx === idx) {
-            setSelectedPkgIdx(null);
+    function handleSelectOption(idx: number) {
+        if (selectedOptionIdx === idx) {
+            setSelectedOptionIdx(null);
             setBookingForm(p => ({ ...p, amount: '' }));
         } else {
-            setSelectedPkgIdx(idx);
+            setSelectedOptionIdx(idx);
             setCustomServiceName('');
-            const pkg = availablePackages[idx];
-            const numericPrice = parseFloat(pkg.price.replace(/[^0-9.]/g, ''));
+            const opt = serviceOptions[idx];
+            const numericPrice = parseFloat((opt.price || '').replace(/[^0-9.]/g, ''));
             if (!isNaN(numericPrice)) {
                 setBookingForm(p => ({ ...p, amount: String(numericPrice) }));
             }
@@ -334,8 +350,8 @@ export default function WellnessBookingsTab({ venue }: Props) {
         if (!bookingDate || !bookingForm.guest_name || selectedTimeSlots.size === 0) return;
         setBookingSaving(true);
 
-        const selectedPkg = selectedPkgIdx !== null ? availablePackages[selectedPkgIdx] : null;
-        const serviceName = selectedPkg?.name || customServiceName.trim() || null;
+        const selectedOpt = selectedOptionIdx !== null ? serviceOptions[selectedOptionIdx] : null;
+        const serviceName = selectedOpt?.name || customServiceName.trim() || null;
         const amountVal = bookingForm.amount ? parseFloat(bookingForm.amount) : null;
 
         const rows = Array.from(selectedTimeSlots).sort().map(slot => ({
@@ -745,7 +761,7 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                         </div>
 
                                         {/* No service warning */}
-                                        {selectedPkgIdx === null && !customServiceName.trim() && (
+                                        {selectedOptionIdx === null && !customServiceName.trim() && (
                                             <div style={{
                                                 fontSize: 11, color: '#f59e0b',
                                                 background: 'rgba(245,158,11,0.08)',
@@ -756,58 +772,116 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                             </div>
                                         )}
 
-                                        {/* Package tiles */}
-                                        {availablePackages.length > 0 ? (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 10 }}>
-                                                {availablePackages.map((pkg, idx) => {
-                                                    const isSel = selectedPkgIdx === idx;
-                                                    return (
-                                                        <button
-                                                            key={idx}
-                                                            type="button"
-                                                            onClick={() => handleSelectPackage(idx)}
-                                                            style={{
-                                                                background: isSel ? 'rgba(var(--primary-rgb, 47,133,90), 0.15)' : 'var(--secondary-bg)',
-                                                                border: `2px solid ${isSel ? 'var(--primary-btn, #2f855a)' : 'var(--border, #333)'}`,
-                                                                borderRadius: 8,
-                                                                padding: '10px 12px',
-                                                                textAlign: 'left',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.15s',
-                                                            }}
-                                                        >
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
-                                                                <div>
-                                                                    <div style={{ fontSize: 13, fontWeight: 600, color: isSel ? 'var(--primary-btn, #2f855a)' : 'var(--text-primary, #e0e0e0)', marginBottom: 2 }}>
-                                                                        {pkg.name}
-                                                                    </div>
-                                                                    <div style={{ fontSize: 11, color: 'var(--accent)' }}>{pkg.type}</div>
-                                                                </div>
-                                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                                                    <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--primary-btn, #2f855a)' : 'var(--text-primary, #e0e0e0)' }}>
-                                                                        {pkg.price}
-                                                                    </div>
-                                                                    <div style={{ fontSize: 10, color: 'var(--accent)' }}>{pkg.per}</div>
-                                                                </div>
-                                                            </div>
-                                                            {isSel && (
-                                                                <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--primary-btn, #2f855a)' }}>
-                                                                    <Check size={11} strokeWidth={2.5} /> Selected
-                                                                </div>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
+                                        {serviceOptions.length === 0 ? (
                                             <p style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 10 }}>
-                                                No packages configured for this venue yet.
+                                                No services or packages configured for this venue yet. Add them in the Services tab.
                                             </p>
+                                        ) : (
+                                            <>
+                                                {/* Individual Services */}
+                                                {serviceOptions.filter(o => o.kind === 'service').length > 0 && (
+                                                    <div style={{ marginBottom: 12 }}>
+                                                        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
+                                                            Services
+                                                        </p>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                                                            {serviceOptions.map((opt, idx) => {
+                                                                if (opt.kind !== 'service') return null;
+                                                                const isSel = selectedOptionIdx === idx;
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        type="button"
+                                                                        onClick={() => handleSelectOption(idx)}
+                                                                        style={{
+                                                                            background: isSel ? 'rgba(47,133,90,0.15)' : 'var(--secondary-bg)',
+                                                                            border: `2px solid ${isSel ? 'var(--primary-btn,#2f855a)' : 'var(--border,#333)'}`,
+                                                                            borderRadius: 8, padding: '10px 12px',
+                                                                            textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
+                                                                        }}
+                                                                    >
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                                                                            <div style={{ minWidth: 0 }}>
+                                                                                <div style={{ fontSize: 13, fontWeight: 600, color: isSel ? 'var(--primary-btn,#2f855a)' : 'var(--text-primary,#e0e0e0)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                    {opt.name}
+                                                                                </div>
+                                                                                <div style={{ fontSize: 11, color: 'var(--accent)' }}>
+                                                                                    {opt.category || opt.type}
+                                                                                    {opt.duration ? ` · ${opt.duration}` : ''}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                                                <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--primary-btn,#2f855a)' : 'var(--text-primary,#e0e0e0)' }}>
+                                                                                    {opt.price || '—'}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        {isSel && (
+                                                                            <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--primary-btn,#2f855a)' }}>
+                                                                                <Check size={11} strokeWidth={2.5} /> Selected
+                                                                            </div>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Packages */}
+                                                {serviceOptions.filter(o => o.kind === 'package').length > 0 && (
+                                                    <div style={{ marginBottom: 12 }}>
+                                                        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 6 }}>
+                                                            Packages
+                                                        </p>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                                                            {serviceOptions.map((opt, idx) => {
+                                                                if (opt.kind !== 'package') return null;
+                                                                const isSel = selectedOptionIdx === idx;
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        type="button"
+                                                                        onClick={() => handleSelectOption(idx)}
+                                                                        style={{
+                                                                            background: isSel ? 'rgba(47,133,90,0.15)' : 'var(--secondary-bg)',
+                                                                            border: `2px solid ${isSel ? 'var(--primary-btn,#2f855a)' : 'var(--border,#333)'}`,
+                                                                            borderRadius: 8, padding: '10px 12px',
+                                                                            textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
+                                                                        }}
+                                                                    >
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                                                                            <div style={{ minWidth: 0 }}>
+                                                                                <div style={{ fontSize: 13, fontWeight: 600, color: isSel ? 'var(--primary-btn,#2f855a)' : 'var(--text-primary,#e0e0e0)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                    {opt.name}
+                                                                                </div>
+                                                                                <div style={{ fontSize: 11, color: 'var(--accent)' }}>
+                                                                                    Package{opt.duration ? ` · ${opt.duration}` : ''}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                                                <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? 'var(--primary-btn,#2f855a)' : 'var(--text-primary,#e0e0e0)' }}>
+                                                                                    {opt.price || '—'}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        {isSel && (
+                                                                            <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--primary-btn,#2f855a)' }}>
+                                                                                <Check size={11} strokeWidth={2.5} /> Selected
+                                                                            </div>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
-                                        {/* Custom service name */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            {availablePackages.length > 0 && (
+                                        {/* Custom service name fallback */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: serviceOptions.length > 0 ? 4 : 0 }}>
+                                            {serviceOptions.length > 0 && (
                                                 <span style={{ fontSize: 12, color: 'var(--accent)', flexShrink: 0 }}>or</span>
                                             )}
                                             <input
@@ -817,14 +891,14 @@ export default function WellnessBookingsTab({ venue }: Props) {
                                                 value={customServiceName}
                                                 onChange={e => {
                                                     setCustomServiceName(e.target.value);
-                                                    if (e.target.value) setSelectedPkgIdx(null);
+                                                    if (e.target.value) setSelectedOptionIdx(null);
                                                 }}
                                                 style={{ fontSize: 13 }}
                                             />
-                                            {(selectedPkgIdx !== null || customServiceName) && (
+                                            {(selectedOptionIdx !== null || customServiceName) && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => { setSelectedPkgIdx(null); setCustomServiceName(''); setBookingForm(p => ({ ...p, amount: '' })); }}
+                                                    onClick={() => { setSelectedOptionIdx(null); setCustomServiceName(''); setBookingForm(p => ({ ...p, amount: '' })); }}
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 12, flexShrink: 0, whiteSpace: 'nowrap' }}
                                                 >
                                                     Clear
