@@ -31,7 +31,7 @@ export default function Settings() {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
+      <div className="settings-layout">
         {/* Settings Nav */}
         <div className="content-card" style={{ padding: '16px 0', height: 'fit-content' }}>
           {settingsSections.map((s) => (
@@ -230,7 +230,7 @@ export default function Settings() {
               </div>
               <div style={{ padding: 24 }}>
                 <h4 style={{ fontSize: 16, marginBottom: 16 }}>Subscription Plans</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+                <div className="billing-plans-grid">
                   {[
                     { name: 'Essentials', price: '$79', features: '3 photos, Basic listing' },
                     { name: 'Standard', price: '$149', features: '10 photos, Featured badge' },
@@ -270,7 +270,7 @@ export default function Settings() {
               </div>
               <div style={{ padding: 24 }}>
                 <h4 style={{ fontSize: 16, marginBottom: 16 }}>Color Palette</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+                <div className="branding-colors-grid">
                   {[
                     { name: 'Primary BG', color: '#FDFCF9' },
                     { name: 'Secondary BG', color: '#F7F5F1' },

@@ -35,7 +35,7 @@ export default function WellnessGuests() {
         </div>
       </header>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Total Guests</div>
           <div className="stat-value">189</div>
@@ -76,8 +76,8 @@ export default function WellnessGuests() {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
+      <div className="data-table-container contact-list-table-container">
+        <table className="data-table contact-list-table">
           <thead>
             <tr>
               <th>Guest</th>

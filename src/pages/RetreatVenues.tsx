@@ -194,8 +194,8 @@ export default function RetreatVenues() {
                 </div>
             )}
 
-            <div className="data-table-container">
-                <table className="data-table">
+            <div className="data-table-container venue-list-table-container">
+                <table className="data-table venue-list-table">
                     <thead>
                         <tr>
                             <th style={{ width: 40 }}>

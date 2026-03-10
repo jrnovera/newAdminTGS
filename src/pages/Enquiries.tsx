@@ -119,7 +119,7 @@ function EnquiryDetailModal({ enquiry, onClose, onStatusUpdate }: EnquiryDetailM
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-container modal-detail" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="modal-header">
@@ -145,7 +145,7 @@ function EnquiryDetailModal({ enquiry, onClose, onStatusUpdate }: EnquiryDetailM
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ padding: '8px 28px 24px' }}>
+        <div className="modal-body modal-body-detail">
 
           {/* Guest Info */}
           <div style={{ marginBottom: 4, marginTop: 16, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
@@ -349,7 +349,7 @@ export default function Enquiries() {
       </header>
 
       {/* ── Stat Cards ──────────────────────────────────────────────────────── */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Total Enquiries</div>
           <div className="stat-value">{loading ? '…' : enquiries.length}</div>
@@ -412,7 +412,7 @@ export default function Enquiries() {
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────────── */}
-      <div className="data-table-container">
+      <div className="data-table-container record-list-table-container">
         {error ? (
           <div style={{ padding: '40px 24px', textAlign: 'center', color: '#C45C5C', fontSize: 13 }}>
             Failed to load enquiries: {error}
@@ -426,7 +426,7 @@ export default function Enquiries() {
             {search ? 'No enquiries match your search.' : 'No enquiries found.'}
           </div>
         ) : (
-          <table className="data-table">
+          <table className="data-table record-list-table">
             <thead>
               <tr>
                 <th>ID</th>

@@ -54,7 +54,7 @@ export default function Payments() {
         </div>
       </header>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Revenue MTD</div>
           <div className="stat-value">$14,280</div>
@@ -95,8 +95,8 @@ export default function Payments() {
         </div>
       </div>
 
-      <div className="data-table-container">
-        <table className="data-table">
+      <div className="data-table-container record-list-table-container">
+        <table className="data-table record-list-table">
           <thead>
             <tr>
               <th>Transaction ID</th>

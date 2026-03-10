@@ -147,7 +147,7 @@ export default function Users() {
       </div>
 
       {/* Stats Row */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card" style={{ textAlign: 'center' }}>
           <div className="stat-value">{loading ? '-' : dbUsers.length}</div>
           <div className="stat-label">Total Team</div>
@@ -209,8 +209,8 @@ export default function Users() {
             </div>
           </div>
 
-          <div className="data-table-container">
-            <table className="data-table">
+          <div className="data-table-container contact-list-table-container">
+            <table className="data-table contact-list-table">
               <thead>
                 <tr>
                   <th>User</th>
@@ -315,7 +315,7 @@ export default function Users() {
 
       {/* Tab: Roles & Permissions */}
       {activeTab === 1 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        <div className="roles-grid">
           {roles.map((r, i) => (
             <div key={i} className="content-card" style={{ cursor: 'pointer', transition: 'all 0.2s', padding: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -376,8 +376,8 @@ export default function Users() {
 
       {/* Tab: Pending Invites */}
       {activeTab === 3 && (
-        <div className="data-table-container">
-          <table className="data-table">
+        <div className="data-table-container contact-list-table-container">
+          <table className="data-table contact-list-table">
             <thead>
               <tr>
                 <th>Invitee</th>

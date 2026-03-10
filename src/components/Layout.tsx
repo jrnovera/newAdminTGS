@@ -109,7 +109,7 @@ export default function Layout() {
   const { venues } = useVenues();
   const { pathname, search } = useLocation();
   const currentPath = pathname + search;
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 768);
   const [venuesExpanded, setVenuesExpanded] = useState(false);
 
   // Dynamic counts

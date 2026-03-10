@@ -203,7 +203,7 @@ export default function Subscriptions() {
       </header>
 
       {/* ── Stat Cards ────────────────────────────────────────────────────── */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Monthly Recurring Revenue</div>
           <div className="stat-value">
@@ -266,7 +266,7 @@ export default function Subscriptions() {
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}
-      <div className="data-table-container">
+      <div className="data-table-container finance-list-table-container">
         {error ? (
           <div style={{ padding: '40px 24px', textAlign: 'center', color: '#C45C5C', fontSize: 13 }}>
             Failed to load subscriptions: {error}
@@ -280,7 +280,7 @@ export default function Subscriptions() {
             {search ? 'No subscriptions match your search.' : 'No subscriptions found.'}
           </div>
         ) : (
-          <table className="data-table">
+          <table className="data-table finance-list-table">
             <thead>
               <tr>
                 <th>Subscriber</th>

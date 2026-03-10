@@ -139,7 +139,7 @@ function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailM
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-container modal-detail" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="modal-header">
@@ -176,7 +176,7 @@ function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailM
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ padding: '8px 28px 24px', maxHeight: '70vh', overflowY: 'auto' }}>
+        <div className="modal-body modal-body-detail">
 
           {/* Guest Info */}
           <SectionLabel>Guest Information</SectionLabel>
@@ -464,7 +464,7 @@ export default function Bookings() {
       </header>
 
       {/* ── Stat Cards ───────────────────────────────────────────────────── */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Total Bookings</div>
           <div className="stat-value">{loading ? '…' : bookings.length}</div>
@@ -527,7 +527,7 @@ export default function Bookings() {
       </div>
 
       {/* ── Table ────────────────────────────────────────────────────────── */}
-      <div className="data-table-container">
+      <div className="data-table-container record-list-table-container">
         {error ? (
           <div style={{ padding: '40px 24px', textAlign: 'center', color: '#C45C5C', fontSize: 13 }}>
             Failed to load bookings: {error}
@@ -541,7 +541,7 @@ export default function Bookings() {
             {search ? 'No bookings match your search.' : 'No bookings found.'}
           </div>
         ) : (
-          <table className="data-table">
+          <table className="data-table record-list-table">
             <thead>
               <tr>
                 <th>Ref</th>

@@ -10172,3 +10172,774 @@ a {
 .floating-save-bar>span+button {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
+/* ===================================================================
+   MOBILE RESPONSIVE — Dashboard & global layout (≤768px)
+   These rules only affect narrow screens; desktop is unchanged.
+   =================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+  /* Sidebar always starts collapsed on mobile (set via JS default). */
+  /* Main content sits flush against the 68px collapsed rail. */
+  .main-content {
+    margin-left: 68px !important;
+    padding: 24px 16px;
+  }
+
+  /* ── Page header ─────────────────────────────────────────────── */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 26px;
+    margin-bottom: 4px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
+  }
+
+  /* ── Stat cards — 2 columns on mobile ───────────────────────── */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    padding: 18px 16px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  /* ── Alerts — 2 columns on mobile ───────────────────────────── */
+  .alerts-section {
+    margin-bottom: 24px;
+  }
+
+  .alerts-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .alert-card {
+    padding: 14px 14px;
+    gap: 10px;
+  }
+
+  .alert-count {
+    font-size: 22px;
+  }
+
+  .alert-title {
+    font-size: 12px;
+  }
+
+  .alert-subtitle {
+    font-size: 10px;
+  }
+
+  /* ── Content grid — single column on mobile ─────────────────── */
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ===================================================================
+   MOBILE RESPONSIVE — Venue listing pages (Venues / Retreat / Wellness)
+   Tabs scroll, toolbar stacks, table rows become cards.
+   Desktop is completely unaffected.
+   =================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Tabs: horizontal scroll, no wrap ───────────────────────── */
+  .tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .tabs-container::-webkit-scrollbar { display: none; }
+
+  .tab {
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  /* ── Toolbar: stack search above filters ────────────────────── */
+  .toolbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+
+  .toolbar-actions {
+    justify-content: flex-start;
+  }
+
+  .filter-btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* ── Bulk action bar: wrap ───────────────────────────────────── */
+  .bulk-action-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── Pagination: stack ───────────────────────────────────────── */
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  /* ── Venue list container: strip the outer card ─────────────── */
+  .venue-list-table-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  /* ── Table structure → block ─────────────────────────────────── */
+  .venue-list-table,
+  .venue-list-table tbody {
+    display: block;
+  }
+
+  /* Hide column headers */
+  .venue-list-table thead {
+    display: none;
+  }
+
+  /* ── Each row = venue card ───────────────────────────────────── */
+  .venue-list-table tbody tr {
+    display: block;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 184, 184, 0.25);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+
+  .venue-list-table tbody tr:hover {
+    background: var(--white);
+    box-shadow: 0 2px 14px rgba(49, 49, 49, 0.08);
+  }
+
+  .venue-list-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* All cells: block by default, reset padding/border */
+  .venue-list-table td {
+    display: block;
+    padding: 0;
+    border: none;
+    vertical-align: unset;
+  }
+
+  /* ── Col 1 (checkbox): pin top-left ── */
+  .venue-list-table td:first-child {
+    position: absolute;
+    top: 17px;
+    left: 14px;
+    width: 16px;
+  }
+
+  /* ── Col 2 (venue name + location): full-width title area ── */
+  .venue-list-table td:nth-child(2) {
+    display: block;
+    padding-left: 30px;   /* clear checkbox */
+    padding-right: 38px;  /* clear ⋯ button */
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  /* ── Last col (⋯ action button): pin top-right ── */
+  .venue-list-table td:last-child {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  /* ── All middle cols (type, location, capacity, status, sub, date):
+        flow inline as a metadata chip row ── */
+  .venue-list-table td:not(:first-child):not(:nth-child(2)):not(:last-child) {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    vertical-align: middle;
+  }
+}
+
+/* ===================================================================
+   MOBILE RESPONSIVE — Enquiries & Bookings pages
+   Rows become cards. Ref/ID label sits at top, guest name is
+   prominent, action button pins top-right, metadata flows inline.
+   =================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Strip the outer container card ─────────────────────────── */
+  .record-list-table-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  /* ── Table structure → block ─────────────────────────────────── */
+  .record-list-table,
+  .record-list-table tbody {
+    display: block;
+  }
+
+  /* Hide column headers */
+  .record-list-table thead {
+    display: none;
+  }
+
+  /* ── Each row = record card ──────────────────────────────────── */
+  .record-list-table tbody tr {
+    display: block;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 184, 184, 0.25);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+
+  .record-list-table tbody tr:hover {
+    background: var(--white);
+    box-shadow: 0 2px 14px rgba(49, 49, 49, 0.08);
+  }
+
+  .record-list-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* All cells: block by default, reset padding/border */
+  .record-list-table td {
+    display: block;
+    padding: 0;
+    border: none;
+    vertical-align: unset;
+  }
+
+  /* ── Col 1 (ID / Ref): small label at top ── */
+  .record-list-table td:first-child {
+    display: block;
+    font-size: 10px;
+    font-family: monospace;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 4px;
+    padding-right: 38px; /* space for ⋯ button */
+  }
+
+  /* ── Col 2 (guest / customer name + email): prominent ── */
+  .record-list-table td:nth-child(2) {
+    display: block;
+    padding-right: 38px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  /* ── Last col (⋯ action button): pin top-right ── */
+  .record-list-table td:last-child {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  /* ── All middle cols: inline metadata chip row ── */
+  .record-list-table td:not(:first-child):not(:nth-child(2)):not(:last-child) {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    vertical-align: middle;
+  }
+}
+
+/* ===================================================================
+   MODAL — Desktop overrides for .modal-detail & .modal-body-detail
+   =================================================================== */
+
+/* Detail modals (Booking + Enquiry) are slightly narrower than 680px */
+.modal-detail {
+  max-width: 640px;
+}
+
+/* Reduced top padding inside detail modal bodies + constrained height */
+.modal-body-detail {
+  padding: 8px 28px 24px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+/* ===================================================================
+   MODAL — Bottom-sheet layout on mobile (≤768px)
+   Desktop is completely unchanged.
+   =================================================================== */
+@media (max-width: 768px) {
+
+  /* Overlay: remove side padding, anchor to bottom */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  /* Container becomes a bottom sheet */
+  .modal-container,
+  .modal-detail {
+    max-width: 100% !important;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 92vh;
+    /* Slide-up animation */
+    animation: modalSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes modalSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* Header: tighter padding, align close btn to top */
+  .modal-header {
+    padding: 18px 18px 14px;
+    align-items: flex-start;
+  }
+
+  .modal-title {
+    font-size: 18px;
+  }
+
+  /* A small drag handle indicator at the top of the sheet */
+  .modal-container::before,
+  .modal-detail::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: rgba(184, 184, 184, 0.4);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Body: tighter padding, let container handle max-height */
+  .modal-body,
+  .modal-body-detail {
+    padding: 10px 18px 20px;
+    max-height: none;
+    overflow-y: auto;
+    /* fill available space between header and footer */
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Footer: tighter, wraps to two lines if needed */
+  .modal-footer {
+    padding: 14px 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-radius: 0;
+  }
+
+  /* Close button grows to fill left side, status control fills right */
+  .modal-footer > .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Status dropdown or action buttons fill available width */
+  .modal-footer > div {
+    flex: 2;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+}
+
+/* ===================================================================
+   MOBILE RESPONSIVE — Contact pages (Venue Owners / Retreat Hosts /
+   Wellness Guests)
+   First column is the person card (avatar + name + email) — it
+   becomes the prominent heading of each card. Middle columns flow
+   inline as metadata. Action button pins top-right.
+   =================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Strip the outer container card ─────────────────────────── */
+  .contact-list-table-container {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  /* ── Table structure → block ─────────────────────────────────── */
+  .contact-list-table,
+  .contact-list-table tbody {
+    display: block;
+  }
+
+  /* Hide column headers */
+  .contact-list-table thead {
+    display: none;
+  }
+
+  /* ── Each row = person card ──────────────────────────────────── */
+  .contact-list-table tbody tr {
+    display: block;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 184, 184, 0.25);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: box-shadow 0.15s ease;
+    cursor: pointer;
+  }
+
+  .contact-list-table tbody tr:hover {
+    background: var(--white);
+    box-shadow: 0 2px 14px rgba(49, 49, 49, 0.08);
+  }
+
+  .contact-list-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* All cells: block by default, reset padding/border */
+  .contact-list-table td {
+    display: block;
+    padding: 0;
+    border: none;
+    vertical-align: unset;
+  }
+
+  /* ── Col 1 (person: avatar + name + email): full-width heading ── */
+  .contact-list-table td:first-child {
+    display: block;
+    padding-right: 38px; /* space for ⋯ button */
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  /* ── Last col (⋯ action button): pin top-right ── */
+  .contact-list-table td:last-child {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  /* ── All middle cols: inline metadata chip row ── */
+  .contact-list-table td:not(:first-child):not(:last-child) {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    vertical-align: middle;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Quote column (RetreatHosts) can be a bit wider and truncates */
+  .contact-list-table td:not(:first-child):not(:last-child)[style*="italic"] {
+    max-width: 200px;
+    display: inline-block;
+  }
+}
+
+/* ── Finance / Subscriptions table (mobile cards) ──────────────────────────
+   Pattern: td:1 = subscriber name (bold title)
+            td:2 = email (muted sub-text)
+            td:last = ⋯ action (absolute top-right)
+            middle tds = inline chip row
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .finance-list-table-container {
+    background: transparent;
+    border: none;
+    overflow: visible;
+  }
+
+  .finance-list-table,
+  .finance-list-table tbody {
+    display: block;
+  }
+
+  .finance-list-table thead {
+    display: none;
+  }
+
+  .finance-list-table tbody tr {
+    display: block;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 184, 184, 0.25);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .finance-list-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  /* Col 1 — subscriber name: bold primary title */
+  .finance-list-table td:first-child {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 2px;
+    padding-right: 38px;
+  }
+
+  /* Col 2 — email: small muted sub-text */
+  .finance-list-table td:nth-child(2) {
+    font-size: 12px;
+    color: #B8B8B8;
+    margin-bottom: 10px;
+    padding-right: 38px;
+  }
+
+  /* Last col — ⋯ button: pin top-right */
+  .finance-list-table td:last-child {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  /* Middle cols — plan, amount, status, billing, started: inline chips */
+  .finance-list-table td:not(:first-child):not(:nth-child(2)):not(:last-child) {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    vertical-align: middle;
+  }
+}
+
+/* ── Content list table (WellnessEdit + SanctumJournal) ──────────────────────
+   Pattern: td:1 = article/post title (bold primary)
+            td:last = 3 action buttons (absolute top-right)
+            middle tds = inline chip row
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .content-list-table-container {
+    background: transparent;
+    border: none;
+    overflow: visible;
+  }
+
+  .content-list-table,
+  .content-list-table tbody {
+    display: block;
+  }
+
+  .content-list-table thead {
+    display: none;
+  }
+
+  .content-list-table tbody tr {
+    display: block;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid rgba(184, 184, 184, 0.25);
+    padding: 14px 90px 14px 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .content-list-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .content-list-table td:first-child {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .content-list-table td:last-child {
+    position: absolute;
+    top: 8px;
+    right: 4px;
+    width: auto;
+    display: block;
+  }
+
+  .content-list-table td:not(:first-child):not(:last-child) {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    vertical-align: middle;
+  }
+}
+
+/* ── Analytics mobile ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-title-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .date-range-selector {
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .date-range-selector::-webkit-scrollbar {
+    display: none;
+  }
+
+  .realtime-ticker {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ticker-items {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .kpi-hero {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .goals-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-card.full-width {
+    grid-column: 1 !important;
+  }
+}
+
+/* ── Roles grid (Users — Roles & Permissions tab) ────────────────────────── */
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filters-row .filter-select {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .filters-row .search-box {
+    max-width: 100% !important;
+    width: 100%;
+  }
+}
+
+/* ── Settings layout ──────────────────────────────────────────────────────── */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+}
+
+.billing-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.branding-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .billing-plans-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .branding-colors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+}
