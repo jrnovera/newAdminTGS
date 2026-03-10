@@ -1,27 +1,37 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Download, Search, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertCircle, X, Mail, MapPin, Users, Calendar, Tag, User, CreditCard } from 'lucide-react';
+import { Download, Search, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, AlertCircle, X, Mail, MapPin, Users, Calendar, Tag, User, CreditCard, Smartphone, Monitor } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+// Mirrors the venue_bookings table (single source of truth for all bookings).
+// Admin bookings: source='admin', amount=direct $, amount_total=null
+// Client Stripe bookings: source='client', amount=parsed display $, amount_total=cents from Stripe
 interface Booking {
   id: string;
   venue_id: string | null;
-  venue_name: string;
+  venue_name: string | null;
   venue_location: string | null;
   venue_type: string | null;
-  service_name: string;
+  guest_name: string;
+  guest_email: string | null;
+  guest_phone: string | null;
+  service_name: string | null;
   service_price: string | null;
   service_duration: string | null;
-  preferred_date: string;
-  preferred_time: string | null;
-  guest_count: number;
-  customer_name: string;
-  customer_email: string;
-  special_requests: string | null;
+  check_in_date: string;
+  check_out_date: string | null;
+  time_slot: string | null;
+  guests: number;
+  amount: number | null;
+  amount_total: number | null;
   status: string;
+  notes: string | null;
+  source: string | null;
+  booking_type: string | null;
+  practitioner_name: string | null;
+  add_ons: { name: string; price: number }[] | null;
   stripe_session_id: string | null;
   stripe_payment_intent_id: string | null;
-  amount_total: number | null;
   created_at: string;
   user_id: string | null;
 }
@@ -34,18 +44,28 @@ function formatDate(iso: string | null): string {
   } catch { return iso; }
 }
 
-function formatPreferredDate(dateStr: string | null): string {
+function formatCheckInDate(dateStr: string | null): string {
   if (!dateStr) return '—';
   try {
-    // preferred_date is a plain date string (YYYY-MM-DD) — parse without timezone shift
     const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   } catch { return dateStr; }
 }
 
-function formatAmount(cents: number | null): string {
-  if (cents === null || cents === undefined) return '—';
-  return `$${(cents / 100).toFixed(2)}`;
+// Client bookings: amount_total in cents from Stripe; admin bookings: amount in direct $
+function displayAmount(b: Booking): string {
+  if (b.amount_total !== null && b.amount_total !== undefined) {
+    return `$${(b.amount_total / 100).toFixed(2)}`;
+  }
+  if (b.amount !== null && b.amount !== undefined) {
+    return `$${b.amount.toFixed(2)}`;
+  }
+  return '—';
+}
+
+function revenueValue(b: Booking): number {
+  if (b.amount_total !== null && b.amount_total !== undefined) return b.amount_total / 100;
+  return b.amount ?? 0;
 }
 
 function normaliseStatus(s: string): string {
@@ -63,7 +83,7 @@ function referenceId(id: string): string {
   return `BKG-${id.slice(0, 6).toUpperCase()}`;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 // ── Booking Detail Modal ───────────────────────────────────────────────────────
 interface BookingDetailModalProps {
@@ -73,54 +93,36 @@ interface BookingDetailModalProps {
 }
 
 function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailModalProps) {
-  const [updating, setUpdating] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(booking.status?.toLowerCase() ?? 'pending');
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    setUpdating(newStatus);
+  const handleStatusChange = async (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setUpdating(true);
     await onStatusUpdate(booking.id, newStatus);
-    setUpdating(null);
+    setUpdating(false);
   };
-
-  const statusActions: { label: string; value: string; style: React.CSSProperties }[] = [
-    {
-      label: 'Confirm',
-      value: 'confirmed',
-      style: { backgroundColor: '#E8F4EA', color: '#4A7C59', border: '1px solid #4A7C59' },
-    },
-    {
-      label: 'Complete',
-      value: 'completed',
-      style: { backgroundColor: '#EEF3FB', color: '#6B8EC9', border: '1px solid #6B8EC9' },
-    },
-    {
-      label: 'Cancel',
-      value: 'cancelled',
-      style: { backgroundColor: '#FCE8E8', color: '#C45C5C', border: '1px solid #C45C5C' },
-    },
-  ].filter(a => a.value !== booking.status.toLowerCase());
 
   const statusBadgeClass = (() => {
     switch (normaliseStatus(booking.status)) {
-      case 'Confirmed':  return 'active';
-      case 'Completed':  return 'active';
-      case 'Pending':    return 'pending';
-      case 'Cancelled':  return 'error';
-      default:           return 'pending';
+      case 'Confirmed': case 'Completed': return 'active';
+      case 'Pending':   return 'pending';
+      case 'Cancelled': return 'error';
+      default:          return 'pending';
     }
   })();
 
   const statusIcon = (() => {
     switch (normaliseStatus(booking.status)) {
       case 'Pending':   return <Clock size={12} />;
-      case 'Confirmed': return <CheckCircle size={12} />;
-      case 'Completed': return <CheckCircle size={12} />;
+      case 'Confirmed': case 'Completed': return <CheckCircle size={12} />;
       case 'Cancelled': return <XCircle size={12} />;
-      default:          return null;
+      default: return null;
     }
   })();
 
   const DetailRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid rgba(184,184,184,0.15)' }}>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid rgba(184,184,184,0.12)' }}>
       <div style={{ color: '#B8B8B8', marginTop: 2, flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', color: '#B8B8B8', textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
@@ -129,27 +131,43 @@ function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailM
     </div>
   );
 
+  const SectionLabel = ({ children }: { children: string }) => (
+    <div style={{ marginTop: 20, marginBottom: 4, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
+      {children}
+    </div>
+  );
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" style={{ maxWidth: 620 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-container" style={{ maxWidth: 640 }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="modal-header">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <h2 className="modal-title">Booking Details</h2>
               <span style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 1, color: '#B8B8B8', fontWeight: 500 }}>
                 {referenceId(booking.id)}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span className={`status-badge ${statusBadgeClass}`}>
-                {statusIcon}
-                {normaliseStatus(booking.status)}
+                {statusIcon}{normaliseStatus(booking.status)}
               </span>
-              {booking.amount_total !== null && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#4A7C59' }}>
-                  {formatAmount(booking.amount_total)}
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#4A7C59' }}>
+                {displayAmount(booking)}
+              </span>
+              {booking.source && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#B8B8B8', border: '1px solid rgba(184,184,184,0.3)', borderRadius: 20, padding: '2px 8px' }}>
+                  {booking.source === 'client'
+                    ? <><Smartphone size={10} /> Online</>
+                    : <><Monitor size={10} /> Admin</>
+                  }
+                </span>
+              )}
+              {booking.booking_type && booking.booking_type !== 'service' && (
+                <span style={{ fontSize: 11, color: '#B8B8B8', border: '1px solid rgba(184,184,184,0.3)', borderRadius: 20, padding: '2px 8px', textTransform: 'capitalize' }}>
+                  {booking.booking_type}
                 </span>
               )}
             </div>
@@ -158,60 +176,86 @@ function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailM
         </div>
 
         {/* Body */}
-        <div className="modal-body" style={{ padding: '8px 28px 24px' }}>
+        <div className="modal-body" style={{ padding: '8px 28px 24px', maxHeight: '70vh', overflowY: 'auto' }}>
 
           {/* Guest Info */}
-          <div style={{ marginBottom: 4, marginTop: 16, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
-            Guest Information
-          </div>
-          <DetailRow icon={<User size={15} />} label="Name"  value={booking.customer_name} />
-          <DetailRow icon={<Mail size={15} />} label="Email" value={
-            <a href={`mailto:${booking.customer_email}`} style={{ color: '#313131', textDecoration: 'underline' }}>
-              {booking.customer_email}
-            </a>
+          <SectionLabel>Guest Information</SectionLabel>
+          <DetailRow icon={<User size={15} />}  label="Name"  value={booking.guest_name} />
+          <DetailRow icon={<Mail size={15} />}  label="Email" value={
+            booking.guest_email
+              ? <a href={`mailto:${booking.guest_email}`} style={{ color: '#313131', textDecoration: 'underline' }}>{booking.guest_email}</a>
+              : null
           } />
-          <DetailRow icon={<Users size={15} />} label="Guest Count" value={`${booking.guest_count} ${booking.guest_count === 1 ? 'guest' : 'guests'}`} />
+          {booking.guest_phone && (
+            <DetailRow icon={<User size={15} />} label="Phone" value={booking.guest_phone} />
+          )}
+          <DetailRow icon={<Users size={15} />} label="Guests" value={`${booking.guests} ${booking.guests === 1 ? 'guest' : 'guests'}`} />
 
           {/* Venue & Service */}
-          <div style={{ marginBottom: 4, marginTop: 20, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
-            Venue & Service
-          </div>
+          <SectionLabel>Venue & Service</SectionLabel>
           <DetailRow icon={<MapPin size={15} />} label="Venue" value={
             <span>
-              {booking.venue_name}
+              {booking.venue_name || '—'}
               {booking.venue_type && <span style={{ color: '#B8B8B8', marginLeft: 6, fontSize: 11 }}>({booking.venue_type})</span>}
               {booking.venue_location && <div style={{ fontSize: 11, color: '#B8B8B8', marginTop: 2 }}>{booking.venue_location}</div>}
             </span>
           } />
           <DetailRow icon={<Tag size={15} />} label="Service" value={
             <span>
-              {booking.service_name}
-              {(booking.service_price || booking.service_duration) && (
+              {booking.service_name || '—'}
+              {(booking.service_duration || booking.service_price) && (
                 <span style={{ color: '#B8B8B8', marginLeft: 6, fontSize: 11 }}>
                   {[booking.service_duration, booking.service_price].filter(Boolean).join(' · ')}
                 </span>
               )}
             </span>
           } />
+          {booking.practitioner_name && (
+            <DetailRow icon={<User size={15} />} label="Practitioner" value={booking.practitioner_name} />
+          )}
 
-          {/* Booking Details */}
-          <div style={{ marginBottom: 4, marginTop: 20, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
-            Booking Details
-          </div>
-          <DetailRow icon={<Calendar size={15} />} label="Preferred Date" value={
-            booking.preferred_time
-              ? `${formatPreferredDate(booking.preferred_date)} at ${booking.preferred_time}`
-              : formatPreferredDate(booking.preferred_date)
+          {/* Booking Schedule */}
+          <SectionLabel>Booking Schedule</SectionLabel>
+          <DetailRow icon={<Calendar size={15} />} label="Date & Time" value={
+            booking.time_slot
+              ? `${formatCheckInDate(booking.check_in_date)} at ${booking.time_slot}`
+              : formatCheckInDate(booking.check_in_date)
           } />
-          <DetailRow icon={<CreditCard size={15} />} label="Amount Paid" value={formatAmount(booking.amount_total)} />
-          <DetailRow icon={<Clock size={15} />}     label="Booked On"    value={formatDate(booking.created_at)} />
+          {booking.check_out_date && (
+            <DetailRow icon={<Calendar size={15} />} label="Check-out" value={formatCheckInDate(booking.check_out_date)} />
+          )}
+          <DetailRow icon={<CreditCard size={15} />} label="Amount Paid" value={displayAmount(booking)} />
+          <DetailRow icon={<Clock size={15} />}     label="Booked On"   value={formatDate(booking.created_at)} />
 
-          {/* Payment IDs */}
+          {/* Add-ons */}
+          {booking.add_ons && booking.add_ons.length > 0 && (
+            <>
+              <SectionLabel>Add-ons Purchased</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                {booking.add_ons.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#313131', backgroundColor: '#F7F5F1', borderRadius: 8, padding: '8px 14px' }}>
+                    <span>{a.name}</span>
+                    <span style={{ fontWeight: 500 }}>${a.price.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Special Requests / Notes */}
+          {booking.notes && (
+            <>
+              <SectionLabel>Notes / Special Requests</SectionLabel>
+              <div style={{ backgroundColor: '#F7F5F1', borderRadius: 10, padding: '14px 16px', fontSize: 13, lineHeight: 1.7, color: '#313131', fontStyle: 'italic' }}>
+                "{booking.notes}"
+              </div>
+            </>
+          )}
+
+          {/* Payment References */}
           {(booking.stripe_session_id || booking.stripe_payment_intent_id) && (
             <>
-              <div style={{ marginBottom: 4, marginTop: 20, fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8' }}>
-                Payment Reference
-              </div>
+              <SectionLabel>Payment Reference</SectionLabel>
               {booking.stripe_session_id && (
                 <DetailRow icon={<CreditCard size={15} />} label="Stripe Session" value={
                   <span style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: 0.5, color: '#6B8EC9' }}>
@@ -228,46 +272,51 @@ function BookingDetailModal({ booking, onClose, onStatusUpdate }: BookingDetailM
               )}
             </>
           )}
-
-          {/* Special Requests */}
-          {booking.special_requests && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#B8B8B8', marginBottom: 8 }}>
-                Special Requests
-              </div>
-              <div style={{ backgroundColor: '#F7F5F1', borderRadius: 10, padding: '14px 16px', fontSize: 13, lineHeight: 1.7, color: '#313131', fontStyle: 'italic' }}>
-                "{booking.special_requests}"
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div className="modal-footer">
           <button className="btn btn-secondary btn-small" onClick={onClose}>Close</button>
-          {statusActions.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#B8B8B8' }}>Update status:</span>
-              {statusActions.map(action => (
-                <button
-                  key={action.value}
-                  className="btn btn-small"
-                  style={{ ...action.style, borderRadius: 20, opacity: updating ? 0.6 : 1, cursor: updating ? 'not-allowed' : 'pointer' }}
-                  disabled={!!updating}
-                  onClick={() => handleStatusUpdate(action.value)}
-                >
-                  {updating === action.value ? 'Saving…' : action.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 12, color: '#B8B8B8', flexShrink: 0 }}>Update status:</span>
+            <select
+              value={selectedStatus}
+              onChange={e => handleStatusChange(e.target.value)}
+              disabled={updating}
+              style={{
+                fontSize: 13,
+                padding: '6px 32px 6px 12px',
+                borderRadius: 20,
+                border: '1px solid rgba(184,184,184,0.4)',
+                backgroundColor: '#fff',
+                color: (selectedStatus === 'confirmed' || selectedStatus === 'completed') ? '#4A7C59'
+                     : selectedStatus === 'pending' ? '#D4A853'
+                     : '#C45C5C',
+                fontWeight: 500,
+                cursor: updating ? 'not-allowed' : 'pointer',
+                opacity: updating ? 0.6 : 1,
+                outline: 'none',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B8B8B8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center',
+              }}
+            >
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            {updating && <span style={{ fontSize: 12, color: '#B8B8B8' }}>Saving…</span>}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function Bookings() {
   const [activeTab, setActiveTab]             = useState(0);
   const [search, setSearch]                   = useState('');
@@ -277,17 +326,17 @@ export default function Bookings() {
   const [error, setError]                     = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Fetch from venue_bookings (single source of truth) ────────────────────
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError('');
       const { data, error: err } = await supabase
-        .from('bookings')
+        .from('venue_bookings')
         .select('*')
         .order('created_at', { ascending: false });
       if (err) { setError(err.message); }
-      else { setBookings(data ?? []); }
+      else { setBookings((data ?? []) as Booking[]); }
       setLoading(false);
     };
     load();
@@ -296,7 +345,7 @@ export default function Bookings() {
   // ── Status update ─────────────────────────────────────────────────────────
   const updateStatus = async (id: string, newStatus: string) => {
     const { error: err } = await supabase
-      .from('bookings')
+      .from('venue_bookings')
       .update({ status: newStatus })
       .eq('id', id);
     if (!err) {
@@ -305,15 +354,15 @@ export default function Bookings() {
     }
   };
 
-  // ── Derived stats ──────────────────────────────────────────────────────────
+  // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const pending   = bookings.filter(b => b.status === 'pending').length;
     const confirmed = bookings.filter(b => b.status === 'confirmed').length;
     const completed = bookings.filter(b => b.status === 'completed').length;
     const cancelled = bookings.filter(b => ['cancelled', 'canceled'].includes(b.status)).length;
     const revenue   = bookings
-      .filter(b => b.status !== 'cancelled' && b.status !== 'canceled')
-      .reduce((sum, b) => sum + (b.amount_total ?? 0), 0);
+      .filter(b => !['cancelled', 'canceled'].includes(b.status))
+      .reduce((sum, b) => sum + revenueValue(b), 0);
     return { pending, confirmed, completed, cancelled, revenue };
   }, [bookings]);
 
@@ -325,27 +374,23 @@ export default function Bookings() {
     { label: 'Cancelled',    count: stats.cancelled },
   ];
 
-  // ── Tab filter ────────────────────────────────────────────────────────────
+  // ── Tab + search filter ───────────────────────────────────────────────────
   const tabFiltered = useMemo(() => {
     const statusMap: Record<number, string[]> = {
-      1: ['pending'],
-      2: ['confirmed'],
-      3: ['completed'],
-      4: ['cancelled', 'canceled'],
+      1: ['pending'], 2: ['confirmed'], 3: ['completed'], 4: ['cancelled', 'canceled'],
     };
     if (activeTab === 0) return bookings;
     return bookings.filter(b => statusMap[activeTab].includes(b.status));
   }, [bookings, activeTab]);
 
-  // ── Search filter ─────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     if (!search.trim()) return tabFiltered;
     const q = search.toLowerCase();
     return tabFiltered.filter(b =>
-      (b.customer_name  ?? '').toLowerCase().includes(q) ||
-      (b.customer_email ?? '').toLowerCase().includes(q) ||
-      (b.venue_name     ?? '').toLowerCase().includes(q) ||
-      (b.service_name   ?? '').toLowerCase().includes(q)
+      (b.guest_name    ?? '').toLowerCase().includes(q) ||
+      (b.guest_email   ?? '').toLowerCase().includes(q) ||
+      (b.venue_name    ?? '').toLowerCase().includes(q) ||
+      (b.service_name  ?? '').toLowerCase().includes(q)
     );
   }, [tabFiltered, search]);
 
@@ -356,12 +401,11 @@ export default function Bookings() {
   const goToPage   = (p: number) => setPage(Math.max(1, Math.min(p, totalPages)));
   useEffect(() => { setPage(1); }, [activeTab, search]);
 
-  // ── Badge helpers ─────────────────────────────────────────────────────────
+  // ── Status badge helpers ──────────────────────────────────────────────────
   const statusIcon = (s: string) => {
     switch (normaliseStatus(s)) {
       case 'Pending':   return <Clock size={13} />;
-      case 'Confirmed': return <CheckCircle size={13} />;
-      case 'Completed': return <CheckCircle size={13} />;
+      case 'Confirmed': case 'Completed': return <CheckCircle size={13} />;
       case 'Cancelled': return <XCircle size={13} />;
       default:          return <AlertCircle size={13} />;
     }
@@ -369,12 +413,39 @@ export default function Bookings() {
 
   const statusClass = (s: string): string => {
     switch (normaliseStatus(s)) {
+      case 'Confirmed': case 'Completed': return 'active';
       case 'Pending':   return 'pending';
-      case 'Confirmed': return 'active';
-      case 'Completed': return 'active';
       case 'Cancelled': return 'error';
       default:          return 'pending';
     }
+  };
+
+  // ── Export CSV ────────────────────────────────────────────────────────────
+  const handleExport = () => {
+    const rows = [
+      ['Ref', 'Guest', 'Email', 'Phone', 'Venue', 'Service', 'Date', 'Time', 'Guests', 'Amount', 'Status', 'Source', 'Booked On'],
+      ...filtered.map(b => [
+        referenceId(b.id),
+        b.guest_name,
+        b.guest_email ?? '',
+        b.guest_phone ?? '',
+        b.venue_name ?? '',
+        b.service_name ?? '',
+        b.check_in_date,
+        b.time_slot ?? '',
+        String(b.guests),
+        displayAmount(b),
+        normaliseStatus(b.status),
+        b.source ?? '',
+        formatDate(b.created_at),
+      ]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `tgs-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -386,7 +457,9 @@ export default function Bookings() {
           <p className="page-subtitle">Manage guest bookings and payments</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary"><Download size={16} /> Export</button>
+          <button className="btn btn-secondary" onClick={handleExport}>
+            <Download size={16} /> Export
+          </button>
         </div>
       </header>
 
@@ -418,7 +491,7 @@ export default function Bookings() {
         <div className="stat-card">
           <div className="stat-label">Total Revenue</div>
           <div className="stat-value" style={{ color: '#4A7C59' }}>
-            {loading ? '…' : `$${(stats.revenue / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            {loading ? '…' : `$${stats.revenue.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
           <div className="stat-breakdown">Excl. cancelled bookings</div>
         </div>
@@ -471,16 +544,17 @@ export default function Bookings() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Ref</th>
                 <th>Guest</th>
                 <th>Venue</th>
                 <th>Service</th>
-                <th>Date</th>
+                <th>Date & Time</th>
                 <th>Guests</th>
                 <th>Amount</th>
+                <th>Source</th>
                 <th>Status</th>
                 <th>Booked</th>
-                <th style={{ width: 50 }}></th>
+                <th style={{ width: 40 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -490,36 +564,43 @@ export default function Bookings() {
                   onClick={() => setSelectedBooking(b)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <td style={{ fontWeight: 500, fontSize: 11, fontFamily: 'monospace', letterSpacing: 1 }}>
+                  <td style={{ fontWeight: 500, fontSize: 11, fontFamily: 'monospace', letterSpacing: 1, color: '#B8B8B8' }}>
                     {referenceId(b.id)}
                   </td>
                   <td>
-                    <div style={{ fontWeight: 500 }}>{b.customer_name}</div>
-                    <div style={{ fontSize: 12, color: '#B8B8B8' }}>{b.customer_email}</div>
+                    <div style={{ fontWeight: 500 }}>{b.guest_name}</div>
+                    {b.guest_email && <div style={{ fontSize: 12, color: '#B8B8B8' }}>{b.guest_email}</div>}
                   </td>
                   <td>
-                    <div>{b.venue_name}</div>
-                    {b.venue_type && (
-                      <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.venue_type}</div>
-                    )}
+                    <div>{b.venue_name || '—'}</div>
+                    {b.venue_type && <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.venue_type}</div>}
                   </td>
                   <td>
-                    <div style={{ fontSize: 13 }}>{b.service_name}</div>
-                    {b.service_price && (
-                      <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.service_price}</div>
-                    )}
+                    <div style={{ fontSize: 13 }}>{b.service_name || '—'}</div>
+                    {b.service_price && <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.service_price}</div>}
                   </td>
                   <td style={{ fontSize: 13 }}>
-                    <div>{formatPreferredDate(b.preferred_date)}</div>
-                    {b.preferred_time && (
-                      <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.preferred_time}</div>
-                    )}
+                    <div>{formatCheckInDate(b.check_in_date)}</div>
+                    {b.time_slot && <div style={{ fontSize: 11, color: '#B8B8B8' }}>{b.time_slot}</div>}
                   </td>
                   <td style={{ fontSize: 13 }}>
-                    {b.guest_count} {b.guest_count === 1 ? 'guest' : 'guests'}
+                    {b.guests} {b.guests === 1 ? 'guest' : 'guests'}
                   </td>
                   <td style={{ fontSize: 13, fontWeight: 500 }}>
-                    {formatAmount(b.amount_total)}
+                    {displayAmount(b)}
+                  </td>
+                  <td>
+                    {b.source === 'client' ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#6B8EC9' }}>
+                        <Smartphone size={11} /> Online
+                      </span>
+                    ) : b.source === 'admin' ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#B8B8B8' }}>
+                        <Monitor size={11} /> Admin
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#B8B8B8' }}>—</span>
+                    )}
                   </td>
                   <td>
                     <span className={`status-badge ${statusClass(b.status)}`}>
@@ -528,7 +609,10 @@ export default function Bookings() {
                   </td>
                   <td style={{ fontSize: 12, color: '#B8B8B8' }}>{formatDate(b.created_at)}</td>
                   <td onClick={ev => ev.stopPropagation()}>
-                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#B8B8B8' }}>
+                    <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#B8B8B8' }}
+                      onClick={() => setSelectedBooking(b)}
+                    >
                       <MoreHorizontal size={16} />
                     </button>
                   </td>
@@ -552,11 +636,7 @@ export default function Bookings() {
                 const start = Math.max(1, Math.min(safePage - 2, totalPages - 4));
                 const p = start + i;
                 return p <= totalPages ? (
-                  <button
-                    key={p}
-                    className={`page-btn${safePage === p ? ' active' : ''}`}
-                    onClick={() => goToPage(p)}
-                  >
+                  <button key={p} className={`page-btn${safePage === p ? ' active' : ''}`} onClick={() => goToPage(p)}>
                     {p}
                   </button>
                 ) : null;
