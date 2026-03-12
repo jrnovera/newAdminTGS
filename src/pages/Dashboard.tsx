@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
-  TrendingUp,
   Upload,
   Plus,
   Home,
   CalendarDays,
-  DollarSign,
+  MessageSquare,
   UserPlus,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useVenues } from '../context/VenueContext';
+import CreateRetreatModal from '../components/CreateRetreatModal';
+import CreateWellnessModal from '../components/CreateWellnessModal';
 
 interface ActivityItem {
   id: string;
@@ -36,12 +39,63 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { addVenue } = useVenues();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
 
+  // Real stats
+  const [totalVenues, setTotalVenues] = useState(0);
+  const [retreatCount, setRetreatCount] = useState(0);
+  const [wellnessCount, setWellnessCount] = useState(0);
+  const [bookingsThisMonth, setBookingsThisMonth] = useState(0);
+  const [pendingBookings, setPendingBookings] = useState(0);
+  const [confirmedBookings, setConfirmedBookings] = useState(0);
+  const [cancelledBookings, setCancelledBookings] = useState(0);
+  const [enquiryCount, setEnquiryCount] = useState(0);
+  const [newUsersCount, setNewUsersCount] = useState(0);
+
+  // Add venue modal
+  const [showVenueTypeChoice, setShowVenueTypeChoice] = useState(false);
+  const [showCreateRetreat, setShowCreateRetreat] = useState(false);
+  const [showCreateWellness, setShowCreateWellness] = useState(false);
+
   useEffect(() => {
     fetchRecentActivity();
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [retreatRes, wellnessRes, bookingsRes, enquiriesRes, usersRes] = await Promise.all([
+        supabase.from('retreat_venues').select('id', { count: 'exact', head: true }),
+        supabase.from('wellness_venues').select('id', { count: 'exact', head: true }),
+        supabase.from('bookings').select('id, status, created_at').gte('created_at', startOfMonth),
+        supabase.from('enquiries').select('id', { count: 'exact', head: true }),
+        supabase.from('wellness_guests').select('id', { count: 'exact', head: true }).gte('created_at', startOfMonth),
+      ]);
+
+      const rCount = retreatRes.count || 0;
+      const wCount = wellnessRes.count || 0;
+      setRetreatCount(rCount);
+      setWellnessCount(wCount);
+      setTotalVenues(rCount + wCount);
+
+      const bookings = bookingsRes.data || [];
+      setBookingsThisMonth(bookings.length);
+      setPendingBookings(bookings.filter(b => b.status === 'pending').length);
+      setConfirmedBookings(bookings.filter(b => b.status === 'confirmed').length);
+      setCancelledBookings(bookings.filter(b => b.status === 'cancelled').length);
+
+      setEnquiryCount(enquiriesRes.count || 0);
+      setNewUsersCount(usersRes.count || 0);
+    } catch (err) {
+      console.error('[Dashboard] fetchStats error:', err);
+    }
+  };
 
   const fetchRecentActivity = async () => {
     try {
@@ -101,13 +155,25 @@ export default function Dashboard() {
         });
       }
 
-      // Sort all by timestamp descending, take top 10
       items.sort((a, b) => b.timestamp - a.timestamp);
       setActivities(items.slice(0, 10));
     } catch (err) {
       console.error('[Dashboard] fetchRecentActivity error:', err);
     } finally {
       setLoadingActivity(false);
+    }
+  };
+
+  const handleAddVenueClick = () => {
+    setShowVenueTypeChoice(true);
+  };
+
+  const handleVenueTypeSelect = (type: 'retreat' | 'wellness') => {
+    setShowVenueTypeChoice(false);
+    if (type === 'retreat') {
+      setShowCreateRetreat(true);
+    } else {
+      setShowCreateWellness(true);
     }
   };
 
@@ -124,7 +190,7 @@ export default function Dashboard() {
             <Upload size={16} />
             Export
           </button>
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleAddVenueClick}>
             <Plus size={16} />
             Add Venue
           </button>
@@ -135,39 +201,21 @@ export default function Dashboard() {
       <section className="stats-grid">
         <div className="stat-card">
           <div className="stat-label">Total Venues</div>
-          <div className="stat-value">47</div>
-          <div className="stat-change positive">
-            <TrendingUp size={14} />
-            +12 this month
-          </div>
-          <div className="stat-breakdown">32 Active · 10 Draft · 5 Inactive</div>
+          <div className="stat-value">{totalVenues}</div>
+          <div className="stat-breakdown">{retreatCount} Retreat · {wellnessCount} Wellness</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Bookings This Month</div>
-          <div className="stat-value">23</div>
-          <div className="stat-change positive">
-            <TrendingUp size={14} />
-            +18% vs last month
-          </div>
-          <div className="stat-breakdown">19 Confirmed · 3 Pending · 1 Cancelled</div>
+          <div className="stat-value">{bookingsThisMonth}</div>
+          <div className="stat-breakdown">{confirmedBookings} Confirmed · {pendingBookings} Pending · {cancelledBookings} Cancelled</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Revenue MTD</div>
-          <div className="stat-value">$14,280</div>
-          <div className="stat-change positive">
-            <TrendingUp size={14} />
-            +24% vs last month
-          </div>
-          <div className="stat-breakdown">$8,420 Subscriptions · $5,860 Commissions</div>
+          <div className="stat-label">Total Enquiries</div>
+          <div className="stat-value">{enquiryCount}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Total Contacts</div>
-          <div className="stat-value">312</div>
-          <div className="stat-change positive">
-            <TrendingUp size={14} />
-            +8 new this week
-          </div>
-          <div className="stat-breakdown">189 Guests · 76 Hosts · 47 Owners</div>
+          <div className="stat-label">New Guests This Month</div>
+          <div className="stat-value">{newUsersCount}</div>
         </div>
       </section>
 
@@ -178,29 +226,29 @@ export default function Dashboard() {
           <a href="#" className="card-action">View All</a>
         </div>
         <div className="alerts-grid">
-          <div className="alert-card warning">
-            <div className="alert-count">5</div>
+          <div className="alert-card warning" style={{ cursor: 'pointer' }} onClick={() => navigate('/enquiries')}>
+            <div className="alert-count">{enquiryCount}</div>
             <div className="alert-text">
-              <div className="alert-title">New Enquiries</div>
-              <div className="alert-subtitle">Awaiting response</div>
+              <div className="alert-title">Enquiries</div>
+              <div className="alert-subtitle">View all enquiries</div>
             </div>
           </div>
-          <div className="alert-card warning">
-            <div className="alert-count">3</div>
+          <div className="alert-card warning" style={{ cursor: 'pointer' }} onClick={() => navigate('/bookings')}>
+            <div className="alert-count">{pendingBookings}</div>
             <div className="alert-text">
               <div className="alert-title">Pending Bookings</div>
               <div className="alert-subtitle">Awaiting confirmation</div>
             </div>
           </div>
           <div className="alert-card error">
-            <div className="alert-count">1</div>
+            <div className="alert-count">0</div>
             <div className="alert-text">
               <div className="alert-title">Failed Payment</div>
               <div className="alert-subtitle">Subscription renewal failed</div>
             </div>
           </div>
           <div className="alert-card info">
-            <div className="alert-count">5</div>
+            <div className="alert-count">0</div>
             <div className="alert-text">
               <div className="alert-title">Incomplete Profiles</div>
               <div className="alert-subtitle">Venues missing key info</div>
@@ -218,7 +266,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body">
             <div className="quick-actions">
-              <div className="quick-action">
+              <div className="quick-action" style={{ cursor: 'pointer' }} onClick={handleAddVenueClick}>
                 <div className="quick-action-icon">
                   <Home size={22} />
                 </div>
@@ -227,31 +275,31 @@ export default function Dashboard() {
                   <div className="quick-action-subtitle">Create a new listing</div>
                 </div>
               </div>
-              <div className="quick-action">
+              <div className="quick-action" style={{ cursor: 'pointer' }} onClick={() => navigate('/bookings')}>
                 <div className="quick-action-icon">
                   <CalendarDays size={22} />
                 </div>
                 <div>
                   <div className="quick-action-title">View Pending Bookings</div>
-                  <div className="quick-action-subtitle">3 awaiting review</div>
+                  <div className="quick-action-subtitle">{pendingBookings} awaiting review</div>
                 </div>
               </div>
-              <div className="quick-action">
+              <div className="quick-action" style={{ cursor: 'pointer' }} onClick={() => navigate('/enquiries')}>
                 <div className="quick-action-icon">
-                  <DollarSign size={22} />
+                  <MessageSquare size={22} />
                 </div>
                 <div>
-                  <div className="quick-action-title">Process Payouts</div>
-                  <div className="quick-action-subtitle">$2,340 ready to send</div>
+                  <div className="quick-action-title">Enquiries</div>
+                  <div className="quick-action-subtitle">{enquiryCount} total enquiries</div>
                 </div>
               </div>
-              <div className="quick-action">
+              <div className="quick-action" style={{ cursor: 'pointer' }} onClick={() => navigate('/wellness-guests')}>
                 <div className="quick-action-icon">
                   <UserPlus size={22} />
                 </div>
                 <div>
                   <div className="quick-action-title">View New Users</div>
-                  <div className="quick-action-subtitle">8 registered this week</div>
+                  <div className="quick-action-subtitle">{newUsersCount} registered this month</div>
                 </div>
               </div>
             </div>
@@ -288,6 +336,59 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
+      {/* Venue Type Chooser Modal */}
+      {showVenueTypeChoice && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#1E1E1E', borderRadius: 12, padding: 32, width: '100%', maxWidth: 400, border: '1px solid #333', textAlign: 'center' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Add New Venue</h2>
+            <p style={{ fontSize: 14, color: '#B8B8B8', marginBottom: 24 }}>Choose venue type</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '14px 16px' }}
+                onClick={() => handleVenueTypeSelect('retreat')}
+              >
+                Retreat Venue
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, padding: '14px 16px' }}
+                onClick={() => handleVenueTypeSelect('wellness')}
+              >
+                Wellness Venue
+              </button>
+            </div>
+            <button
+              className="btn btn-secondary"
+              style={{ marginTop: 12, width: '100%' }}
+              onClick={() => setShowVenueTypeChoice(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modals */}
+      <CreateRetreatModal
+        isOpen={showCreateRetreat}
+        onClose={() => { setShowCreateRetreat(false); fetchStats(); }}
+        onSubmit={async (data) => {
+          await addVenue(data);
+          setShowCreateRetreat(false);
+          fetchStats();
+        }}
+      />
+      <CreateWellnessModal
+        isOpen={showCreateWellness}
+        onClose={() => { setShowCreateWellness(false); fetchStats(); }}
+        onSubmit={async (data) => {
+          await addVenue(data);
+          setShowCreateWellness(false);
+          fetchStats();
+        }}
+      />
     </>
   );
 }
