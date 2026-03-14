@@ -202,6 +202,7 @@ export interface Venue {
   sanctumVetted?: boolean;
   featuredListing?: boolean;
   instantBooking?: boolean;
+  isPremium?: boolean;
   hireType?: string;
   internalNotes?: string;
   shortDescription?: string;
@@ -418,6 +419,7 @@ function mapFromRetreat(r: any): Venue {
     sanctumVetted: r.sanctum_vetted ?? false,
     featuredListing: r.featured_listing ?? false,
     instantBooking: r.instant_booking ?? false,
+    isPremium: r.is_premium ?? false,
     isAvailable: true,
     showOnWebsite: true,
 
@@ -538,6 +540,7 @@ function mapFromWellness(w: any): Venue {
     sanctumVetted: w.sanctum_vetted ?? false,
     featuredListing: w.featured_listing ?? false,
     instantBooking: w.online_booking ?? false,
+    isPremium: w.is_premium ?? false,
     isAvailable: true,
     showOnWebsite: true,
 
@@ -629,6 +632,7 @@ function buildRetreatDBRow(v: Partial<Venue>) {
     sanctum_vetted: v.sanctumVetted ?? false,
     featured_listing: v.featuredListing ?? false,
     instant_booking: v.instantBooking ?? false,
+    is_premium: v.isPremium ?? false,
     overview_hero_image: v.heroImage || null,
     experience_feature_image: v.experienceFeatureImage || null,
     gallery_photos: v.galleryPhotos?.length ? v.galleryPhotos : null,
@@ -670,6 +674,7 @@ function buildWellnessDBRow(v: Partial<Venue>) {
     sanctum_vetted: v.sanctumVetted ?? false,
     featured_listing: v.featuredListing ?? false,
     online_booking: v.instantBooking ?? false,
+    is_premium: v.isPremium ?? false,
     overview_hero_image: v.heroImage || null,
     experience_feature_image: v.experienceFeatureImage || null,
     gallery_photos: v.galleryPhotos?.length ? v.galleryPhotos : null,

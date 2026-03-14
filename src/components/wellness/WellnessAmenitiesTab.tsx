@@ -304,12 +304,26 @@ export default function WellnessAmenitiesTab({ venue, onUpdate }: Props) {
 
             {/* Floating Save Button */}
             {hasChanges && (
-                <div style={{ position: 'sticky', top: 12, zIndex: 100, display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                    <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                        <Save size={16} style={{ marginRight: 6 }} />
-                        {saving ? 'Saving…' : 'Save Amenities'}
-                    </button>
-                </div>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                        position: 'fixed', bottom: 32, right: 32, zIndex: 500,
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '14px 24px',
+                        background: '#111111', color: '#fff',
+                        border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 600,
+                        fontFamily: "'Montserrat', sans-serif",
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+                        opacity: saving ? 0.8 : 1,
+                        transition: 'opacity 0.2s',
+                        letterSpacing: '0.02em',
+                    }}
+                >
+                    {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                    {saving ? 'Saving…' : 'Save Amenities'}
+                </button>
             )}
 
             {/* ── Tab Images ── */}

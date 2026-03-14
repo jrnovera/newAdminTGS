@@ -534,24 +534,21 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
     return (
         <div className="wvd-content">
 
-            {/* ── Floating Save / Status Bar ── */}
-            {(hasChanges || saveSuccess || saveError) && (
-                <div style={{ position: 'sticky', top: 12, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginBottom: 16 }}>
-                    {saveSuccess && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--success)', color: '#fff', fontSize: 12, padding: '8px 14px', borderRadius: 6, boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
-                            <Check size={14} strokeWidth={2.5} /> Saved successfully
-                        </span>
-                    )}
-                    {saveError && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#dc2626', color: '#fff', fontSize: 12, padding: '8px 14px', borderRadius: 6, boxShadow: '0 2px 12px rgba(0,0,0,0.12)', maxWidth: 320 }}>
-                            <X size={14} strokeWidth={2.5} /> {saveError}
-                        </span>
-                    )}
-                    {hasChanges && (
-                        <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-                            {saving ? <><Loader size={14} style={{ marginRight: 6 }} className="spin" />Saving…</> : <><Save size={14} style={{ marginRight: 6 }} />Save Services</>}
-                        </button>
-                    )}
+            {/* ── Floating Save Button ── */}
+            {hasChanges && (
+                <button onClick={handleSave} disabled={saving} style={{ position: 'fixed', bottom: 32, right: 32, zIndex: 500, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', background: '#111111', color: '#fff', border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 600, fontFamily: "'Montserrat', sans-serif", cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 6px 24px rgba(0,0,0,0.25)', opacity: saving ? 0.8 : 1, transition: 'opacity 0.2s', letterSpacing: '0.02em' }}>
+                    {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                    {saving ? 'Saving…' : 'Save Services'}
+                </button>
+            )}
+            {saveSuccess && (
+                <div style={{ position: 'fixed', bottom: 100, right: 32, zIndex: 600, padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, fontFamily: "'Montserrat', sans-serif", background: '#4A7C59', color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+                    Saved successfully
+                </div>
+            )}
+            {saveError && (
+                <div style={{ position: 'fixed', bottom: 100, right: 32, zIndex: 600, padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, fontFamily: "'Montserrat', sans-serif", background: '#C45C5C', color: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+                    {saveError}
                 </div>
             )}
 

@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import {
   LayoutGrid,
   Home,
@@ -60,7 +61,7 @@ const navSections: NavSection[] = [
           { to: '/wellness-venues', label: 'Wellness Venues', badge: 0, badgeStyle: 'wellness' },
         ]
       },
-      { to: '/enquiries', icon: MessageSquare, label: 'Enquiries', badge: '5' },
+      { to: '/enquiries', icon: MessageSquare, label: 'Enquiries' },
       { to: '/bookings', icon: CalendarCheck, label: 'Bookings' },
     ],
   },
@@ -111,6 +112,14 @@ export default function Layout() {
   const currentPath = pathname + search;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 768);
   const [venuesExpanded, setVenuesExpanded] = useState(false);
+  const [enquiryCount, setEnquiryCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('enquiries')
+      .select('id', { count: 'exact', head: true })
+      .then(({ count }) => setEnquiryCount(count ?? 0));
+  }, []);
 
   // Dynamic counts
   const retreatCount = venues.filter(v => v.type === 'Retreat').length;
@@ -148,7 +157,11 @@ export default function Layout() {
                 const isParentActive =
                   (pathname.startsWith(item.to) && (item.to !== '/' || pathname === '/')) ||
                   (isVenues && (pathname === '/retreat-venues' || pathname === '/wellness-venues'));
-                const badge = isVenues ? totalVenuesCount : item.badge;
+                const badge = isVenues
+                  ? totalVenuesCount
+                  : item.to === '/enquiries'
+                  ? (enquiryCount ?? undefined)
+                  : item.badge;
 
                 const handleParentClick = () => {
                   if (hasSubItems && isVenues) {

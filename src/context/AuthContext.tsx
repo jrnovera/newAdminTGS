@@ -39,11 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        // Safety timeout — if Supabase never responds, stop blocking the UI
+        const timeout = setTimeout(() => setLoading(false), 5000);
+
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
+            clearTimeout(timeout);
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) fetchProfile(session.user.id);
+            setLoading(false);
+        }).catch(() => {
+            clearTimeout(timeout);
             setLoading(false);
         });
 
@@ -61,7 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const signUp = async (email: string, password: string, fullName?: string) => {

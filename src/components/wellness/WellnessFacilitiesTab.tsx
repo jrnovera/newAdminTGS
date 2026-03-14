@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Check, Loader, UploadCloud, X, Plus, Trash2 } from 'lucide-react';
+import { Check, Loader, UploadCloud, X, Plus, Trash2, Save } from 'lucide-react';
 import type { Venue } from '../../context/VenueContext';
 import { supabase } from '../../lib/supabase';
 import { uploadFile } from '../../lib/storage';
@@ -372,17 +372,39 @@ export default function WellnessFacilitiesTab({ venue }: Props) {
     return (
         <div className="wvd-content" style={{ position: 'relative', paddingBottom: 80 }}>
             {/* Floating Save Button */}
-            <div className="floating-save-bar">
-                {saveMsg && (
-                    <span style={{ color: saveMsg.startsWith('Error') ? 'var(--danger)' : 'var(--success)', fontSize: 13, marginRight: 12 }}>
-                        {saveMsg}
-                    </span>
-                )}
-                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving && <Loader size={15} className="spin" />}
-                    {saving ? 'Saving...' : 'Save Facilities'}
-                </button>
-            </div>
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                    position: 'fixed', bottom: 32, right: 32, zIndex: 500,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '14px 24px',
+                    background: '#111111', color: '#fff',
+                    border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 600,
+                    fontFamily: "'Montserrat', sans-serif",
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+                    opacity: saving ? 0.8 : 1,
+                    transition: 'opacity 0.2s',
+                    letterSpacing: '0.02em',
+                }}
+            >
+                {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                {saving ? 'Saving…' : 'Save Facilities'}
+            </button>
+
+            {/* Toast */}
+            {saveMsg && (
+                <div style={{
+                    position: 'fixed', bottom: 100, right: 32, zIndex: 600,
+                    padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+                    fontFamily: "'Montserrat', sans-serif",
+                    background: saveMsg.startsWith('Error') ? '#C45C5C' : '#4A7C59', color: '#fff',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}>
+                    {saveMsg}
+                </div>
+            )}
 
             {/* Tab Header */}
             <section className="wvd-form-section">

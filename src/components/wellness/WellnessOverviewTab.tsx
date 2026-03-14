@@ -129,6 +129,7 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
         sanctumVetted: venue.sanctumVetted || true,
         featuredListing: venue.featuredListing || true,
         onlineBooking: venue.instantBooking || true,
+        isPremium: venue.isPremium ?? false,
 
         // Hours extra
         holidayNote: venue.holidayNote || 'Closed public holidays. Extended hours available by appointment.',
@@ -544,6 +545,15 @@ export default function WellnessOverviewTab({ venue, onUpdate }: Props) {
                                     <div className="toggle-knob"></div>
                                 </div>
                                 <span className="toggle-label">{form.onlineBooking ? 'Yes - Book via TGS' : 'Off'}</span>
+                            </div>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Is Premium</label>
+                            <div className="toggle-container" onClick={() => update('isPremium', !form.isPremium)}>
+                                <div className={`toggle ${form.isPremium ? 'active' : ''}`}>
+                                    <div className="toggle-knob"></div>
+                                </div>
+                                <span className="toggle-label">{form.isPremium ? 'Yes - Premium venue' : 'No'}</span>
                             </div>
                         </div>
                     </div>

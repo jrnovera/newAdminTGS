@@ -112,6 +112,7 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
     const [sanctumVetted, setSanctumVetted] = useState(venue.sanctumVetted ?? true);
     const [featuredListing, setFeaturedListing] = useState(venue.featuredListing ?? true);
     const [instantBooking, setInstantBooking] = useState(venue.instantBooking ?? false);
+    const [isPremium, setIsPremium] = useState(venue.isPremium ?? false);
 
     // Computed location for Venue interface mapping
     const computedLocation = `${suburb}${stateProvince ? `, ${stateProvince}` : ''}${country ? `, ${country}` : ''}`;
@@ -133,7 +134,7 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
             modalities, idealRetreatTypes,
             streetAddress, suburb, postcode, stateProvince, country, climate, locationType, gpsCoordinates, nearestAirport, transportAccess,
             location: computedLocation,
-            status, propertyStatus, subscription, sanctumVetted, featuredListing, instantBooking
+            status, propertyStatus, subscription, sanctumVetted, featuredListing, instantBooking, isPremium
         });
     }, [
         heroImage, experienceFeatureImage, galleryPhotos,
@@ -141,7 +142,7 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
         quote, introText, propertySizeValue, propertySizeUnit, established, architectureStyle,
         experienceTitle, experienceSubtitle, experienceDescription, modalities, idealRetreatTypes,
         streetAddress, suburb, postcode, stateProvince, country, climate, locationType, gpsCoordinates, nearestAirport, transportAccess,
-        status, propertyStatus, subscription, sanctumVetted, featuredListing, instantBooking
+        status, propertyStatus, subscription, sanctumVetted, featuredListing, instantBooking, isPremium
     ]);
 
     // Array helpers
@@ -547,6 +548,10 @@ export default function OverviewTab({ venue, onUpdate }: OverviewTabProps) {
                         <div className="rf-form-group">
                             <label className="rf-form-label">Instant Booking Available</label>
                             <Toggle active={instantBooking} onToggle={() => setInstantBooking(!instantBooking)} label={instantBooking ? 'Yes - Book instantly' : 'No - Enquiry required'} />
+                        </div>
+                        <div className="rf-form-group">
+                            <label className="rf-form-label">Is Premium</label>
+                            <Toggle active={isPremium} onToggle={() => setIsPremium(!isPremium)} label={isPremium ? 'Yes - Premium venue' : 'No'} />
                         </div>
                     </div>
                 </div>

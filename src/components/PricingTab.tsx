@@ -106,9 +106,10 @@ export default function PricingTab({ venue }: PricingTabProps) {
     // ─── Fetch ───────────────────────────────────────────────────────────
     useEffect(() => {
         async function fetchData() {
-            if (!venue.id) return;
+            if (!venue.id) { setLoading(false); return; }
             setLoading(true);
 
+            try {
             const [pricingRes, seasonRes] = await Promise.all([
                 supabase
                     .from('venue_pricing')
@@ -174,8 +175,11 @@ export default function PricingTab({ venue }: PricingTabProps) {
                     minimum_stay: (s.minimum_stay as string) || '',
                 })));
             }
-
-            setLoading(false);
+            } catch (err) {
+                console.error('[PricingTab] fetch error:', err);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchData();
     }, [venue.id]);
@@ -304,23 +308,40 @@ export default function PricingTab({ venue }: PricingTabProps) {
     return (
         <div className="content-area">
 
-            {/* Sticky Save */}
-            <div style={{ position: 'sticky', top: 12, zIndex: 100, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                {saveMsg && (
-                    <span style={{ fontSize: 13, color: saveMsg.startsWith('Error') ? 'var(--danger, #e53e3e)' : 'var(--success)', fontWeight: 500 }}>
-                        {saveMsg}
-                    </span>
-                )}
-                <button
-                    className="btn btn-primary"
-                    onClick={handleSave}
-                    disabled={saving}
-                    style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
-                >
-                    {saving ? <Loader size={15} className="spin" style={{ marginRight: 6 }} /> : <Save size={15} style={{ marginRight: 6 }} />}
-                    {saving ? 'Saving…' : 'Save Pricing'}
-                </button>
-            </div>
+            {/* Floating Save Button */}
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                    position: 'fixed', bottom: 32, right: 32, zIndex: 500,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '14px 24px',
+                    background: '#111111', color: '#fff',
+                    border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 600,
+                    fontFamily: "'Montserrat', sans-serif",
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+                    opacity: saving ? 0.8 : 1,
+                    transition: 'opacity 0.2s',
+                    letterSpacing: '0.02em',
+                }}
+            >
+                {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                {saving ? 'Saving…' : 'Save Pricing'}
+            </button>
+
+            {/* Toast */}
+            {saveMsg && (
+                <div style={{
+                    position: 'fixed', bottom: 100, right: 32, zIndex: 600,
+                    padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+                    fontFamily: "'Montserrat', sans-serif",
+                    background: saveMsg.startsWith('Error') ? '#ef4444' : '#22c55e', color: '#fff',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}>
+                    {saveMsg}
+                </div>
+            )}
 
             {/* ── Tab Images ──────────────────────────────────────────── */}
             <section className="form-section">

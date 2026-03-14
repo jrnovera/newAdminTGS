@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Check, Plus, Trash2, X } from 'lucide-react';
+import { Shield, Check, Plus, Trash2, X, Save, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Venue } from '../../context/VenueContext';
 
@@ -281,17 +281,40 @@ export default function WellnessInternalTab({ venue }: Props) {
                 </div>
             </div>
 
-            {/* Floating Save Bar */}
-            <div className="floating-save-bar">
-                {status && (
-                    <span style={{ marginRight: 12, fontSize: 13, color: status.type === 'success' ? 'var(--success)' : 'var(--error)' }}>
-                        {status.message}
-                    </span>
-                )}
-                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Internal'}
-                </button>
-            </div>
+            {/* Floating Save Button */}
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                    position: 'fixed', bottom: 32, right: 32, zIndex: 500,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '14px 24px',
+                    background: '#111111', color: '#fff',
+                    border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 600,
+                    fontFamily: "'Montserrat', sans-serif",
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+                    opacity: saving ? 0.8 : 1,
+                    transition: 'opacity 0.2s',
+                    letterSpacing: '0.02em',
+                }}
+            >
+                {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                {saving ? 'Saving…' : 'Save Internal'}
+            </button>
+
+            {/* Toast */}
+            {status && (
+                <div style={{
+                    position: 'fixed', bottom: 100, right: 32, zIndex: 600,
+                    padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+                    fontFamily: "'Montserrat', sans-serif",
+                    background: status.type === 'success' ? '#4A7C59' : '#C45C5C', color: '#fff',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}>
+                    {status.message}
+                </div>
+            )}
 
             {/* Quality Scores — static computed indicators */}
             <div className="score-cards">

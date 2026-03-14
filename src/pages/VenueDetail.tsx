@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
-import { ArrowLeft, Trash2, Globe, MapPin, Users, Calendar, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Trash2, Globe, MapPin, Users, Calendar, Eye, Save, Loader2 } from 'lucide-react';
 import { useVenues } from '../context/VenueContext';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import RetreatFacilitiesTab from '../components/RetreatFacilitiesTab';
@@ -37,6 +37,9 @@ export default function VenueDetail() {
   const { getVenue, updateVenue, deleteVenue } = useVenues();
   const [showDelete, setShowDelete] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveToast, setSaveToast] = useState<'success' | 'error' | null>(null);
   const pendingUpdatesRef = useRef<Partial<Venue>>({});
 
   const venue = getVenue(id || '');
@@ -63,19 +66,26 @@ export default function VenueDetail() {
   };
 
   const handleSaveChanges = async () => {
-    if (Object.keys(pendingUpdatesRef.current).length > 0) {
-      try {
-        await updateVenue(venue.id, pendingUpdatesRef.current);
-        pendingUpdatesRef.current = {};
-        alert('Changes saved successfully!');
-      } catch (err) {
-        console.error('Failed to save changes:', err);
-      }
+    if (!hasChanges || Object.keys(pendingUpdatesRef.current).length === 0) return;
+    setSaving(true);
+    try {
+      await updateVenue(venue.id, pendingUpdatesRef.current);
+      pendingUpdatesRef.current = {};
+      setHasChanges(false);
+      setSaveToast('success');
+      setTimeout(() => setSaveToast(null), 3000);
+    } catch (err) {
+      console.error('Failed to save changes:', err);
+      setSaveToast('error');
+      setTimeout(() => setSaveToast(null), 3000);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleTabUpdate = (updates: Partial<Venue>) => {
     pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+    setHasChanges(true);
   };
 
   const subClass = (sub: string) => {
@@ -155,11 +165,6 @@ export default function VenueDetail() {
           <button className="btn btn-secondary" onClick={() => setShowDelete(true)}>
             <Trash2 size={16} /> Delete
           </button>
-          {!SELF_SAVE_TABS.has(activeTab) && (
-            <button className="btn btn-primary" onClick={handleSaveChanges}>
-              <Save size={16} /> Save Changes
-            </button>
-          )}
         </div>
       </header>
 
@@ -217,6 +222,60 @@ export default function VenueDetail() {
         onConfirm={handleDelete}
         venueName={venue.name}
       />
+
+      {/* Floating Save Button */}
+      {hasChanges && !SELF_SAVE_TABS.has(activeTab) && (
+        <button
+          onClick={handleSaveChanges}
+          disabled={saving}
+          style={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32,
+            zIndex: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 24px',
+            background: '#111111',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 50,
+            fontSize: 14,
+            fontWeight: 600,
+            fontFamily: "'Montserrat', sans-serif",
+            cursor: saving ? 'not-allowed' : 'pointer',
+            boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+            opacity: saving ? 0.8 : 1,
+            transition: 'opacity 0.2s, transform 0.2s',
+            transform: 'translateY(0)',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {saving ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      )}
+
+      {/* Save Toast */}
+      {saveToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 100,
+          right: 32,
+          zIndex: 600,
+          padding: '12px 20px',
+          borderRadius: 10,
+          fontSize: 13,
+          fontWeight: 500,
+          fontFamily: "'Montserrat', sans-serif",
+          background: saveToast === 'success' ? '#4A7C59' : '#C45C5C',
+          color: '#fff',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        }}>
+          {saveToast === 'success' ? 'Changes saved successfully' : 'Failed to save changes'}
+        </div>
+      )}
     </>
   );
 }
