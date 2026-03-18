@@ -37,6 +37,88 @@ interface Config {
 
 interface ServiceCategory { id: string; name: string; show: boolean; }
 
+// ─── Experience Taxonomy (mirrors the 13 categories on the Wellness Experiences page) ───
+const TAXONOMY = [
+    { category: 'Thermal & Hydrotherapy', slug: 'thermal', subs: [
+        { label: 'Japanese Onsen', slug: 'onsen' }, { label: 'Contrast Therapy', slug: 'contrast-therapy' },
+        { label: 'Flotation & REST', slug: 'flotation' }, { label: 'Thalassotherapy', slug: 'thalassotherapy' },
+        { label: 'Steam & Sauna Rituals', slug: 'steam-sauna' }, { label: 'Cold Water Immersion', slug: 'cold-immersion' },
+        { label: 'Hammam & Ritual Bathing', slug: 'hammam' },
+    ]},
+    { category: 'Yoga & Movement', slug: 'yoga', subs: [
+        { label: 'Hatha Yoga', slug: 'hatha' }, { label: 'Vinyasa & Flow', slug: 'vinyasa' },
+        { label: 'Yin Yoga', slug: 'yin' }, { label: 'Kundalini Yoga', slug: 'kundalini' },
+        { label: 'Somatic Movement', slug: 'somatic' }, { label: 'Qigong & Tai Chi', slug: 'qigong' },
+        { label: 'Ecstatic Dance', slug: 'ecstatic-dance' }, { label: 'Yoga Nidra', slug: 'nidra' },
+    ]},
+    { category: 'Breathwork', slug: 'breathwork', subs: [
+        { label: 'Holotropic Breathwork', slug: 'holotropic' }, { label: 'Wim Hof Method', slug: 'wim-hof' },
+        { label: 'Pranayama', slug: 'pranayama' }, { label: 'Rebirthing Breathwork', slug: 'rebirthing' },
+        { label: 'Transformational Breath', slug: 'transformational-breath' },
+    ]},
+    { category: 'Sound & Vibrational', slug: 'sound', subs: [
+        { label: 'Sound Bath', slug: 'sound-bath' }, { label: 'Gong Therapy', slug: 'gong-therapy' },
+        { label: 'Crystal Singing Bowls', slug: 'crystal-bowls' }, { label: 'Binaural Frequencies', slug: 'binaural' },
+        { label: 'Mantra & Chanting', slug: 'mantra' }, { label: 'Tuning Fork Therapy', slug: 'tuning-forks' },
+    ]},
+    { category: 'Ayurveda', slug: 'ayurveda', subs: [
+        { label: 'Panchakarma', slug: 'panchakarma' }, { label: 'Abhyanga Massage', slug: 'abhyanga' },
+        { label: 'Shirodhara', slug: 'shirodhara' }, { label: 'Marma Therapy', slug: 'marma' },
+        { label: 'Ayurvedic Nutrition', slug: 'ayurvedic-nutrition' }, { label: 'Pulse Diagnosis', slug: 'pulse-diagnosis' },
+    ]},
+    { category: 'Indigenous & Earth Traditions', slug: 'indigenous', subs: [
+        { label: 'Aboriginal Healing', slug: 'aboriginal-healing' }, { label: 'Andean Therapies', slug: 'andean-therapies' },
+        { label: 'Native American Traditions', slug: 'native-american' }, { label: 'Sweat Lodge & Temazcal', slug: 'sweat-lodge' },
+        { label: 'Māori Healing', slug: 'maori-healing' }, { label: 'African Healing Traditions', slug: 'african-traditions' },
+        { label: 'Shamanic Journeying', slug: 'shamanic' },
+    ]},
+    { category: 'Plant Medicine & Ceremony', slug: 'plant-medicine', subs: [
+        { label: 'Cacao Ceremony', slug: 'cacao-ceremony' }, { label: 'Kambo', slug: 'kambo' },
+        { label: 'Rapé & Hapé', slug: 'hape' }, { label: 'Herbal & Botanical Medicine', slug: 'herbal-medicine' },
+        { label: 'Flower Essence Therapy', slug: 'flower-essences' },
+    ]},
+    { category: 'Meditation & Mindfulness', slug: 'meditation', subs: [
+        { label: 'Vipassana', slug: 'vipassana' }, { label: 'Zen Meditation', slug: 'zen' },
+        { label: 'Transcendental Meditation', slug: 'transcendental' }, { label: 'Walking Meditation', slug: 'walking-meditation' },
+        { label: 'Yoga Nidra', slug: 'yoga-nidra' }, { label: 'MBSR & Mindfulness', slug: 'mbsr' },
+    ]},
+    { category: 'Body Therapies & Bodywork', slug: 'bodywork', subs: [
+        { label: 'Traditional Thai Massage', slug: 'thai-massage' }, { label: 'Craniosacral Therapy', slug: 'craniosacral' },
+        { label: 'Rolfing & Structural Integration', slug: 'rolfing' }, { label: 'Shiatsu', slug: 'shiatsu' },
+        { label: 'Lymphatic Drainage', slug: 'lymphatic' }, { label: 'Myofascial Release', slug: 'myofascial' },
+        { label: 'Lomi Lomi', slug: 'lomi-lomi' },
+    ]},
+    { category: 'Nutrition & Cleansing', slug: 'nutrition', subs: [
+        { label: 'Juice Fasting & Cleansing', slug: 'juice-fasting' }, { label: 'Raw & Living Foods', slug: 'raw-food' },
+        { label: 'Detox Programs', slug: 'detox' }, { label: 'Macrobiotic Nutrition', slug: 'macrobiotic' },
+        { label: 'Therapeutic Fasting', slug: 'therapeutic-fasting' },
+    ]},
+    { category: 'Nature Immersion', slug: 'nature', subs: [
+        { label: 'Forest Bathing & Shinrin-Yoku', slug: 'forest-bathing' }, { label: 'Wild Swimming', slug: 'wild-swimming' },
+        { label: 'Earthing & Grounding', slug: 'earthing' }, { label: 'Wilderness Therapy', slug: 'wilderness-therapy' },
+        { label: 'Ecotherapy', slug: 'ecotherapy' },
+    ]},
+    { category: 'Energy & Esoteric', slug: 'energy', subs: [
+        { label: 'Reiki', slug: 'reiki' }, { label: 'Acupuncture & TCM', slug: 'acupuncture' },
+        { label: 'Human Design', slug: 'human-design' }, { label: 'Akashic Records', slug: 'akashic' },
+        { label: 'Theta Healing', slug: 'theta-healing' }, { label: 'Pranic Healing', slug: 'pranic-healing' },
+    ]},
+    { category: 'Modern Wellness', slug: 'modern-wellness', subs: [
+        { label: 'Halotherapy & Salt Therapy', slug: 'halotherapy' }, { label: 'Cryotherapy', slug: 'cryotherapy' },
+        { label: 'Infrared Sauna', slug: 'infrared-sauna' }, { label: 'IV Therapy & Infusions', slug: 'iv-therapy' },
+        { label: 'Hyperbaric Oxygen Therapy', slug: 'hyperbaric' }, { label: 'Compression Therapy', slug: 'compression' },
+        { label: 'Red Light Therapy', slug: 'red-light' }, { label: 'Biofeedback & Neurofeedback', slug: 'biofeedback' },
+        { label: 'Spa & Skin Treatments', slug: 'spa-treatments' },
+    ]},
+];
+
+function getCategorySlug(subcategorySlug: string): string {
+    for (const cat of TAXONOMY) {
+        if (cat.subs.some(s => s.slug === subcategorySlug)) return cat.slug;
+    }
+    return '';
+}
+
 // ─── Individual service items ─────────────────────────────────────────────────
 interface ServiceItem {
     id: string;
@@ -56,6 +138,8 @@ interface ServiceItem {
     show_on_website: boolean;
     image_url: string;
     sort_order: number;
+    taxonomy_category: string;
+    taxonomy_subcategory: string;
     isNew?: boolean;
     expanded?: boolean;
 }
@@ -129,7 +213,9 @@ function blankService(order: number): ServiceItem {
         name: '', display_name: '', category: '', service_type: 'Single Treatment',
         primary_category: '', duration: '', price: '', capacity: '',
         description: '', tags: [], is_featured: false, is_popular: false, is_new: false,
-        show_on_website: true, image_url: '', sort_order: order, isNew: true, expanded: true,
+        show_on_website: true, image_url: '', sort_order: order,
+        taxonomy_category: '', taxonomy_subcategory: '',
+        isNew: true, expanded: true,
     };
 }
 
@@ -217,7 +303,9 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
                 description: r.description || '', tags: r.tags || [],
                 is_featured: r.is_featured ?? false, is_popular: r.is_popular ?? false,
                 is_new: r.is_new ?? false, show_on_website: r.show_on_website ?? true,
-                image_url: r.image_url || '', sort_order: r.sort_order || 0, expanded: false,
+                image_url: r.image_url || '', sort_order: r.sort_order || 0,
+                taxonomy_category: r.taxonomy_category || '', taxonomy_subcategory: r.taxonomy_subcategory || '',
+                expanded: false,
             })));
         }
 
@@ -416,6 +504,7 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
                     name: s.name,
                     display_name: s.name, // mirrors name
                     category: s.category,
+                    primary_category: s.primary_category || null,
                     service_type: s.service_type,
                     duration: s.duration || null,
                     price: s.price || null,
@@ -428,6 +517,8 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
                     show_on_website: s.show_on_website,
                     image_url: s.image_url || null,
                     sort_order: i,
+                    taxonomy_category: s.taxonomy_category || null,
+                    taxonomy_subcategory: s.taxonomy_subcategory || null,
                 }));
 
                 const { data: insertedSvcs, error: svcErr } = await supabase
@@ -769,7 +860,7 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
                                                 </div>
                                                 {svc.image_url && <button onClick={() => updateService(svc.id, 'image_url', '')} style={{ display: 'block', width: '100%', marginTop: 2, background: 'none', border: 'none', color: 'var(--accent)', fontSize: 9, cursor: 'pointer' }}>Remove</button>}
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                                                 <div className="wvd-form-group" style={{ marginBottom: 0 }}>
                                                     <label className="wvd-form-label" style={{ fontSize: 10 }}>Service Name</label>
                                                     <input type="text" className="wvd-form-input" style={{ padding: '6px 10px', fontSize: 12 }} value={svc.name} onChange={e => updateService(svc.id, 'name', e.target.value)} placeholder="e.g. Deep Tissue Massage" />
@@ -779,6 +870,24 @@ export default function WellnessServicesTab({ venue, onUpdate: _onUpdate }: Prop
                                                     <select className="wvd-form-input wvd-form-select" style={{ padding: '6px 10px', fontSize: 12 }} value={svc.category} onChange={e => updateService(svc.id, 'category', e.target.value)}>
                                                         <option value="">— Select —</option>
                                                         {config.service_categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="wvd-form-group" style={{ marginBottom: 0 }}>
+                                                    <label className="wvd-form-label" style={{ fontSize: 10 }}>Experience Taxonomy</label>
+                                                    <select className="wvd-form-input wvd-form-select" style={{ padding: '6px 10px', fontSize: 12 }} value={svc.taxonomy_subcategory}
+                                                        onChange={e => {
+                                                            const subSlug = e.target.value;
+                                                            updateService(svc.id, 'taxonomy_subcategory', subSlug);
+                                                            updateService(svc.id, 'taxonomy_category', subSlug ? getCategorySlug(subSlug) : '');
+                                                        }}>
+                                                        <option value="">— None —</option>
+                                                        {TAXONOMY.map(cat => (
+                                                            <optgroup key={cat.slug} label={cat.category}>
+                                                                {cat.subs.map(sub => (
+                                                                    <option key={sub.slug} value={sub.slug}>{sub.label}</option>
+                                                                ))}
+                                                            </optgroup>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
